@@ -30,9 +30,18 @@
   *:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
   .container { width:100%; max-width:480px; margin:0 auto; }
 
-  .header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; }
-  .header h1 { font-family:'Fraunces',serif; font-weight:600; font-size:22px; margin:0; letter-spacing:0.2px; }
+  .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:12px; }
+  .header-title-wrap { display:flex; flex-direction:column; gap:2px; }
+  .header h1 {
+    font-family:'Fraunces',serif; font-weight:600; font-size:25px; margin:0; letter-spacing:0.3px;
+    line-height:1.15; background:linear-gradient(100deg, var(--text) 40%, var(--gold) 130%);
+    -webkit-background-clip:text; background-clip:text; color:var(--text);
+  }
+  .header-rule { width:34px; height:2px; background:var(--gold); border-radius:2px; }
   .header .date { font-size:12px; color:var(--text-muted); font-variant:small-caps; }
+  .date-leaf { display:flex; flex-direction:column; width:38px; border-radius:8px; overflow:hidden; border:1px solid var(--border); box-shadow:0 2px 6px rgba(0,0,0,0.18); flex-shrink:0; }
+  .date-leaf-month { background:var(--gold); color:#1b1607; font-size:9px; font-weight:700; text-align:center; padding:2px 0; text-transform:uppercase; letter-spacing:0.4px; }
+  .date-leaf-day { background:var(--surface); color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; text-align:center; padding:2px 0; line-height:1.3; }
 
   .summary { background:linear-gradient(155deg, var(--surface-2), var(--surface)); border:1px solid var(--border); border-radius:18px; padding:20px 20px 18px; margin-bottom:18px; }
   .summary-label { font-size:12px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-muted); margin-bottom:6px; }
@@ -179,10 +188,11 @@
   .bes-total-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
   .bes-total-value { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:15px; color:var(--teal); }
 
-  .activity-row { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .activity-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
   .activity-row:last-of-type { border-bottom:none; }
-  .activity-text { flex:1; min-width:0; }
-  .activity-time { color:var(--text-muted); font-size:10.5px; white-space:nowrap; flex-shrink:0; padding-top:1px; }
+  .activity-desc { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .activity-amt { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-muted); flex-shrink:0; }
+  #activityList { max-height:115px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .kesim-btn { font-size:11.5px; color:var(--text-muted); background:none; border:1px dashed var(--border); border-radius:8px; padding:5px 9px; cursor:pointer; font-family:inherit; margin-bottom:8px; }
   .kesim-form { display:none; gap:8px; margin-bottom:8px; }
   .kesim-form.open { display:flex; }
@@ -228,14 +238,39 @@
   .backup-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12.5px; color:var(--text-muted); background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px; cursor:pointer; font-family:inherit; }
   .backup-note { font-size:11px; color:var(--text-muted); text-align:center; margin-top:8px; line-height:1.5; }
 
+  .fab-btn {
+    position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom)); width:46px; height:46px;
+    border-radius:50%; background:var(--gold); color:#1b1607; border:none; display:flex; align-items:center;
+    justify-content:center; box-shadow:0 6px 16px rgba(0,0,0,0.35); z-index:60; cursor:pointer;
+  }
+  .fab-menu {
+    position:fixed; right:18px; bottom:calc(72px + env(safe-area-inset-bottom)); background:var(--surface);
+    border:1px solid var(--border); border-radius:14px; padding:6px; display:none; flex-direction:column;
+    gap:2px; box-shadow:0 10px 24px rgba(0,0,0,0.4); z-index:59; min-width:170px;
+  }
+  .fab-menu.open { display:flex; }
+  .fab-menu-item {
+    display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:9px; background:none;
+    border:none; color:var(--text); font-family:inherit; font-size:13.5px; cursor:pointer; text-align:left;
+  }
+  .fab-menu-item:active, .fab-menu-item:hover { background:var(--surface-2); }
+  .fab-backdrop { position:fixed; inset:0; z-index:58; display:none; }
+  .fab-backdrop.open { display:block; }
+
   svg { display:block; }
 </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>Borç Takibim</h1>
-      <span class="date" id="today"></span>
+      <div class="header-title-wrap">
+        <h1>Borç Takibim</h1>
+        <div class="header-rule"></div>
+      </div>
+      <div class="date-leaf" id="todayLeaf">
+        <div class="date-leaf-month" id="todayMonthAbbr"></div>
+        <div class="date-leaf-day" id="todayDay"></div>
+      </div>
     </div>
 
     <div class="summary">
@@ -244,6 +279,9 @@
       <div class="sub-stats">
         <div class="sub-stat"><div class="sub-stat-label">Toplam Varlık</div><div class="sub-stat-value assets" id="totalAssets">₺0,00</div></div>
         <div class="sub-stat"><div class="sub-stat-label">Toplam Borç (₺)</div><div class="sub-stat-value debts" id="totalDebts">₺0,00</div></div>
+      </div>
+      <div class="sub-stats" id="curExpenseRow" style="display:none; margin-top:10px;">
+        <div class="sub-stat"><div class="sub-stat-label">Bu Ay Harcanan</div><div class="sub-stat-value" style="color:var(--danger)" id="curExpenseValue">₺0,00</div></div>
       </div>
       <div class="fx-chips" id="fxChips"></div>
     </div>
@@ -268,7 +306,7 @@
         <button type="submit" class="btn btn-primary" style="background:var(--danger)">Ekle</button>
       </div>
     </form>
-    <button class="add-item-btn" id="showAddExpenseBtn">+ Harcama ekle</button>
+    <button class="add-item-btn" id="showAddExpenseBtn" style="display:none;">+ Harcama ekle</button>
 
     <div class="tear"></div>
 
@@ -291,7 +329,7 @@
         <button type="submit" class="btn btn-primary" style="background:var(--teal)">Ekle</button>
       </div>
     </form>
-    <button class="add-item-btn" id="showAddAssetBtn">+ Yeni kategori ekle</button>
+    <button class="add-item-btn" id="showAddAssetBtn" style="display:none;">+ Yeni kategori ekle</button>
 
     <div class="tear"></div>
 
@@ -310,7 +348,7 @@
         <button type="submit" class="btn btn-primary" style="background:#8C86D6">Ekle</button>
       </div>
     </form>
-    <button class="add-item-btn" id="showAddBesBtn">+ Yeni BES ekle</button>
+    <button class="add-item-btn" id="showAddBesBtn" style="display:none;">+ Yeni BES ekle</button>
 
     <div class="tear"></div>
 
@@ -362,7 +400,7 @@
         <button type="submit" class="btn btn-primary" style="background:var(--gold)">Ekle</button>
       </div>
     </form>
-    <button class="add-item-btn" id="showAddBankBtn">+ Yeni borç ekle</button>
+    <button class="add-item-btn" id="showAddBankBtn" style="display:none;">+ Yeni borç ekle</button>
 
     <div class="section-title"><span>Hareketler</span></div>
     <div id="activityEmptyState" class="empty-state" style="display:none;">
@@ -402,6 +440,17 @@
     <div class="backup-note">Telefon değiştirirsen önce "Dışa Aktar" ile bir yedek dosyası indir, yeni telefonda bu uygulamayı açıp "İçe Aktar" ile geri yükle.</div>
   </div>
 
+  <div class="fab-backdrop" id="fabBackdrop"></div>
+  <div class="fab-menu" id="fabMenu">
+    <button type="button" class="fab-menu-item" data-target="expense">🧾 Harcama</button>
+    <button type="button" class="fab-menu-item" data-target="bank">💳 Taksit (Borç)</button>
+    <button type="button" class="fab-menu-item" data-target="asset">💰 Varlık</button>
+    <button type="button" class="fab-menu-item" data-target="bes">🧓 BES</button>
+  </div>
+  <button type="button" class="fab-btn" id="fabBtn" aria-label="Ekle">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+
 <script>
   const STORAGE_KEY = 'borc-takibi-data';
   const PALETTE = ['#C9A24B','#4FA8A0','#8C86D6','#D07A6A','#6FA8D6','#8FBF7F','#D6A0C4','#B7935A'];
@@ -415,6 +464,11 @@
 
   const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
+  const SIMPLE_ASSET_OPTIONS = [
+    'Nakit','Vadesiz Mevduat','Vadeli Mevduat','Para Piyasası Fonu','Repo','Ters Repo','Döviz Hesabı (Dolar)',
+    'Döviz Hesabı (Euro)','Altın Hesabı (Gram Altın)','Çeyrek Altın','Cumhuriyet Altını','Kira Sertifikası (Sukuk)',
+    'Devlet Tahvili','Hazine Bonosu','Katılım Hesabı'
+  ];
   const BROKER_OPTIONS = [
     'Ziraat Yatırım','İş Yatırım','Garanti BBVA Yatırım','Yapı Kredi Yatırım','Halk Yatırım','Vakıf Yatırım',
     'QNB Yatırım','Deniz Yatırım','TEB Yatırım','ING Yatırım','Midas','Tacirler Yatırım','Gedik Yatırım',
@@ -428,20 +482,53 @@
   ];
   const BIST100_OPTIONS = [
     'THYAO - Türk Hava Yolları','GARAN - Garanti BBVA','ISCTR - Türkiye İş Bankası','ASELS - Aselsan',
-    'EREGL - Ereğli Demir Çelik','NETAS - Netaş Telekom','GSRAY - Galatasaray Sportif','Anadolu Efes','Akbank',
-    'Aksa Akrilik','Aksa Enerji Üretim','Alarko Holding','Anadolu Sigorta','Arçelik','BİM Mağazalar','Ral Yatırım',
-    'Borusan Birleşik','Borusan Yatırım','Batısöke','Batıçim','Coca-Cola İçecek','Çimsa Çimento','Doğuş Otomotiv',
-    'Doğan Holding','Eczacıbaşı İlaç','Emlak Konut GYO','ENKA İnşaat','Ford Otosan','Gübretaş','Türkiye Sigorta',
-    'Halkbank','Hektaş','Doğal Enerji','Koç Holding','Anadolu Metal Madencilik','Koza Altın','Kardemir','Migros',
-    'Oyak Çimento','Işıklar Enerji','Otokar','Petkim','Sabancı Holding','Sarkuysan','SASA Polyester','Şişecam',
-    'Şekerbank','TAV Havalimanları','Turkcell','Tekfen Holding','Tofaş','TSKB','Türk Telekom','Tukaş Gıda','Tüpraş',
-    'Ülker','VakıfBank','Vestel','Yapı Kredi','Zorlu Enerji','Bera Holding','Kuyaş Yatırım','Pegasus','ODAŞ Elektrik',
-    'Mavi Giyim','Enerjisa Enerji','MLP Sağlık','Şok Marketler','Esenboğa Elektrik','Qua Granite','Can2 Termik',
-    'Gen İlaç','Girişim Elektrik','Margün Enerji','Mia Teknoloji','Pasifik GYO','DAP Gayrimenkul','Gürsel Turizm',
-    'Europen Endüstri','Kiler Holding','Astor Enerji','CVK Maden','Europower Enerji','Grainturk Holding','CW Enerji',
-    'Katılımevim Tasarruf','Pasifik Eurasia Lojistik','İzdemir Enerji','Enerya Enerji','Reeder Teknoloji',
-    'Pasifik Teknoloji','Oba Makarna','Odine Teknoloji','Altınay Savunma','Efor Çay Sanayi','Gülermak',
-    'Destek Finans Faktoring','Balsu Gıda','Pasifik Holding'
+    'EREGL - Ereğli Demir Çelik','NETAS - Netaş Telekom','GSRAY - Galatasaray Sportif','AEFES - Anadolu Efes','AKBNK - Akbank',
+    'AKSA - Aksa Akrilik','AKSEN - Aksa Enerji','ALARK - Alarko Holding','ANSGR - Anadolu Sigorta','ARCLK - Arçelik','BIMAS - BİM Mağazalar',
+    'BRYAT - Borusan Yatırım','BSOKE - Batısöke','BTCIM - Batıçim','CCOLA - Coca-Cola İçecek','CIMSA - Çimsa Çimento','DOAS - Doğuş Otomotiv',
+    'DOHOL - Doğan Holding','ECILC - Eczacıbaşı İlaç','EKGYO - Emlak Konut GYO','ENKAI - ENKA İnşaat','FROTO - Ford Otosan','GUBRF - Gübretaş',
+    'HALKB - Halkbank','HEKTS - Hektaş','KCHOL - Koç Holding','KOZAL - Koza Altın','KRDMD - Kardemir','MGROS - Migros',
+    'OTKAR - Otokar','PETKM - Petkim','SAHOL - Sabancı Holding','SARKY - Sarkuysan','SASA - SASA Polyester','SISE - Şişecam',
+    'SKBNK - Şekerbank','TAVHL - TAV Havalimanları','TCELL - Turkcell','TKFEN - Tekfen Holding','TOASO - Tofaş','TSKB - TSKB','TTKOM - Türk Telekom','TUKAS - Tukaş Gıda','TUPRS - Tüpraş',
+    'ULKER - Ülker','VAKBN - VakıfBank','VESTL - Vestel','YKBNK - Yapı Kredi','ZOREN - Zorlu Enerji','KUYAS - Kuyaş','PGSUS - Pegasus','ODAS - ODAŞ Elektrik',
+    'MAVI - Mavi Giyim','ENJSA - Enerjisa Enerji','MPARK - MLP Sağlık','SOKM - Şok Marketler','QUAGR - Qua Granite',
+    'GENIL - Gen İlaç','GESAN - Girişim Elektrik','MAGEN - Margün Enerji',
+    'ASTOR - Astor Enerji','CVKMD - CVK Maden','CWENE - CW Enerji',
+    'IZENR - İzdemir Enerji','ENJY - Enerya Enerji','RODRG - Reeder Teknoloji',
+    'ALTNY - Altınay Savunma','GULER - Gülermak',
+    // Diğer BIST şirketleri (BIST100 dışı, sık işlem görenler)
+    'AYGAZ - Aygaz','BAGFS - Bagfaş','BIZIM - Bizim Toptan','BRISA - Brisa','CLEBI - Çelebi Hava Servisi','EGEEN - Ege Endüstri','EGSER - Ege Seramik',
+    'FMIZP - Federal-Mogul İzmit','GOLTS - Göltaş Çimento','IHLAS - İhlas Holding','IZMDC - İzmir Demir Çelik',
+    'JANTS - Jantsa Jant','KARTN - Kartonsan','KATMR - Katmerciler','KORDS - Kordsa Teknik Tekstil','LKMNH - Lokman Hekim','LOGO - Logo Yazılım',
+    'MRDIN - Mardin Çimento','MERIT - Merit Turizm','PRKME - Park Elektrik Madencilik',
+    'RYSAS - Reysaş Lojistik','SELEC - Selçuk Ecza Deposu',
+    'SODA - Soda Sanayii','TATGD - Tat Gıda','TSPOR - Trabzonspor Sportif','VAKKO - Vakko Tekstil',
+    'YATAS - Yataş',
+    // Wikipedia BIST şirket listesinden ek girişler (A-Z)
+    'AVOD - A.V.O.D Kurutulmuş Gıda','ACSEL - Acıselsan Acıpayam','ADANA - Adana Çimento','ADEL - Adel Kalemcilik','AFYON - Afyon Çimento',
+    'AKCNS - Akçansa Çimento','AKENR - Akenerji','AKFGY - Akfen GYO','AKFEN - Akfen Holding','ATEKS - Akın Tekstil','AKSGY - Akiş Gayrimenkul',
+    'AKMGY - Akmerkez GYO','AKGRT - Aksigorta','ALGYO - Alarko GYO','ALBRK - Albaraka Türk','ALKIM - Alkim Kimya','AYCES - Altınyunus',
+    'ANACM - Anadolu Cam','ANHYT - Anadolu Hayat Emeklilik','ASUZU - Anadolu Isuzu','ARENA - Arena Bilgisayar','ARMDA - Armada Bilgisayar',
+    'ASCEL - Asil Çelik','ATPET - Atlantik Petrol','AVGYO - Avrasya GYO','AYEN - Ayen Enerji','BANVT - Banvit','BASCM - Baştaş Çimento',
+    'BJKAS - Beşiktaş Futbol','BMEKS - Bimeks','BRSAN - Borusan Mannesmann','BOSSA - Bossa','BUCIM - Bursa Çimento',
+    'CEMTS - Çemtaş','DENIZ - DenizBank','DERIM - Derimod','DESA - Desa','DEVA - Deva Holding','DGKLB - Doğtaş Kelebek',
+    'DGGYO - Doğuş GYO','ECZYT - Eczacıbaşı Yatırım','GEDIK - Gedik Yatırım','GENTS - Gentaş','GLYHO - Global Yatırım Holding',
+    'GOODY - Goodyear','GOZDE - Gözde Girişim','GSDHO - GSD Holding','GUSGR - Güneş Sigorta','HLGYO - Halk GYO',
+    'HURGZ - Hürriyet Gazetecilik','IDGYO - Idealist GYO','IHGZT - İhlas Gazetecilik','INDES - İndeks Bilgisayar','INFO - İnfo Yatırım',
+    'INTEM - İntema','IPEKE - İpek Doğal Enerji','ISFIN - İş Finansal Kiralama','ISGYO - İş GYO','ISGSY - İş Girişim',
+    'ISMEN - İş Yatırım Menkul','IZOCM - İzocam','KARSN - Karsan Otomotiv','KAREL - Karel Elektronik','KENT - Kent Gıda',
+    'KERVT - Kerevitaş','KLGYO - Kiler GYO','KLMSN - Klimasan','KONYA - Konya Çimento','KRGYO - Körfez GYO','KUTPO - Kütahya Porselen',
+    'LUKSK - Lüks Kadife','MARTI - Martı GYO','MNDRS - Menderes Tekstil','MEPET - Mepet','METRO - Metro Holding','MIPAZ - Milpa',
+    'MUTLU - Mutlu Akü','NTHOL - Net Holding','NIBAS - Niğbaş','NUHCM - Nuh Çimento','NUGYO - Nurol GYO','PARSN - Parsan',
+    'PENGD - Penguen Gıda','PTOFS - Petrol Ofisi','RYGYO - Reysaş GYO','TBORG - Türk Tuborg','TTRAK - Türk Traktör',
+    'UNYEC - Ünye Çimento','VKGYO - Vakıf GYO','VESBE - Vestel Beyaz Eşya','YKSGR - Yapı Kredi Sigorta','YAZIC - Yazıcılar Holding','YUNSA - Yünsa',
+    // 2025-2026 döneminde halka arz olan bazı yeni şirketler (liste zamanla değişir)
+    'NETCD - Netcad Yazılım (Yeni Halka Arz)','ARFYE - ARF Bio Yenilenebilir Enerji (Yeni Halka Arz)',
+    // Popüler yatırım fonu kategorileri (TEFAS) — tam fon adın için "Diğer" ile kendi fon adını da yazabilirsin
+    'Fon — Ziraat Portföy Hisse Senedi Fonu','Fon — İş Portföy Hisse Senedi Fonu','Fon — Ak Portföy Hisse Senedi Fonu',
+    'Fon — Garanti Portföy Hisse Senedi Fonu','Fon — QNB Portföy Hisse Senedi Fonu','Fon — Yapı Kredi Portföy Hisse Senedi Fonu',
+    'Fon — Deniz Portföy Hisse Senedi Fonu','Fon — TEB Portföy Hisse Senedi Fonu','Fon — Fiba Portföy Hisse Senedi Fonu',
+    'Fon — Katılım Endeks Fonu','Fon — Altın Fonu','Fon — Para Piyasası Fonu','Fon — Değişken Fon','Fon — Serbest Fon',
+    'Repo — Gecelik Repo','Repo — Ters Repo'
   ];
 
   function setupCombo(inputEl, dropdownEl, getOptions, onSelect) {
@@ -515,10 +602,10 @@
     const d = new Date(ts);
     return d.toLocaleDateString('tr-TR', { day:'numeric', month:'short' }) + ' · ' + d.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
   }
-  function logActivity(text) {
+  function logActivity(desc, amount) {
     state.activityLog = state.activityLog || [];
-    state.activityLog.unshift({ id: uid(), text, ts: Date.now() });
-    if (state.activityLog.length > 50) state.activityLog.length = 50;
+    state.activityLog.unshift({ id: uid(), desc, amount: (typeof amount === 'number' ? amount : null), ts: Date.now() });
+    if (state.activityLog.length > 100) state.activityLog.length = 100;
   }
 
   function loadData() {
@@ -549,17 +636,20 @@
 
   let state = loadData();
 
-  // Seed the three fixed banks for this version, if not already present
+  // Seed the three fixed banks for this version, if not already present, and mark them undeletable
   (function seedFixedBanks() {
     const fixed = ['Ziraat Bankası', 'İş Bankası', 'Akbank'];
-    let added = false;
+    let changed = false;
     fixed.forEach(name => {
-      if (!state.banks.some(b => b.name === name)) {
-        state.banks.push({ id: uid(), name, entityType: 'bank', color: getEntityColor(name, state.banks.length), debts: [], kesimTarihi: null });
-        added = true;
+      let b = state.banks.find(x => x.name === name);
+      if (!b) {
+        b = { id: uid(), name, entityType: 'bank', color: getEntityColor(name, state.banks.length), debts: [], kesimTarihi: null };
+        state.banks.push(b);
+        changed = true;
       }
+      if (!b.fixed) { b.fixed = true; changed = true; }
     });
-    if (added) saveData();
+    if (changed) saveData();
   })();
 
   let expanded = {};
@@ -761,6 +851,7 @@
         const amount = parseAmount(form.querySelector('.e-amount').value);
         if (amount <= 0) return;
         item.debts.push({ id: uid(), desc, amount });
+        logActivity(desc, amount);
         addingEntryFor = null; saveData(); renderAll();
       };
       form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
@@ -827,6 +918,7 @@
         } else {
           item.contributions.push({ id: uid(), month, year, amount });
         }
+        logActivity('BES ödemesi (' + TR_MONTHS[month-1] + ' ' + year + ')', amount);
         addingEntryFor = null; saveData(); renderAll();
       };
       form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
@@ -913,6 +1005,7 @@
           const qty = parseAmount(form.querySelector('.tx-qty').value);
           if (price <= 0 || qty <= 0) return;
           (isBuy ? stock.buys : stock.sells).push({ id: uid(), price, qty });
+          logActivity(stock.name + (isBuy ? ' alım' : ' satım'), price * qty);
           addingEntryFor = null; saveData(); renderAll();
         };
         form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
@@ -986,6 +1079,7 @@
         const id = uid();
         portfolioItem.stocks.push({ id, name, color: PALETTE[portfolioItem.stocks.length % PALETTE.length], buys: [], sells: [], currentPrice: 0 });
         expanded[portfolioItem.id + ':' + id] = true;
+        logActivity(name + ' eklendi');
         addingStockFor = null; saveData(); renderAll();
       };
       form.querySelector('.cancel-stock').onclick = () => { addingStockFor = null; renderAll(); };
@@ -1019,23 +1113,20 @@
       card.className = 'item-card';
       const head = document.createElement('button');
       head.className = 'item-head';
-      const kesimText = item.kesimTarihi ? ' · Kesim: ' + item.kesimTarihi : '';
+      const subText = item.kesimTarihi ? ("Her ayın " + item.kesimTarihi + "'i") : 'Hesap Kesim Tarihi Ekle';
       head.innerHTML =
         '<span class="item-dot" style="background:'+item.color+'">'+esc(initials(item.name))+'</span>' +
-        '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+(item.debts||[]).length+' borç kalemi'+kesimText+'</div></span>' +
+        '<span class="item-name">'+esc(item.name)+'<div class="item-sub" id="kesimSub-'+item.id+'" style="text-decoration:underline dotted;text-underline-offset:2px;">'+subText+'</div></span>' +
         '<span class="item-total">'+currency(total)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
       card.appendChild(head);
+      const subEl = head.querySelector('#kesimSub-' + item.id);
+      if (subEl) subEl.onclick = (e) => { e.stopPropagation(); editingKesimFor = editingKesimFor === item.id ? null : item.id; expanded[expKey] = true; renderAll(); };
 
       const body = document.createElement('div');
       body.className = 'item-body' + (isOpen ? ' open' : '');
 
-      const kesimBtn = document.createElement('button');
-      kesimBtn.className = 'kesim-btn';
-      kesimBtn.textContent = item.kesimTarihi ? 'Hesap kesim günü: ' + item.kesimTarihi + ' (değiştir)' : '+ Hesap kesim tarihi gir';
-      kesimBtn.onclick = () => { editingKesimFor = editingKesimFor === item.id ? null : item.id; renderAll(); };
-      body.appendChild(kesimBtn);
       if (editingKesimFor === item.id) {
         const kf = document.createElement('form');
         kf.className = 'kesim-form open';
@@ -1061,8 +1152,9 @@
           const row = document.createElement('div');
           row.className = 'entry-row';
           const badge = d.isInstallment ? '<span class="entry-badge">'+d.paidInstallments+'/'+d.totalInstallments+' taksit</span>' : '';
+          const typeBadge = d.note ? '<span class="entry-badge" style="color:var(--text-muted);background:rgba(127,127,127,0.14)">'+esc(d.debtType)+'</span>' : '';
           row.innerHTML =
-            '<span class="entry-desc">'+esc(d.debtType)+badge+'</span>' +
+            '<span class="entry-desc">'+esc(d.note || d.debtType)+typeBadge+badge+'</span>' +
             '<span class="entry-right"><span class="entry-amount">'+formatMoney(entryRemaining(d), d.currency)+'</span>' +
             '<button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></span>';
           row.querySelector('.icon-btn').onclick = () => { item.debts = item.debts.filter(x => x.id !== d.id); saveData(); renderAll(); };
@@ -1085,8 +1177,8 @@
                 const newPaid = (d.paidInstallments === idx + 1) ? idx : idx + 1;
                 logPaymentRange(item, d, oldPaid, newPaid);
                 d.paidInstallments = newPaid;
-                if (newPaid > oldPaid) logActivity(item.name + ' — ' + d.debtType + ' taksiti ödendi olarak işaretlendi ('+newPaid+'/'+d.totalInstallments+')');
-                else logActivity(item.name + ' — ' + d.debtType + ' taksit işareti geri alındı ('+newPaid+'/'+d.totalInstallments+')');
+                if (newPaid > oldPaid) logActivity((d.note || d.debtType) + ' taksiti ödendi ('+newPaid+'/'+d.totalInstallments+')', d.monthlyAmount);
+                else logActivity((d.note || d.debtType) + ' taksit işareti geri alındı ('+newPaid+'/'+d.totalInstallments+')', d.monthlyAmount);
                 saveData(); renderAll();
               };})();
               dots.appendChild(dot);
@@ -1104,6 +1196,7 @@
         let curOpts = CURRENCIES.map(c => '<option value="'+c.code+'">'+c.label+'</option>').join('');
         form.innerHTML =
           '<select class="sel-input debt-type-sel">'+typeOpts+'</select>' +
+          '<input class="entry-note-input" placeholder="Açıklama (opsiyonel, örn. Araba kredisi)" />' +
           '<select class="sel-input debt-cur-sel">'+curOpts+'</select>' +
           '<div class="installment-fields open">' +
             '<div class="installment-fields-row"><input class="inst-monthly-input" placeholder="Aylık taksit" inputmode="decimal" /><input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" /></div>' +
@@ -1114,16 +1207,17 @@
         form.onsubmit = (e) => {
           e.preventDefault();
           const debtType = form.querySelector('.debt-type-sel').value;
+          const note = form.querySelector('.entry-note-input').value.trim();
           const cur = form.querySelector('.debt-cur-sel').value;
           const monthlyAmount = parseAmount(form.querySelector('.inst-monthly-input').value);
           const totalInstallments = parseInt2(form.querySelector('.inst-total-input').value);
           let paidInstallments = parseInt2(form.querySelector('.inst-paid-input').value);
           if (monthlyAmount <= 0 || totalInstallments <= 0) return;
           if (paidInstallments > totalInstallments) paidInstallments = totalInstallments;
-          const newEntry = { id: uid(), debtType, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0 };
+          const newEntry = { id: uid(), debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0 };
           item.debts.push(newEntry);
           if (paidInstallments > 0) { logPaymentRange(item, newEntry, 0, paidInstallments); newEntry.paidInstallments = paidInstallments; }
-          logActivity(item.name + ' — ' + debtType + ' eklendi (' + totalInstallments + ' taksit)');
+          logActivity((note || debtType) + ' eklendi', monthlyAmount * totalInstallments);
           addingEntryFor = null; saveData(); renderAll();
         };
         form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
@@ -1136,11 +1230,13 @@
         body.appendChild(addBtn);
       }
 
-      const delBtn = document.createElement('button');
-      delBtn.className = 'del-item-btn';
-      delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Sil';
-      delBtn.onclick = () => { state.banks = state.banks.filter(x => x.id !== item.id); saveData(); renderAll(); };
-      body.appendChild(delBtn);
+      if (!item.fixed) {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del-item-btn';
+        delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Sil';
+        delBtn.onclick = () => { state.banks = state.banks.filter(x => x.id !== item.id); saveData(); renderAll(); };
+        body.appendChild(delBtn);
+      }
 
       card.appendChild(body);
       listEl.appendChild(card);
@@ -1150,8 +1246,13 @@
   function renderMonthCarousel() {
     const curKey = currentMonthKey();
     const maxKey = effectiveCurrentMonthKey();
-    const allKeys = [curKey, ...Object.keys(state.incomeByMonth).filter(k => state.incomeByMonth[k] > 0), ...state.paymentLog.map(p => p.month), ...state.expenses.map(e => e.month)];
+    const allKeys = [curKey, ...state.paymentLog.map(p => p.month), ...state.expenses.map(e => e.month)];
     let minKey = allKeys.reduce((min, k) => (k < min ? k : min), curKey);
+    // always show at least 3 months of past history, even without data
+    let [fy, fm] = curKey.split('-').map(Number);
+    fm -= 3; while (fm < 1) { fm += 12; fy--; }
+    const floorKey = fy + '-' + String(fm).padStart(2,'0');
+    if (minKey > floorKey) minKey = floorKey;
     if (minKey > maxKey) minKey = maxKey;
 
     const pages = [];
@@ -1190,7 +1291,6 @@
       if (isCurrent) {
         html += '<div class="monthly-row"><span class="monthly-label">Bu ayki toplam taksit (₺)</span><span class="monthly-value due">'+currency(due)+'</span></div>';
       }
-      html += '<div class="monthly-row"><span class="monthly-label">Ödenen taksitler</span><span class="monthly-value due">'+currency(paid)+'</span></div>';
       if (income > 0) {
         html += '<div class="monthly-row"><span class="monthly-label">Elde kalan</span><span class="monthly-value left '+(net>=0?'positive':'negative')+'">'+(net<0?'-':'')+currency(Math.abs(net))+'</span></div>';
       }
@@ -1205,13 +1305,6 @@
         html += '<div class="archive-items">';
         items.forEach(p => {
           html += '<div class="archive-item-row"><span>'+esc(p.bankName)+' — '+esc(p.debtType)+'</span><span>'+currency(p.amount)+'</span></div>';
-        });
-        html += '</div>';
-      }
-      if (monthExpenses.length > 0) {
-        html += '<div class="archive-items">';
-        monthExpenses.forEach(ex => {
-          html += '<div class="archive-item-row"><span>'+esc(ex.bankName)+' — '+esc(ex.desc)+'</span><span>'+currency(ex.amount)+'</span></div>';
         });
         html += '</div>';
       }
@@ -1233,6 +1326,7 @@
         const key = openForm.dataset.formkey;
         const amount = parseAmount(openForm.querySelector('.carousel-income-input').value);
         state.incomeByMonth[key] = amount;
+        logActivity('Gelir (' + monthLabel(key) + ')', amount);
         editingCarouselKey = null;
         saveData(); renderAll();
       };
@@ -1281,7 +1375,7 @@
     log.forEach(a => {
       const row = document.createElement('div');
       row.className = 'activity-row';
-      row.innerHTML = '<span class="activity-text">'+esc(a.text)+'</span><span class="activity-time">'+formatTs(a.ts)+'</span>';
+      row.innerHTML = '<span class="activity-desc">'+esc(a.desc)+'</span>' + (a.amount != null ? '<span class="activity-amt">'+currency(a.amount)+'</span>' : '');
       listEl.appendChild(row);
     });
   }
@@ -1290,9 +1384,11 @@
     const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
-    const totalAssets = totalAssetsOnly + totalBes;
+    const totalSalary = Object.values(state.incomeByMonth).reduce((s,v) => s + (v||0), 0);
+    const totalAssets = totalAssetsOnly + totalBes + totalSalary;
     const monthlyDue = state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0);
-    const net = totalAssets - totalDebtsTRY;
+    const curMonthExpenses = state.expenses.filter(e => e.month === currentMonthKey()).reduce((s,e) => s + (e.amount||0), 0);
+    const net = totalAssets - totalDebtsTRY - curMonthExpenses;
 
     document.getElementById('totalDebts').textContent = currency(totalDebtsTRY);
     document.getElementById('totalAssets').textContent = currency(totalAssets);
@@ -1303,6 +1399,14 @@
     const netEl = document.getElementById('netTotal');
     netEl.textContent = (net < 0 ? '-' : '') + currency(Math.abs(net));
     netEl.className = 'net-total ' + (net >= 0 ? 'positive' : 'negative');
+
+    const curExpenseRow = document.getElementById('curExpenseRow');
+    if (curMonthExpenses > 0) {
+      curExpenseRow.style.display = 'flex';
+      document.getElementById('curExpenseValue').textContent = '-' + currency(curMonthExpenses);
+    } else {
+      curExpenseRow.style.display = 'none';
+    }
 
     const fxTotals = {};
     state.banks.forEach(b => (b.debts||[]).forEach(d => {
@@ -1331,7 +1435,11 @@
     renderActivity();
   }
 
-  document.getElementById('today').textContent = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
+  (function() {
+    const now = new Date();
+    document.getElementById('todayDay').textContent = now.getDate();
+    document.getElementById('todayMonthAbbr').textContent = now.toLocaleDateString('tr-TR', { month:'short' }).replace('.','');
+  })();
 
   // Month carousel swipe tracking
   (function() {
@@ -1355,10 +1463,10 @@
     const dropdown = document.getElementById('newAssetDropdown');
     let selectedType = 'simple';
 
-    const placeholders = { simple:'Kategori adı (örn. Nakit)', portfolio:'Aracı kurum adı (örn. Midas)' };
+    const placeholders = { simple:'Kategori adı (örn. Nakit, Repo)', portfolio:'Aracı kurum adı (örn. Midas)' };
     function optionsForType() {
       if (selectedType === 'portfolio') return BROKER_OPTIONS;
-      return null;
+      return SIMPLE_ASSET_OPTIONS;
     }
     setupCombo(input, dropdown, optionsForType);
 
@@ -1373,7 +1481,7 @@
       };
     });
     showBtn.onclick = () => { form.classList.add('open'); showBtn.style.display = 'none'; input.focus(); };
-    document.getElementById('cancelAssetBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'flex'; input.value = ''; };
+    document.getElementById('cancelAssetBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'none'; input.value = ''; };
     form.onsubmit = (e) => {
       e.preventDefault();
       const name = input.value.trim();
@@ -1385,7 +1493,8 @@
       else newItem.debts = [];
       state.assets.push(newItem);
       expanded['assets:' + id] = true;
-      input.value = ''; form.classList.remove('open'); showBtn.style.display = 'flex';
+      logActivity(name + ' eklendi');
+      input.value = ''; form.classList.remove('open'); showBtn.style.display = 'none';
       selectedType = 'simple';
       input.placeholder = placeholders.simple;
       form.querySelectorAll('.mode-btn[data-atype]').forEach(b => b.classList.toggle('active', b.dataset.atype === 'simple'));
@@ -1401,7 +1510,7 @@
     const dropdown = document.getElementById('newBesDropdown');
     setupCombo(input, dropdown, () => BES_OPTIONS);
     showBtn.onclick = () => { form.classList.add('open'); showBtn.style.display = 'none'; input.focus(); };
-    document.getElementById('cancelBesBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'flex'; input.value = ''; };
+    document.getElementById('cancelBesBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'none'; input.value = ''; };
     form.onsubmit = (e) => {
       e.preventDefault();
       const name = input.value.trim();
@@ -1410,7 +1519,8 @@
       const color = getEntityColor(name, state.bes.length) || PALETTE[state.bes.length % PALETTE.length];
       state.bes.push({ id, name, color, type: 'bes', contributions: [] });
       expanded['bes:' + id] = true;
-      input.value = ''; form.classList.remove('open'); showBtn.style.display = 'flex';
+      logActivity(name + ' eklendi');
+      input.value = ''; form.classList.remove('open'); showBtn.style.display = 'none';
       saveData(); renderAll();
     };
   })();
@@ -1435,6 +1545,7 @@
       const key = year + '-' + String(month).padStart(2,'0');
       if (state.incomeByMonth[key] && !confirm(TR_MONTHS[month-1]+' '+year+' için zaten bir kayıt var (₺'+state.incomeByMonth[key].toLocaleString('tr-TR')+'). Üzerine yazılsın mı?')) return;
       state.incomeByMonth[key] = amount;
+      logActivity('Maaş (' + TR_MONTHS[month-1] + ' ' + year + ')', amount);
       document.getElementById('salaryAmountInput').value = '';
       saveData(); renderAll();
     };
@@ -1483,7 +1594,7 @@
     };
 
     showBtn.onclick = () => { form.classList.add('open'); showBtn.style.display = 'none'; };
-    document.getElementById('cancelBankBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'flex'; customInput.value = ''; };
+    document.getElementById('cancelBankBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'none'; customInput.value = ''; };
 
     form.onsubmit = (e) => {
       e.preventDefault();
@@ -1500,7 +1611,7 @@
       state.banks.push({ id, name, entityType: type, color, debts: [], kesimTarihi: null });
       expanded['banks:' + id] = true;
       customInput.value = ''; customInput.style.display = 'none';
-      form.classList.remove('open'); showBtn.style.display = 'flex';
+      form.classList.remove('open'); showBtn.style.display = 'none';
       logActivity(name + ' eklendi');
       saveData(); renderAll();
     };
@@ -1510,22 +1621,28 @@
   (function() {
     const showBtn = document.getElementById('showAddExpenseBtn');
     const form = document.getElementById('newExpenseForm');
-    showBtn.onclick = () => { refreshExpenseBankOptions(); form.classList.add('open'); showBtn.style.display = 'none'; document.getElementById('expenseDescInput').focus(); };
-    document.getElementById('cancelExpenseBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'flex'; };
+    showBtn.onclick = () => {
+      refreshExpenseBankOptions();
+      if (state.banks.length === 0) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
+      form.classList.add('open'); showBtn.style.display = 'none'; document.getElementById('expenseDescInput').focus();
+    };
+    document.getElementById('cancelExpenseBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'none'; };
     form.onsubmit = (e) => {
       e.preventDefault();
+      refreshExpenseBankOptions();
       const bankId = document.getElementById('expenseBankSelect').value;
-      const bank = state.banks.find(b => b.id === bankId);
-      if (!bank) return;
+      let bank = state.banks.find(b => b.id === bankId);
+      if (!bank) bank = state.banks[0];
+      if (!bank) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
       const desc = document.getElementById('expenseDescInput').value.trim() || 'Harcama';
       const amount = parseAmount(document.getElementById('expenseAmountInput').value);
-      if (amount <= 0) return;
+      if (amount <= 0) { alert('Lütfen geçerli bir tutar gir.'); return; }
       const month = expenseBucketForBank(bank);
       state.expenses.push({ id: uid(), bankId: bank.id, bankName: bank.name, desc, amount, month, ts: Date.now() });
-      logActivity(bank.name + ' — ' + desc + ' harcaması eklendi ('+currency(amount)+')');
+      logActivity(desc, amount);
       document.getElementById('expenseDescInput').value = '';
       document.getElementById('expenseAmountInput').value = '';
-      form.classList.remove('open'); showBtn.style.display = 'flex';
+      form.classList.remove('open'); showBtn.style.display = 'none';
       saveData(); renderAll();
     };
   })();
@@ -1556,6 +1673,27 @@
     reader.readAsText(file);
     e.target.value = '';
   };
+
+  // FAB add menu
+  (function() {
+    const fabBtn = document.getElementById('fabBtn');
+    const fabMenu = document.getElementById('fabMenu');
+    const fabBackdrop = document.getElementById('fabBackdrop');
+    function closeFab() { fabMenu.classList.remove('open'); fabBackdrop.classList.remove('open'); }
+    fabBtn.onclick = () => { fabMenu.classList.toggle('open'); fabBackdrop.classList.toggle('open'); };
+    fabBackdrop.onclick = closeFab;
+    function scrollToEl(id) { setTimeout(() => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior:'smooth', block:'center' }); }, 60); }
+    fabMenu.querySelectorAll('.fab-menu-item').forEach(btn => {
+      btn.onclick = () => {
+        const target = btn.dataset.target;
+        closeFab();
+        if (target === 'expense') { document.getElementById('showAddExpenseBtn').click(); scrollToEl('newExpenseForm'); }
+        else if (target === 'bank') { document.getElementById('showAddBankBtn').click(); scrollToEl('newBankForm'); }
+        else if (target === 'asset') { document.getElementById('showAddAssetBtn').click(); scrollToEl('newAssetForm'); }
+        else if (target === 'bes') { document.getElementById('showAddBesBtn').click(); scrollToEl('newBesForm'); }
+      };
+    });
+  })();
 
   renderAll();
 </script>

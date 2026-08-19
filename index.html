@@ -48,6 +48,21 @@
 
   .month-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:22px; }
   .month-card-title { font-family:'Fraunces',serif; font-size:14px; font-weight:600; margin-bottom:10px; }
+
+  .month-carousel-wrap { margin-bottom:6px; border-radius:16px; overflow:hidden; }
+  .month-carousel {
+    display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .month-carousel::-webkit-scrollbar { display:none; }
+  .month-page {
+    flex:0 0 100%; scroll-snap-align:start; box-sizing:border-box;
+    background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px 18px;
+  }
+  .carousel-dots { display:flex; justify-content:center; gap:6px; margin-top:10px; }
+  .carousel-dot { width:6px; height:6px; border-radius:50%; background:var(--border); transition:all .2s ease; }
+  .carousel-dot.active { background:var(--gold); width:16px; border-radius:3px; }
+  .carousel-hint { text-align:center; font-size:10.5px; color:var(--text-muted); margin-top:6px; margin-bottom:22px; }
   .monthly-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; }
   .monthly-row + .monthly-row { border-top:1px dashed var(--border); }
   .monthly-label { font-size:12px; color:var(--text-muted); }
@@ -164,6 +179,15 @@
   .bes-total-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
   .bes-total-value { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:15px; color:var(--teal); }
 
+  .activity-row { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .activity-row:last-of-type { border-bottom:none; }
+  .activity-text { flex:1; min-width:0; }
+  .activity-time { color:var(--text-muted); font-size:10.5px; white-space:nowrap; flex-shrink:0; padding-top:1px; }
+  .kesim-btn { font-size:11.5px; color:var(--text-muted); background:none; border:1px dashed var(--border); border-radius:8px; padding:5px 9px; cursor:pointer; font-family:inherit; margin-bottom:8px; }
+  .kesim-form { display:none; gap:8px; margin-bottom:8px; }
+  .kesim-form.open { display:flex; }
+  .kesim-form input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:7px 9px; color:var(--text); font-size:12.5px; font-family:inherit; }
+
   .inline-form { display:none; flex-direction:column; gap:8px; margin-top:8px; background:var(--surface-2); border-radius:10px; padding:10px; }
   .inline-form.open { display:flex; }
   .inline-form input { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit; width:100%; }
@@ -224,21 +248,29 @@
       <div class="fx-chips" id="fxChips"></div>
     </div>
 
-    <div class="month-card">
-      <div class="month-card-title" id="monthCardTitle">Bu Ay</div>
-      <div class="monthly-row"><span class="monthly-label">Bu ayki toplam taksit (₺)</span><span class="monthly-value due" id="monthlyDueValue">₺0,00</span></div>
-      <div class="monthly-row"><span class="monthly-label">Aylık gelir</span><span class="monthly-value editable" id="incomeValue">Gir</span></div>
-      <div class="monthly-row" id="incomeLeftRow" style="display:none;"><span class="monthly-label">Elde kalan</span><span class="monthly-value left" id="incomeLeftValue">₺0,00</span></div>
-      <form class="income-edit-form" id="incomeEditForm">
-        <input id="incomeInput" placeholder="Aylık gelir (₺)" inputmode="decimal" />
-        <button type="submit" class="btn btn-primary" style="background:var(--gold)">Kaydet</button>
-      </form>
-      <button class="archive-toggle" id="archiveToggleBtn">
-        <svg id="archiveChevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        Geçmiş Aylar
-      </button>
-      <div class="archive-list" id="archiveList"></div>
+    <div class="month-carousel-wrap">
+      <div class="month-carousel" id="monthCarousel"></div>
     </div>
+    <div class="carousel-dots" id="carouselDots"></div>
+    <div class="carousel-hint">← kaydırarak diğer ayları gör →</div>
+
+    <div class="section-title"><span>Bu Ayki Harcamalar</span><span class="section-total" id="expensesSectionTotal" style="color:var(--danger)"></span></div>
+    <div id="expensesEmptyState" class="empty-state" style="display:none;">
+      <div class="icon-wrap">🧾</div><p>Bu ay için henüz harcama eklemedin.<br>Tek seferlik alışveriş/harcamalarını buraya ekle.</p>
+    </div>
+    <div id="expensesList"></div>
+    <form class="new-item-form" id="newExpenseForm">
+      <select class="sel-input" id="expenseBankSelect"></select>
+      <input id="expenseDescInput" placeholder="Açıklama (örn. Market alışverişi)" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
+      <input id="expenseAmountInput" placeholder="Tutar (₺)" inputmode="decimal" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" id="cancelExpenseBtn">Vazgeç</button>
+        <button type="submit" class="btn btn-primary" style="background:var(--danger)">Ekle</button>
+      </div>
+    </form>
+    <button class="add-item-btn" id="showAddExpenseBtn">+ Harcama ekle</button>
+
+    <div class="tear"></div>
 
     <div class="section-title"><span>Varlıklarım</span><span class="section-total" id="assetsSectionTotal" style="color:var(--teal)"></span></div>
     <div id="assetsEmptyState" class="empty-state" style="display:none;">
@@ -331,6 +363,12 @@
       </div>
     </form>
     <button class="add-item-btn" id="showAddBankBtn">+ Yeni borç ekle</button>
+
+    <div class="section-title"><span>Hareketler</span></div>
+    <div id="activityEmptyState" class="empty-state" style="display:none;">
+      <div class="icon-wrap">📋</div><p>Henüz işlem kaydı yok.</p>
+    </div>
+    <div id="activityList" style="margin-bottom:28px;"></div>
 
     <div class="tear"></div>
 
@@ -464,9 +502,23 @@
   }
   function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
   function currentMonthKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+  function nextMonthKeyOf(key) { let [y,m] = key.split('-').map(Number); m++; if (m>12) { m=1; y++; } return y+'-'+String(m).padStart(2,'0'); }
+  function effectiveCurrentMonthKey() {
+    const real = currentMonthKey();
+    return new Date().getDate() >= 25 ? nextMonthKeyOf(real) : real;
+  }
   function monthLabel(key) {
     const [y,m] = key.split('-').map(Number);
     return new Date(y, m-1, 1).toLocaleDateString('tr-TR', { month:'long', year:'numeric' });
+  }
+  function formatTs(ts) {
+    const d = new Date(ts);
+    return d.toLocaleDateString('tr-TR', { day:'numeric', month:'short' }) + ' · ' + d.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
+  }
+  function logActivity(text) {
+    state.activityLog = state.activityLog || [];
+    state.activityLog.unshift({ id: uid(), text, ts: Date.now() });
+    if (state.activityLog.length > 50) state.activityLog.length = 50;
   }
 
   function loadData() {
@@ -485,22 +537,39 @@
         return {
           banks: p.banks || [], assets, bes,
           incomeByMonth: p.incomeByMonth || (p.monthlyIncome ? { [currentMonthKey()]: p.monthlyIncome } : {}),
-          paymentLog: p.paymentLog || []
+          paymentLog: p.paymentLog || [],
+          expenses: p.expenses || [],
+          activityLog: p.activityLog || []
         };
       }
     } catch (e) {}
-    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [] };
+    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [], expenses: [], activityLog: [] };
   }
   function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }
 
   let state = loadData();
+
+  // Seed the three fixed banks for this version, if not already present
+  (function seedFixedBanks() {
+    const fixed = ['Ziraat Bankası', 'İş Bankası', 'Akbank'];
+    let added = false;
+    fixed.forEach(name => {
+      if (!state.banks.some(b => b.name === name)) {
+        state.banks.push({ id: uid(), name, entityType: 'bank', color: getEntityColor(name, state.banks.length), debts: [], kesimTarihi: null });
+        added = true;
+      }
+    });
+    if (added) saveData();
+  })();
+
   let expanded = {};
   let addingEntryFor = null;
   let editingPriceFor = null;
   let addingStockFor = null;
   let txnOpen = {};
-  let archiveOpenMain = false;
-  let archiveOpenMonth = {};
+  let monthCarouselIndex = null;
+  let editingCarouselKey = null;
+  let editingKesimFor = null;
   let salaryOpenMain = false;
 
   function currencySymbol(code) { const c = CURRENCIES.find(x => x.code === code); return c ? c.symbol : '₺'; }
@@ -555,6 +624,11 @@
   }
   function itemMonthlyDueTRY(item) {
     return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryMonthlyDue(d) : 0), 0);
+  }
+  function expenseBucketForBank(bank) {
+    const real = currentMonthKey();
+    if (!bank || !bank.kesimTarihi) return real;
+    return new Date().getDate() > bank.kesimTarihi ? nextMonthKeyOf(real) : real;
   }
 
   function logPaymentRange(item, entry, oldPaid, newPaid) {
@@ -926,8 +1000,12 @@
     }
   }
 
+  function bankDebtTRY(item) {
+    return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0);
+  }
+
   function renderBankGroup() {
-    const items = state.banks;
+    const items = state.banks.slice().sort((a,b) => bankDebtTRY(b) - bankDebtTRY(a));
     const listEl = document.getElementById('bankList');
     document.getElementById('bankEmptyState').style.display = items.length === 0 ? 'block' : 'none';
     listEl.innerHTML = '';
@@ -935,15 +1013,16 @@
     items.forEach(item => {
       const expKey = 'banks:' + item.id;
       const isOpen = !!expanded[expKey];
-      const total = (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0);
+      const total = bankDebtTRY(item);
 
       const card = document.createElement('div');
       card.className = 'item-card';
       const head = document.createElement('button');
       head.className = 'item-head';
+      const kesimText = item.kesimTarihi ? ' · Kesim: ' + item.kesimTarihi : '';
       head.innerHTML =
         '<span class="item-dot" style="background:'+item.color+'">'+esc(initials(item.name))+'</span>' +
-        '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+(item.debts||[]).length+' borç kalemi</div></span>' +
+        '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+(item.debts||[]).length+' borç kalemi'+kesimText+'</div></span>' +
         '<span class="item-total">'+currency(total)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
@@ -951,6 +1030,25 @@
 
       const body = document.createElement('div');
       body.className = 'item-body' + (isOpen ? ' open' : '');
+
+      const kesimBtn = document.createElement('button');
+      kesimBtn.className = 'kesim-btn';
+      kesimBtn.textContent = item.kesimTarihi ? 'Hesap kesim günü: ' + item.kesimTarihi + ' (değiştir)' : '+ Hesap kesim tarihi gir';
+      kesimBtn.onclick = () => { editingKesimFor = editingKesimFor === item.id ? null : item.id; renderAll(); };
+      body.appendChild(kesimBtn);
+      if (editingKesimFor === item.id) {
+        const kf = document.createElement('form');
+        kf.className = 'kesim-form open';
+        kf.innerHTML = '<input class="kesim-input" placeholder="Ayın kaçı (1-31)" inputmode="numeric" value="'+(item.kesimTarihi||'')+'" /><button type="submit" class="btn btn-primary" style="background:'+item.color+'">Kaydet</button>';
+        kf.onsubmit = (e) => {
+          e.preventDefault();
+          let day = parseInt2(kf.querySelector('.kesim-input').value);
+          if (day < 1) day = null; if (day > 31) day = 31;
+          item.kesimTarihi = day || null;
+          editingKesimFor = null; saveData(); renderAll();
+        };
+        body.appendChild(kf);
+      }
 
       if ((item.debts||[]).length === 0) {
         const empty = document.createElement('div');
@@ -987,6 +1085,8 @@
                 const newPaid = (d.paidInstallments === idx + 1) ? idx : idx + 1;
                 logPaymentRange(item, d, oldPaid, newPaid);
                 d.paidInstallments = newPaid;
+                if (newPaid > oldPaid) logActivity(item.name + ' — ' + d.debtType + ' taksiti ödendi olarak işaretlendi ('+newPaid+'/'+d.totalInstallments+')');
+                else logActivity(item.name + ' — ' + d.debtType + ' taksit işareti geri alındı ('+newPaid+'/'+d.totalInstallments+')');
                 saveData(); renderAll();
               };})();
               dots.appendChild(dot);
@@ -1005,48 +1105,25 @@
         form.innerHTML =
           '<select class="sel-input debt-type-sel">'+typeOpts+'</select>' +
           '<select class="sel-input debt-cur-sel">'+curOpts+'</select>' +
-          '<div class="mode-toggle">' +
-            '<button type="button" class="mode-btn active" data-mode="simple">Tek Kalem</button>' +
-            '<button type="button" class="mode-btn" data-mode="installment">Taksitli</button>' +
-          '</div>' +
-          '<div class="simple-fields"><input class="entry-amount-input" placeholder="Tutar" inputmode="decimal" /></div>' +
-          '<div class="installment-fields">' +
+          '<div class="installment-fields open">' +
             '<div class="installment-fields-row"><input class="inst-monthly-input" placeholder="Aylık taksit" inputmode="decimal" /><input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" /></div>' +
             '<input class="inst-paid-input" placeholder="Şimdiye kadar ödenen taksit (örn. 2)" inputmode="numeric" />' +
           '</div>' +
           '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+item.color+'">Ekle</button></div>';
 
-        const simpleFieldsEl = form.querySelector('.simple-fields');
-        const instFieldsEl = form.querySelector('.installment-fields');
-        const modeBtns = form.querySelectorAll('.mode-btn');
-        modeBtns.forEach(btn => {
-          btn.onclick = () => {
-            modeBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if (btn.dataset.mode === 'installment') { simpleFieldsEl.classList.add('hidden'); instFieldsEl.classList.add('open'); }
-            else { simpleFieldsEl.classList.remove('hidden'); instFieldsEl.classList.remove('open'); }
-          };
-        });
-
         form.onsubmit = (e) => {
           e.preventDefault();
           const debtType = form.querySelector('.debt-type-sel').value;
           const cur = form.querySelector('.debt-cur-sel').value;
-          const isInstMode = form.querySelector('.mode-btn[data-mode="installment"]').classList.contains('active');
-          if (isInstMode) {
-            const monthlyAmount = parseAmount(form.querySelector('.inst-monthly-input').value);
-            const totalInstallments = parseInt2(form.querySelector('.inst-total-input').value);
-            let paidInstallments = parseInt2(form.querySelector('.inst-paid-input').value);
-            if (monthlyAmount <= 0 || totalInstallments <= 0) return;
-            if (paidInstallments > totalInstallments) paidInstallments = totalInstallments;
-            const newEntry = { id: uid(), debtType, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0 };
-            item.debts.push(newEntry);
-            if (paidInstallments > 0) { logPaymentRange(item, newEntry, 0, paidInstallments); newEntry.paidInstallments = paidInstallments; }
-          } else {
-            const amount = parseAmount(form.querySelector('.entry-amount-input').value);
-            if (amount <= 0) return;
-            item.debts.push({ id: uid(), debtType, currency: cur, isInstallment: false, amount });
-          }
+          const monthlyAmount = parseAmount(form.querySelector('.inst-monthly-input').value);
+          const totalInstallments = parseInt2(form.querySelector('.inst-total-input').value);
+          let paidInstallments = parseInt2(form.querySelector('.inst-paid-input').value);
+          if (monthlyAmount <= 0 || totalInstallments <= 0) return;
+          if (paidInstallments > totalInstallments) paidInstallments = totalInstallments;
+          const newEntry = { id: uid(), debtType, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0 };
+          item.debts.push(newEntry);
+          if (paidInstallments > 0) { logPaymentRange(item, newEntry, 0, paidInstallments); newEntry.paidInstallments = paidInstallments; }
+          logActivity(item.name + ' — ' + debtType + ' eklendi (' + totalInstallments + ' taksit)');
           addingEntryFor = null; saveData(); renderAll();
         };
         form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
@@ -1070,59 +1147,142 @@
     });
   }
 
-  function renderArchive() {
-    const chevron = document.getElementById('archiveChevron');
-    const listEl = document.getElementById('archiveList');
-    chevron.classList.toggle('open', archiveOpenMain);
-    listEl.classList.toggle('open', archiveOpenMain);
-    if (!archiveOpenMain) return;
-
+  function renderMonthCarousel() {
     const curKey = currentMonthKey();
-    const monthKeys = new Set([...Object.keys(state.incomeByMonth), ...state.paymentLog.map(p => p.month)]);
-    monthKeys.delete(curKey);
-    const sorted = Array.from(monthKeys).sort().reverse();
+    const maxKey = effectiveCurrentMonthKey();
+    const allKeys = [curKey, ...Object.keys(state.incomeByMonth).filter(k => state.incomeByMonth[k] > 0), ...state.paymentLog.map(p => p.month), ...state.expenses.map(e => e.month)];
+    let minKey = allKeys.reduce((min, k) => (k < min ? k : min), curKey);
+    if (minKey > maxKey) minKey = maxKey;
 
-    listEl.innerHTML = '';
-    if (sorted.length === 0) {
-      const e = document.createElement('div'); e.className = 'archive-empty'; e.textContent = 'Henüz geçmiş ay kaydı yok.';
-      listEl.appendChild(e);
-      return;
+    const pages = [];
+    let [y, m] = minKey.split('-').map(Number);
+    const [ey, em] = maxKey.split('-').map(Number);
+    while (y < ey || (y === ey && m <= em)) {
+      pages.push(y + '-' + String(m).padStart(2,'0'));
+      m++; if (m > 12) { m = 1; y++; }
     }
-    sorted.forEach(key => {
+
+    if (monthCarouselIndex === null) {
+      const curIdx = pages.indexOf(curKey);
+      monthCarouselIndex = curIdx >= 0 ? curIdx : pages.length - 1;
+    }
+    if (monthCarouselIndex > pages.length - 1) monthCarouselIndex = pages.length - 1;
+
+    const carousel = document.getElementById('monthCarousel');
+    const dotsWrap = document.getElementById('carouselDots');
+    carousel.innerHTML = '';
+    dotsWrap.innerHTML = '';
+
+    pages.forEach((key, idx) => {
+      const isCurrent = key === curKey;
       const income = state.incomeByMonth[key] || 0;
       const items = state.paymentLog.filter(p => p.month === key && (p.currency||'TRY') === 'TRY');
       const paid = items.reduce((s,p) => s + (p.amount||0), 0);
-      const net = income - paid;
-      const isOpen = !!archiveOpenMonth[key];
+      const monthExpenses = state.expenses.filter(e => e.month === key);
+      const due = isCurrent ? state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0) : null;
+      const compareBase = isCurrent ? due : paid;
+      const net = income - compareBase;
 
-      const wrap = document.createElement('div');
-      wrap.className = 'archive-month';
-      const headEl = document.createElement('div');
-      headEl.className = 'archive-month-head';
-      headEl.innerHTML = '<span class="archive-month-title">'+monthLabel(key)+'</span><span class="archive-month-net">'+currency(net)+'</span>';
-      headEl.onclick = () => { archiveOpenMonth[key] = !archiveOpenMonth[key]; renderAll(); };
-      wrap.appendChild(headEl);
-
-      const detail = document.createElement('div');
-      detail.className = 'archive-detail' + (isOpen ? ' open' : '');
-      detail.innerHTML =
-        '<div class="archive-detail-row"><span>Gelir</span><span>'+currency(income)+'</span></div>' +
-        '<div class="archive-detail-row"><span>Ödenen taksitler</span><span>'+currency(paid)+'</span></div>';
-      const itemsWrap = document.createElement('div');
-      itemsWrap.className = 'archive-items';
-      if (items.length === 0) {
-        itemsWrap.innerHTML = '<div class="txn-empty">Bu ay kaydedilmiş ödeme yok.</div>';
-      } else {
-        items.forEach(p => {
-          const r = document.createElement('div');
-          r.className = 'archive-item-row';
-          r.innerHTML = '<span>'+esc(p.bankName)+' — '+esc(p.debtType)+'</span><span>'+currency(p.amount)+'</span>';
-          itemsWrap.appendChild(r);
-        });
+      const page = document.createElement('div');
+      page.className = 'month-page';
+      let html = '<div class="month-card-title">'+(isCurrent ? 'Bu Ay · ' : '')+monthLabel(key)+'</div>';
+      html += '<div class="monthly-row"><span class="monthly-label">Gelir</span><span class="monthly-value editable" data-editkey="'+key+'">'+(income>0?currency(income):'Gir')+'</span></div>';
+      if (isCurrent) {
+        html += '<div class="monthly-row"><span class="monthly-label">Bu ayki toplam taksit (₺)</span><span class="monthly-value due">'+currency(due)+'</span></div>';
       }
-      detail.appendChild(itemsWrap);
-      wrap.appendChild(detail);
-      listEl.appendChild(wrap);
+      html += '<div class="monthly-row"><span class="monthly-label">Ödenen taksitler</span><span class="monthly-value due">'+currency(paid)+'</span></div>';
+      if (income > 0) {
+        html += '<div class="monthly-row"><span class="monthly-label">Elde kalan</span><span class="monthly-value left '+(net>=0?'positive':'negative')+'">'+(net<0?'-':'')+currency(Math.abs(net))+'</span></div>';
+      }
+      const expenseTotal = monthExpenses.reduce((s,e) => s + (e.amount||0), 0);
+      if (expenseTotal > 0) {
+        html += '<div class="monthly-row"><span class="monthly-label">Harcamalar</span><span class="monthly-value due" style="color:var(--danger)">'+currency(expenseTotal)+'</span></div>';
+      }
+      if (editingCarouselKey === key) {
+        html += '<form class="income-edit-form open" data-formkey="'+key+'"><input class="carousel-income-input" placeholder="Gelir (₺)" inputmode="decimal" value="'+(income||'')+'" /><button type="submit" class="btn btn-primary" style="background:var(--gold)">Kaydet</button></form>';
+      }
+      if (items.length > 0) {
+        html += '<div class="archive-items">';
+        items.forEach(p => {
+          html += '<div class="archive-item-row"><span>'+esc(p.bankName)+' — '+esc(p.debtType)+'</span><span>'+currency(p.amount)+'</span></div>';
+        });
+        html += '</div>';
+      }
+      if (monthExpenses.length > 0) {
+        html += '<div class="archive-items">';
+        monthExpenses.forEach(ex => {
+          html += '<div class="archive-item-row"><span>'+esc(ex.bankName)+' — '+esc(ex.desc)+'</span><span>'+currency(ex.amount)+'</span></div>';
+        });
+        html += '</div>';
+      }
+      page.innerHTML = html;
+      carousel.appendChild(page);
+
+      const dot = document.createElement('span');
+      dot.className = 'carousel-dot' + (idx === monthCarouselIndex ? ' active' : '');
+      dotsWrap.appendChild(dot);
+    });
+
+    carousel.querySelectorAll('.monthly-value.editable').forEach(el => {
+      el.onclick = () => { editingCarouselKey = editingCarouselKey === el.dataset.editkey ? null : el.dataset.editkey; renderAll(); };
+    });
+    const openForm = carousel.querySelector('form[data-formkey]');
+    if (openForm) {
+      openForm.onsubmit = (e) => {
+        e.preventDefault();
+        const key = openForm.dataset.formkey;
+        const amount = parseAmount(openForm.querySelector('.carousel-income-input').value);
+        state.incomeByMonth[key] = amount;
+        editingCarouselKey = null;
+        saveData(); renderAll();
+      };
+      setTimeout(() => { const f = openForm.querySelector('.carousel-income-input'); if (f) f.focus(); }, 0);
+    }
+
+    requestAnimationFrame(() => {
+      carousel.scrollLeft = monthCarouselIndex * carousel.clientWidth;
+    });
+  }
+
+  function renderExpenses() {
+    const curKey = currentMonthKey();
+    const listEl = document.getElementById('expensesList');
+    const list = state.expenses.filter(e => e.month === curKey);
+    document.getElementById('expensesEmptyState').style.display = list.length === 0 ? 'block' : 'none';
+    const total = list.reduce((s,e) => s + (e.amount||0), 0);
+    document.getElementById('expensesSectionTotal').textContent = currency(total);
+    listEl.innerHTML = '';
+    list.forEach(ex => {
+      const row = document.createElement('div');
+      row.className = 'entry-row';
+      row.style.padding = '9px 0';
+      row.style.borderBottom = '1px solid var(--border)';
+      row.innerHTML =
+        '<span class="entry-desc">'+esc(ex.desc)+'<span class="entry-badge">'+esc(ex.bankName)+'</span></span>' +
+        '<span class="entry-right"><span class="entry-amount">'+currency(ex.amount)+'</span>' +
+        '<button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></span>';
+      row.querySelector('.icon-btn').onclick = () => { state.expenses = state.expenses.filter(x => x.id !== ex.id); saveData(); renderAll(); };
+      listEl.appendChild(row);
+    });
+  }
+
+  function refreshExpenseBankOptions() {
+    const sel = document.getElementById('expenseBankSelect');
+    const prev = sel.value;
+    sel.innerHTML = state.banks.map(b => '<option value="'+b.id+'">'+esc(b.name)+'</option>').join('');
+    if (state.banks.some(b => b.id === prev)) sel.value = prev;
+  }
+
+  function renderActivity() {
+    const listEl = document.getElementById('activityList');
+    const log = state.activityLog || [];
+    document.getElementById('activityEmptyState').style.display = log.length === 0 ? 'block' : 'none';
+    listEl.innerHTML = '';
+    log.forEach(a => {
+      const row = document.createElement('div');
+      row.className = 'activity-row';
+      row.innerHTML = '<span class="activity-text">'+esc(a.text)+'</span><span class="activity-time">'+formatTs(a.ts)+'</span>';
+      listEl.appendChild(row);
     });
   }
 
@@ -1160,45 +1320,32 @@
     });
 
     const curKey = currentMonthKey();
-    document.getElementById('monthCardTitle').textContent = 'Bu Ay · ' + monthLabel(curKey);
-    document.getElementById('monthlyDueValue').textContent = currency(monthlyDue);
-    const income = state.incomeByMonth[curKey] || 0;
-    document.getElementById('incomeValue').textContent = income > 0 ? currency(income) : 'Gir';
-    const leftRow = document.getElementById('incomeLeftRow');
-    if (income > 0) {
-      leftRow.style.display = 'flex';
-      const left = income - monthlyDue;
-      const leftEl = document.getElementById('incomeLeftValue');
-      leftEl.textContent = (left < 0 ? '-' : '') + currency(Math.abs(left));
-      leftEl.className = 'monthly-value left ' + (left >= 0 ? 'positive' : 'negative');
-    } else {
-      leftRow.style.display = 'none';
-    }
 
-    renderArchive();
+    refreshExpenseBankOptions();
+    renderMonthCarousel();
+    renderExpenses();
     renderSalaryHistory();
     renderAssetGroup();
     renderBesGroup();
     renderBankGroup();
+    renderActivity();
   }
 
   document.getElementById('today').textContent = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
 
-  document.getElementById('incomeValue').onclick = () => {
-    const form = document.getElementById('incomeEditForm');
-    form.classList.toggle('open');
-    if (form.classList.contains('open')) {
-      document.getElementById('incomeInput').value = state.incomeByMonth[currentMonthKey()] || '';
-      document.getElementById('incomeInput').focus();
-    }
-  };
-  document.getElementById('incomeEditForm').onsubmit = (e) => {
-    e.preventDefault();
-    state.incomeByMonth[currentMonthKey()] = parseAmount(document.getElementById('incomeInput').value);
-    document.getElementById('incomeEditForm').classList.remove('open');
-    saveData(); renderAll();
-  };
-  document.getElementById('archiveToggleBtn').onclick = () => { archiveOpenMain = !archiveOpenMain; renderAll(); };
+  // Month carousel swipe tracking
+  (function() {
+    const carousel = document.getElementById('monthCarousel');
+    let scrollTimeout;
+    carousel.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const idx = Math.round(carousel.scrollLeft / carousel.clientWidth);
+        monthCarouselIndex = idx;
+        document.querySelectorAll('.carousel-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
+      }, 100);
+    });
+  })();
 
   // Asset add form
   (function() {
@@ -1350,9 +1497,34 @@
       }
       const id = uid();
       const color = getEntityColor(name, state.banks.length);
-      state.banks.push({ id, name, entityType: type, color, debts: [] });
+      state.banks.push({ id, name, entityType: type, color, debts: [], kesimTarihi: null });
       expanded['banks:' + id] = true;
       customInput.value = ''; customInput.style.display = 'none';
+      form.classList.remove('open'); showBtn.style.display = 'flex';
+      logActivity(name + ' eklendi');
+      saveData(); renderAll();
+    };
+  })();
+
+  // Expense add form
+  (function() {
+    const showBtn = document.getElementById('showAddExpenseBtn');
+    const form = document.getElementById('newExpenseForm');
+    showBtn.onclick = () => { refreshExpenseBankOptions(); form.classList.add('open'); showBtn.style.display = 'none'; document.getElementById('expenseDescInput').focus(); };
+    document.getElementById('cancelExpenseBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'flex'; };
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const bankId = document.getElementById('expenseBankSelect').value;
+      const bank = state.banks.find(b => b.id === bankId);
+      if (!bank) return;
+      const desc = document.getElementById('expenseDescInput').value.trim() || 'Harcama';
+      const amount = parseAmount(document.getElementById('expenseAmountInput').value);
+      if (amount <= 0) return;
+      const month = expenseBucketForBank(bank);
+      state.expenses.push({ id: uid(), bankId: bank.id, bankName: bank.name, desc, amount, month, ts: Date.now() });
+      logActivity(bank.name + ' — ' + desc + ' harcaması eklendi ('+currency(amount)+')');
+      document.getElementById('expenseDescInput').value = '';
+      document.getElementById('expenseAmountInput').value = '';
       form.classList.remove('open'); showBtn.style.display = 'flex';
       saveData(); renderAll();
     };
@@ -1376,7 +1548,7 @@
         const parsed = JSON.parse(reader.result);
         if (!parsed || !Array.isArray(parsed.banks) || !Array.isArray(parsed.assets)) { alert('Bu dosya geçerli bir yedek dosyası değil.'); return; }
         if (confirm('Mevcut verilerin üzerine yedekteki veriler yüklenecek. Devam edilsin mi?')) {
-          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [] };
+          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [] };
           expanded = {}; saveData(); renderAll();
         }
       } catch (err) { alert('Dosya okunamadı, lütfen doğru yedek dosyasını seç.'); }

@@ -145,6 +145,25 @@
     background-repeat:no-repeat; background-position:right 10px center;
   }
 
+  .combo-wrap { position:relative; }
+  .combo-dropdown {
+    position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; margin-top:4px; max-height:220px; overflow-y:auto; z-index:20; display:none;
+    box-shadow:0 8px 20px rgba(0,0,0,0.25);
+  }
+  .combo-dropdown.open { display:block; }
+  .combo-item { padding:9px 11px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--border); }
+  .combo-item:last-child { border-bottom:none; }
+  .combo-item:active, .combo-item.highlight { background:var(--surface-2); }
+  .combo-item.custom { color:var(--gold); font-style:italic; }
+  .combo-empty { padding:9px 11px; font-size:12.5px; color:var(--text-muted); font-style:italic; }
+
+  .bes-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
+  .bes-row:last-of-type { border-bottom:none; }
+  .bes-total-box { background:rgba(127,127,127,0.06); border:1px solid var(--border); border-radius:10px; padding:9px 11px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .bes-total-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .bes-total-value { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:15px; color:var(--teal); }
+
   .inline-form { display:none; flex-direction:column; gap:8px; margin-top:8px; background:var(--surface-2); border-radius:10px; padding:10px; }
   .inline-form.open { display:flex; }
   .inline-form input { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit; width:100%; }
@@ -227,10 +246,13 @@
     </div>
     <div id="assetList"></div>
     <form class="new-item-form" id="newAssetForm">
-      <input id="newAssetInput" placeholder="Kategori adı (örn. Nakit, Midas, İş Yatırım)" />
       <div class="mode-toggle">
-        <button type="button" class="mode-btn active" data-atype="simple">Basit (Nakit vb.)</button>
-        <button type="button" class="mode-btn" data-atype="portfolio">Aracı Kurum (Hisse)</button>
+        <button type="button" class="mode-btn active" data-atype="simple">Basit</button>
+        <button type="button" class="mode-btn" data-atype="portfolio">Aracı Kurum</button>
+      </div>
+      <div class="combo-wrap">
+        <input id="newAssetInput" placeholder="Kategori adı (örn. Nakit)" autocomplete="off" />
+        <div class="combo-dropdown" id="newAssetDropdown"></div>
       </div>
       <div class="form-actions">
         <button type="button" class="btn btn-ghost" id="cancelAssetBtn">Vazgeç</button>
@@ -238,6 +260,25 @@
       </div>
     </form>
     <button class="add-item-btn" id="showAddAssetBtn">+ Yeni kategori ekle</button>
+
+    <div class="tear"></div>
+
+    <div class="section-title"><span>Bireysel Emeklilik Sistemi</span><span class="section-total" id="besSectionTotal" style="color:#8C86D6"></span></div>
+    <div id="besEmptyState" class="empty-state" style="display:none;">
+      <div class="icon-wrap">🧓</div><p>Henüz BES eklemedin.<br>Emeklilik şirketini ekleyip aylık ödemelerini kaydedebilirsin.</p>
+    </div>
+    <div id="besList"></div>
+    <form class="new-item-form" id="newBesForm">
+      <div class="combo-wrap">
+        <input id="newBesInput" placeholder="Emeklilik şirketi (örn. Anadolu Hayat Emeklilik)" autocomplete="off" />
+        <div class="combo-dropdown" id="newBesDropdown"></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" id="cancelBesBtn">Vazgeç</button>
+        <button type="submit" class="btn btn-primary" style="background:#8C86D6">Ekle</button>
+      </div>
+    </form>
+    <button class="add-item-btn" id="showAddBesBtn">+ Yeni BES ekle</button>
 
     <div class="tear"></div>
 
@@ -291,6 +332,30 @@
     </form>
     <button class="add-item-btn" id="showAddBankBtn">+ Yeni borç ekle</button>
 
+    <div class="tear"></div>
+
+    <button class="archive-toggle" id="salaryToggleBtn" style="padding-top:0;">
+      <svg id="salaryChevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      Maaş Geçmişi
+    </button>
+    <div class="archive-list" id="salaryPanel">
+      <div class="bes-total-box" style="margin-top:10px;">
+        <span class="bes-total-label">Toplam Maaş Geliri</span>
+        <span class="bes-total-value" id="salaryTotalValue">₺0,00</span>
+      </div>
+      <div id="salaryListWrap"></div>
+      <form class="inline-form open" id="salaryAddForm" style="margin-top:8px;">
+        <div class="fields-row">
+          <select class="sel-input" id="salaryMonthSel"></select>
+          <select class="sel-input" id="salaryYearSel"></select>
+        </div>
+        <input id="salaryAmountInput" placeholder="Maaş tutarı (₺)" inputmode="decimal" />
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" style="background:var(--gold)">Ekle</button>
+        </div>
+      </form>
+    </div>
+
     <div class="backup-row">
       <button class="backup-btn" id="exportBtn">⤓ Dışa Aktar (Yedek)</button>
       <button class="backup-btn" id="importBtn">⤒ İçe Aktar</button>
@@ -309,6 +374,72 @@
     { code:'EUR', label:'Euro', symbol:'€' },
     { code:'GOLD', label:'Altın (gr)', symbol:'' }
   ];
+
+  const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+  const BROKER_OPTIONS = [
+    'Ziraat Yatırım','İş Yatırım','Garanti BBVA Yatırım','Yapı Kredi Yatırım','Halk Yatırım','Vakıf Yatırım',
+    'QNB Yatırım','Deniz Yatırım','TEB Yatırım','ING Yatırım','Midas','Tacirler Yatırım','Gedik Yatırım',
+    'Oyak Yatırım','Ak Yatırım','Bizim Menkul','ATA Yatırım','Global Menkul','İnfo Yatırım','Meksa Yatırım',
+    'Marbaş Menkul','Foreks','A1 Capital','Şeker Yatırım','Fibabanka Yatırım'
+  ];
+  const BES_OPTIONS = [
+    'Anadolu Hayat Emeklilik','AvivaSA','Allianz Yaşam ve Emeklilik','Groupama Emeklilik','Halk Hayat ve Emeklilik',
+    'Katılım Emeklilik','NN Hayat ve Emeklilik','Cigna Finans Emeklilik','Fiba Emeklilik','Ziraat Hayat ve Emeklilik',
+    'Vakıf Emeklilik','Bereket Emeklilik','Türkiye Hayat ve Emeklilik'
+  ];
+  const BIST100_OPTIONS = [
+    'THYAO - Türk Hava Yolları','GARAN - Garanti BBVA','ISCTR - Türkiye İş Bankası','ASELS - Aselsan',
+    'EREGL - Ereğli Demir Çelik','NETAS - Netaş Telekom','GSRAY - Galatasaray Sportif','Anadolu Efes','Akbank',
+    'Aksa Akrilik','Aksa Enerji Üretim','Alarko Holding','Anadolu Sigorta','Arçelik','BİM Mağazalar','Ral Yatırım',
+    'Borusan Birleşik','Borusan Yatırım','Batısöke','Batıçim','Coca-Cola İçecek','Çimsa Çimento','Doğuş Otomotiv',
+    'Doğan Holding','Eczacıbaşı İlaç','Emlak Konut GYO','ENKA İnşaat','Ford Otosan','Gübretaş','Türkiye Sigorta',
+    'Halkbank','Hektaş','Doğal Enerji','Koç Holding','Anadolu Metal Madencilik','Koza Altın','Kardemir','Migros',
+    'Oyak Çimento','Işıklar Enerji','Otokar','Petkim','Sabancı Holding','Sarkuysan','SASA Polyester','Şişecam',
+    'Şekerbank','TAV Havalimanları','Turkcell','Tekfen Holding','Tofaş','TSKB','Türk Telekom','Tukaş Gıda','Tüpraş',
+    'Ülker','VakıfBank','Vestel','Yapı Kredi','Zorlu Enerji','Bera Holding','Kuyaş Yatırım','Pegasus','ODAŞ Elektrik',
+    'Mavi Giyim','Enerjisa Enerji','MLP Sağlık','Şok Marketler','Esenboğa Elektrik','Qua Granite','Can2 Termik',
+    'Gen İlaç','Girişim Elektrik','Margün Enerji','Mia Teknoloji','Pasifik GYO','DAP Gayrimenkul','Gürsel Turizm',
+    'Europen Endüstri','Kiler Holding','Astor Enerji','CVK Maden','Europower Enerji','Grainturk Holding','CW Enerji',
+    'Katılımevim Tasarruf','Pasifik Eurasia Lojistik','İzdemir Enerji','Enerya Enerji','Reeder Teknoloji',
+    'Pasifik Teknoloji','Oba Makarna','Odine Teknoloji','Altınay Savunma','Efor Çay Sanayi','Gülermak',
+    'Destek Finans Faktoring','Balsu Gıda','Pasifik Holding'
+  ];
+
+  function setupCombo(inputEl, dropdownEl, getOptions, onSelect) {
+    function render(query) {
+      const q = (query || '').toLocaleLowerCase('tr-TR').trim();
+      const options = getOptions();
+      if (!options) { dropdownEl.classList.remove('open'); return; }
+      let matches;
+      if (!q) {
+        matches = options.slice(0, 8);
+      } else {
+        const starts = options.filter(o => o.toLocaleLowerCase('tr-TR').startsWith(q));
+        const contains = options.filter(o => !o.toLocaleLowerCase('tr-TR').startsWith(q) && o.toLocaleLowerCase('tr-TR').includes(q));
+        matches = [...starts, ...contains].slice(0, 8);
+      }
+      dropdownEl.innerHTML = '';
+      if (matches.length === 0) {
+        const e = document.createElement('div');
+        e.className = 'combo-empty';
+        e.textContent = 'Eşleşme yok — istersen yazdığını kullan';
+        dropdownEl.appendChild(e);
+      }
+      matches.forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'combo-item';
+        item.textContent = m;
+        item.onmousedown = (e) => { e.preventDefault(); inputEl.value = m; dropdownEl.classList.remove('open'); if (onSelect) onSelect(m); };
+        dropdownEl.appendChild(item);
+      });
+      dropdownEl.classList.add('open');
+    }
+    inputEl.oninput = () => render(inputEl.value);
+    inputEl.onfocus = () => render(inputEl.value);
+    inputEl.onblur = () => setTimeout(() => dropdownEl.classList.remove('open'), 150);
+    inputEl._comboRender = render;
+  }
 
   const BANK_COLORS = [
     { k:['ziraat'], c:'#E30613' }, { k:['akbank'], c:'#E4032E' }, { k:['garanti','bbva'], c:'#009B72' },
@@ -343,14 +474,22 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const p = JSON.parse(raw);
+        let assets = p.assets || [];
+        let bes = p.bes || [];
+        // migrate any old BES entries that were nested under assets
+        const migrated = assets.filter(a => a.type === 'bes');
+        if (migrated.length) {
+          assets = assets.filter(a => a.type !== 'bes');
+          bes = [...bes, ...migrated];
+        }
         return {
-          banks: p.banks || [], assets: p.assets || [],
+          banks: p.banks || [], assets, bes,
           incomeByMonth: p.incomeByMonth || (p.monthlyIncome ? { [currentMonthKey()]: p.monthlyIncome } : {}),
           paymentLog: p.paymentLog || []
         };
       }
     } catch (e) {}
-    return { banks: [], assets: [], incomeByMonth: {}, paymentLog: [] };
+    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [] };
   }
   function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }
 
@@ -362,6 +501,7 @@
   let txnOpen = {};
   let archiveOpenMain = false;
   let archiveOpenMonth = {};
+  let salaryOpenMain = false;
 
   function currencySymbol(code) { const c = CURRENCIES.find(x => x.code === code); return c ? c.symbol : '₺'; }
   function formatMoney(amount, code) {
@@ -410,6 +550,7 @@
 
   function itemValue(item) {
     if (item.type === 'portfolio') return portfolioValue(item);
+    if (item.type === 'bes') return (item.contributions||[]).reduce((s,c) => s + (c.amount||0), 0);
     return (item.debts||[]).reduce((s,d) => s + entryRemaining(d), 0);
   }
   function itemMonthlyDueTRY(item) {
@@ -475,6 +616,44 @@
     });
   }
 
+  function renderBesGroup() {
+    const items = state.bes;
+    const listEl = document.getElementById('besList');
+    document.getElementById('besEmptyState').style.display = items.length === 0 ? 'block' : 'none';
+    listEl.innerHTML = '';
+
+    items.forEach(item => {
+      const expKey = 'bes:' + item.id;
+      const isOpen = !!expanded[expKey];
+      const total = itemValue(item);
+
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      const head = document.createElement('button');
+      head.className = 'item-head';
+      head.innerHTML =
+        '<span class="item-dot" style="background:'+item.color+'">'+esc(initials(item.name))+'</span>' +
+        '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+(item.contributions||[]).length+' ödeme</div></span>' +
+        '<span class="item-total">'+currency(total)+'</span>' +
+        '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+      head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
+      card.appendChild(head);
+
+      const body = document.createElement('div');
+      body.className = 'item-body' + (isOpen ? ' open' : '');
+      renderBesInto(body, item, 'bes');
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'del-item-btn';
+      delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> BES hesabını sil';
+      delBtn.onclick = () => { state.bes = state.bes.filter(x => x.id !== item.id); saveData(); renderAll(); };
+      body.appendChild(delBtn);
+
+      card.appendChild(body);
+      listEl.appendChild(card);
+    });
+  }
+
   function renderSimpleEntries(body, item, groupKey) {
     if ((item.debts||[]).length === 0) {
       const empty = document.createElement('div');
@@ -519,6 +698,70 @@
       addBtn.style.color = item.color;
       addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ekle';
       addBtn.onclick = () => { addingEntryFor = { group: groupKey, id: item.id }; renderAll(); };
+      body.appendChild(addBtn);
+    }
+  }
+
+  function renderBesInto(body, item) {
+    const total = itemValue(item);
+    const totalBox = document.createElement('div');
+    totalBox.className = 'bes-total-box';
+    totalBox.innerHTML = '<span class="bes-total-label">Toplam Yatırılan</span><span class="bes-total-value">'+currency(total)+'</span>';
+    body.appendChild(totalBox);
+
+    const list = (item.contributions || []).slice().sort((a,b) => (b.year - a.year) || (b.month - a.month));
+    if (list.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-entries';
+      empty.textContent = 'Henüz ödeme kaydı yok.';
+      body.appendChild(empty);
+    } else {
+      list.forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'bes-row';
+        row.innerHTML = '<span>'+TR_MONTHS[c.month-1]+' '+c.year+'</span>' +
+          '<span class="entry-right"><span class="entry-amount">'+currency(c.amount)+'</span>' +
+          '<button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></span>';
+        row.querySelector('.icon-btn').onclick = () => { item.contributions = item.contributions.filter(x => x.id !== c.id); saveData(); renderAll(); };
+        body.appendChild(row);
+      });
+    }
+
+    if (addingEntryFor && addingEntryFor.group === 'bes' && addingEntryFor.id === item.id) {
+      const curYear = new Date().getFullYear();
+      const curMonth = new Date().getMonth() + 1;
+      let monthOpts = TR_MONTHS.map((m,i) => '<option value="'+(i+1)+'"'+(i+1===curMonth?' selected':'')+'>'+m+'</option>').join('');
+      let yearOpts = '';
+      for (let y = curYear - 3; y <= curYear + 1; y++) yearOpts += '<option value="'+y+'"'+(y===curYear?' selected':'')+'>'+y+'</option>';
+      const form = document.createElement('form');
+      form.className = 'inline-form open';
+      form.innerHTML =
+        '<div class="fields-row"><select class="sel-input bes-month-sel">'+monthOpts+'</select><select class="sel-input bes-year-sel">'+yearOpts+'</select></div>' +
+        '<input class="bes-amount-input" placeholder="Tutar (₺)" inputmode="decimal" />' +
+        '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+item.color+'">Ekle</button></div>';
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        const month = parseInt(form.querySelector('.bes-month-sel').value, 10);
+        const year = parseInt(form.querySelector('.bes-year-sel').value, 10);
+        const amount = parseAmount(form.querySelector('.bes-amount-input').value);
+        if (amount <= 0) return;
+        item.contributions = item.contributions || [];
+        const existingIdx = item.contributions.findIndex(c => c.month === month && c.year === year);
+        if (existingIdx >= 0) {
+          if (!confirm(TR_MONTHS[month-1]+' '+year+' için zaten bir kayıt var. Üzerine eklensin mi?')) return;
+          item.contributions[existingIdx].amount += amount;
+        } else {
+          item.contributions.push({ id: uid(), month, year, amount });
+        }
+        addingEntryFor = null; saveData(); renderAll();
+      };
+      form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
+      body.appendChild(form);
+    } else {
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-entry-btn'; addBtn.style.color = item.color;
+      addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ödeme ekle';
+      addBtn.onclick = () => { addingEntryFor = { group:'bes', id: item.id }; renderAll(); };
       body.appendChild(addBtn);
     }
   }
@@ -659,8 +902,9 @@
     if (addingStockFor === portfolioItem.id) {
       const form = document.createElement('form');
       form.className = 'new-sub-form open';
-      form.innerHTML = '<input class="new-stock-input" placeholder="Hisse/sembol adı (örn. THYAO)" />' +
+      form.innerHTML = '<div class="combo-wrap"><input class="new-stock-input" placeholder="Hisse ara (örn. THYAO, Migros)" autocomplete="off" /><div class="combo-dropdown new-stock-dropdown"></div></div>' +
         '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-stock">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:var(--teal)">Ekle</button></div>';
+      setupCombo(form.querySelector('.new-stock-input'), form.querySelector('.new-stock-dropdown'), () => BIST100_OPTIONS);
       form.onsubmit = (e) => {
         e.preventDefault();
         const name = form.querySelector('.new-stock-input').value.trim();
@@ -884,14 +1128,17 @@
 
   function renderAll() {
     const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
-    const totalAssets = state.assets.reduce((s,a) => s + itemValue(a), 0);
+    const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
+    const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
+    const totalAssets = totalAssetsOnly + totalBes;
     const monthlyDue = state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0);
     const net = totalAssets - totalDebtsTRY;
 
     document.getElementById('totalDebts').textContent = currency(totalDebtsTRY);
     document.getElementById('totalAssets').textContent = currency(totalAssets);
     document.getElementById('banksSectionTotal').textContent = currency(totalDebtsTRY);
-    document.getElementById('assetsSectionTotal').textContent = currency(totalAssets);
+    document.getElementById('assetsSectionTotal').textContent = currency(totalAssetsOnly);
+    document.getElementById('besSectionTotal').textContent = currency(totalBes);
 
     const netEl = document.getElementById('netTotal');
     netEl.textContent = (net < 0 ? '-' : '') + currency(Math.abs(net));
@@ -929,7 +1176,9 @@
     }
 
     renderArchive();
+    renderSalaryHistory();
     renderAssetGroup();
+    renderBesGroup();
     renderBankGroup();
   }
 
@@ -956,12 +1205,24 @@
     const showBtn = document.getElementById('showAddAssetBtn');
     const form = document.getElementById('newAssetForm');
     const input = document.getElementById('newAssetInput');
+    const dropdown = document.getElementById('newAssetDropdown');
     let selectedType = 'simple';
+
+    const placeholders = { simple:'Kategori adı (örn. Nakit)', portfolio:'Aracı kurum adı (örn. Midas)' };
+    function optionsForType() {
+      if (selectedType === 'portfolio') return BROKER_OPTIONS;
+      return null;
+    }
+    setupCombo(input, dropdown, optionsForType);
+
     form.querySelectorAll('.mode-btn[data-atype]').forEach(btn => {
       btn.onclick = () => {
         form.querySelectorAll('.mode-btn[data-atype]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedType = btn.dataset.atype;
+        input.placeholder = placeholders[selectedType];
+        input.value = '';
+        dropdown.classList.remove('open');
       };
     });
     showBtn.onclick = () => { form.classList.add('open'); showBtn.style.display = 'none'; input.focus(); };
@@ -971,17 +1232,95 @@
       const name = input.value.trim();
       if (!name) return;
       const id = uid();
-      const color = PALETTE[state.assets.length % PALETTE.length];
+      const color = selectedType === 'simple' ? PALETTE[state.assets.length % PALETTE.length] : getEntityColor(name, state.assets.length);
       const newItem = { id, name, color, type: selectedType };
-      if (selectedType === 'portfolio') newItem.stocks = []; else newItem.debts = [];
+      if (selectedType === 'portfolio') newItem.stocks = [];
+      else newItem.debts = [];
       state.assets.push(newItem);
       expanded['assets:' + id] = true;
       input.value = ''; form.classList.remove('open'); showBtn.style.display = 'flex';
       selectedType = 'simple';
+      input.placeholder = placeholders.simple;
       form.querySelectorAll('.mode-btn[data-atype]').forEach(b => b.classList.toggle('active', b.dataset.atype === 'simple'));
       saveData(); renderAll();
     };
   })();
+
+  // BES add form
+  (function() {
+    const showBtn = document.getElementById('showAddBesBtn');
+    const form = document.getElementById('newBesForm');
+    const input = document.getElementById('newBesInput');
+    const dropdown = document.getElementById('newBesDropdown');
+    setupCombo(input, dropdown, () => BES_OPTIONS);
+    showBtn.onclick = () => { form.classList.add('open'); showBtn.style.display = 'none'; input.focus(); };
+    document.getElementById('cancelBesBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'flex'; input.value = ''; };
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const name = input.value.trim();
+      if (!name) return;
+      const id = uid();
+      const color = getEntityColor(name, state.bes.length) || PALETTE[state.bes.length % PALETTE.length];
+      state.bes.push({ id, name, color, type: 'bes', contributions: [] });
+      expanded['bes:' + id] = true;
+      input.value = ''; form.classList.remove('open'); showBtn.style.display = 'flex';
+      saveData(); renderAll();
+    };
+  })();
+
+  // Salary history
+  (function() {
+    const monthSel = document.getElementById('salaryMonthSel');
+    const yearSel = document.getElementById('salaryYearSel');
+    const curYear = new Date().getFullYear();
+    monthSel.innerHTML = TR_MONTHS.map((m,i) => '<option value="'+(i+1)+'">'+m+'</option>').join('');
+    let yearOpts = '';
+    for (let y = curYear + 1; y >= curYear - 10; y--) yearOpts += '<option value="'+y+'"'+(y===curYear?' selected':'')+'>'+y+'</option>';
+    yearSel.innerHTML = yearOpts;
+
+    document.getElementById('salaryToggleBtn').onclick = () => { salaryOpenMain = !salaryOpenMain; renderAll(); };
+    document.getElementById('salaryAddForm').onsubmit = (e) => {
+      e.preventDefault();
+      const month = parseInt(monthSel.value, 10);
+      const year = parseInt(yearSel.value, 10);
+      const amount = parseAmount(document.getElementById('salaryAmountInput').value);
+      if (amount <= 0) return;
+      const key = year + '-' + String(month).padStart(2,'0');
+      if (state.incomeByMonth[key] && !confirm(TR_MONTHS[month-1]+' '+year+' için zaten bir kayıt var (₺'+state.incomeByMonth[key].toLocaleString('tr-TR')+'). Üzerine yazılsın mı?')) return;
+      state.incomeByMonth[key] = amount;
+      document.getElementById('salaryAmountInput').value = '';
+      saveData(); renderAll();
+    };
+  })();
+
+  function renderSalaryHistory() {
+    const chevron = document.getElementById('salaryChevron');
+    const panel = document.getElementById('salaryPanel');
+    chevron.classList.toggle('open', salaryOpenMain);
+    panel.classList.toggle('open', salaryOpenMain);
+    if (!salaryOpenMain) return;
+
+    const total = Object.values(state.incomeByMonth).reduce((s,v) => s + (v||0), 0);
+    document.getElementById('salaryTotalValue').textContent = currency(total);
+
+    const listWrap = document.getElementById('salaryListWrap');
+    const keys = Object.keys(state.incomeByMonth).filter(k => state.incomeByMonth[k] > 0).sort().reverse();
+    listWrap.innerHTML = '';
+    if (keys.length === 0) {
+      const e = document.createElement('div'); e.className = 'archive-empty'; e.textContent = 'Henüz maaş kaydı yok.';
+      listWrap.appendChild(e);
+      return;
+    }
+    keys.forEach(key => {
+      const row = document.createElement('div');
+      row.className = 'bes-row';
+      row.innerHTML = '<span>'+monthLabel(key)+'</span>' +
+        '<span class="entry-right"><span class="entry-amount">'+currency(state.incomeByMonth[key])+'</span>' +
+        '<button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></span>';
+      row.querySelector('.icon-btn').onclick = () => { delete state.incomeByMonth[key]; saveData(); renderAll(); };
+      listWrap.appendChild(row);
+    });
+  }
 
   // Bank/debt add form
   (function() {
@@ -1037,7 +1376,7 @@
         const parsed = JSON.parse(reader.result);
         if (!parsed || !Array.isArray(parsed.banks) || !Array.isArray(parsed.assets)) { alert('Bu dosya geçerli bir yedek dosyası değil.'); return; }
         if (confirm('Mevcut verilerin üzerine yedekteki veriler yüklenecek. Devam edilsin mi?')) {
-          state = { banks: parsed.banks, assets: parsed.assets, incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [] };
+          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [] };
           expanded = {}; saveData(); renderAll();
         }
       } catch (err) { alert('Dosya okunamadı, lütfen doğru yedek dosyasını seç.'); }

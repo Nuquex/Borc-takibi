@@ -8,7 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Borç Takibim" />
 <meta name="theme-color" content="#12161d" />
 <title>Borç Takibim</title>
-<link rel="icon" href="data:,">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="favicon-32.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
@@ -24,6 +25,20 @@
     --gold: #c9a24b;
     --teal: #4fa8a0;
     --danger: #d6746a;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f4f0e6;
+      --surface: #ffffff;
+      --surface-2: #efe8d8;
+      --border: #ddd3ba;
+      --text: #201d17;
+      --text-muted: #7a7263;
+      --gold: #a97a2f;
+      --teal: #2f8f86;
+      --danger: #c0392b;
+    }
   }
 
   html, body {
@@ -53,19 +68,30 @@
   .net-total.negative { color: var(--danger); }
 
   .sub-stats { display: flex; gap: 10px; margin-bottom: 4px; }
-  .sub-stat { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+  .sub-stat { flex: 1; background: rgba(127,127,127,0.06); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
   .sub-stat-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 4px; }
   .sub-stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 600; }
   .sub-stat-value.assets { color: var(--teal); }
   .sub-stat-value.debts { color: var(--gold); }
 
-  .monthly-due {
-    display: flex; align-items: center; justify-content: space-between;
-    background: rgba(201,162,75,0.08); border: 1px solid rgba(201,162,75,0.25);
+  .monthly-box {
+    background: rgba(127,127,127,0.06); border: 1px solid var(--border);
     border-radius: 12px; padding: 10px 12px; margin-top: 10px;
   }
-  .monthly-due-label { font-size: 11.5px; color: var(--text-muted); }
-  .monthly-due-value { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; color: var(--gold); }
+  .monthly-row { display: flex; align-items: center; justify-content: space-between; }
+  .monthly-row + .monthly-row { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .monthly-label { font-size: 11.5px; color: var(--text-muted); }
+  .monthly-value { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; }
+  .monthly-value.due { color: var(--gold); }
+  .monthly-value.left.positive { color: var(--teal); }
+  .monthly-value.left.negative { color: var(--danger); }
+  .monthly-value.editable { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .income-edit-form { display: none; gap: 8px; margin-top: 8px; }
+  .income-edit-form.open { display: flex; }
+  .income-edit-form input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 9px; color: var(--text); font-size: 13px; font-family: inherit;
+  }
 
   .tear { height: 1px; border-top: 1px dashed var(--border); margin: 0 0 22px; }
 
@@ -77,15 +103,33 @@
     display: flex; align-items: center; gap: 12px; padding: 14px; cursor: pointer; background: none; border: none;
     width: 100%; text-align: left; color: var(--text); font-family: inherit;
   }
-  .item-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .item-dot { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
   .item-name { flex: 1; font-size: 15px; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .item-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
   .item-total { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; }
   .chevron { color: var(--text-muted); transition: transform .25s ease; flex-shrink: 0; }
   .chevron.open { transform: rotate(180deg); }
 
-  .item-body { border-top: 1px solid var(--border); padding: 6px 14px 14px; display: none; }
+  .item-body { border-top: 1px solid var(--border); padding: 12px 14px 14px; display: none; }
   .item-body.open { display: block; }
+
+  .stock-stats { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .stock-stat { flex: 1; min-width: 100px; background: rgba(127,127,127,0.06); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+  .stock-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .stock-stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; }
+  .stock-stat-value.gain { color: var(--teal); }
+  .stock-stat-value.loss { color: var(--danger); }
+
+  .price-btn {
+    font-size: 12px; color: var(--gold); background: none; border: 1px dashed var(--border);
+    border-radius: 8px; padding: 6px 10px; cursor: pointer; font-family: inherit; margin-bottom: 10px;
+  }
+  .price-form { display: none; gap: 8px; margin-bottom: 10px; }
+  .price-form.open { display: flex; }
+  .price-form input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 9px; color: var(--text); font-size: 13px; font-family: inherit;
+  }
 
   .entry-block { padding: 10px 0; border-bottom: 1px solid var(--border); }
   .entry-block:last-of-type { border-bottom: none; }
@@ -133,9 +177,9 @@
   }
   .mode-btn.active { background: var(--gold); color: #1b1607; border-color: var(--gold); font-weight: 600; }
 
-  .installment-fields { display: none; flex-direction: column; gap: 8px; }
-  .installment-fields.open { display: flex; }
-  .installment-fields-row { display: flex; gap: 8px; }
+  .installment-fields, .stock-fields { display: none; flex-direction: column; gap: 8px; }
+  .installment-fields.open, .stock-fields.open { display: flex; }
+  .installment-fields-row, .stock-fields-row { display: flex; gap: 8px; }
   .simple-fields { display: flex; flex-direction: column; gap: 8px; }
   .simple-fields.hidden { display: none; }
 
@@ -168,6 +212,14 @@
   }
   .empty-state p { font-size: 13px; margin: 0; line-height: 1.5; }
 
+  .backup-row { display: flex; gap: 10px; margin-top: 8px; }
+  .backup-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 12.5px; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px; cursor: pointer; font-family: inherit;
+  }
+  .backup-note { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px; line-height: 1.5; }
+
   svg { display: block; }
 </style>
 </head>
@@ -191,9 +243,24 @@
           <div class="sub-stat-value debts" id="totalDebts">₺0,00</div>
         </div>
       </div>
-      <div class="monthly-due" id="monthlyDueWrap" style="display:none;">
-        <span class="monthly-due-label">Bu ayki toplam taksit</span>
-        <span class="monthly-due-value" id="monthlyDueValue">₺0,00</span>
+
+      <div class="monthly-box" id="monthlyBox" style="display:none;">
+        <div class="monthly-row">
+          <span class="monthly-label">Bu ayki toplam taksit</span>
+          <span class="monthly-value due" id="monthlyDueValue">₺0,00</span>
+        </div>
+        <div class="monthly-row">
+          <span class="monthly-label">Aylık gelir</span>
+          <span class="monthly-value editable" id="incomeValue">Gir</span>
+        </div>
+        <div class="monthly-row" id="incomeLeftRow" style="display:none;">
+          <span class="monthly-label">Elde kalan</span>
+          <span class="monthly-value left" id="incomeLeftValue">₺0,00</span>
+        </div>
+        <form class="income-edit-form" id="incomeEditForm">
+          <input id="incomeInput" placeholder="Aylık gelir (₺)" inputmode="decimal" />
+          <button type="submit" class="btn btn-primary" style="background:var(--gold)">Kaydet</button>
+        </form>
       </div>
     </div>
 
@@ -203,11 +270,15 @@
     </div>
     <div id="assetsEmptyState" class="empty-state" style="display:none;">
       <div class="icon-wrap">💰</div>
-      <p>Henüz varlık eklemedin.<br>Nakit, yatırım vb. ekleyebilirsin.</p>
+      <p>Henüz varlık eklemedin.<br>Nakit, hisse, yatırım vb. ekleyebilirsin.</p>
     </div>
     <div id="assetList"></div>
     <form class="new-item-form" id="newAssetForm">
-      <input id="newAssetInput" placeholder="Kategori adı (örn. Nakit, Yatırım Hesabı)" />
+      <input id="newAssetInput" placeholder="Kategori adı (örn. Nakit, Migros Hisse)" />
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn active" data-atype="simple">Basit (Nakit vb.)</button>
+        <button type="button" class="mode-btn" data-atype="stock">Hisse / Fon</button>
+      </div>
       <div class="form-actions">
         <button type="button" class="btn btn-ghost" id="cancelAssetBtn">Vazgeç</button>
         <button type="submit" class="btn btn-primary" style="background:var(--teal)">Ekle</button>
@@ -234,11 +305,56 @@
       </div>
     </form>
     <button class="add-item-btn" id="showAddBankBtn">+ Yeni banka ekle</button>
+
+    <div class="backup-row">
+      <button class="backup-btn" id="exportBtn">⤓ Dışa Aktar (Yedek)</button>
+      <button class="backup-btn" id="importBtn">⤒ İçe Aktar</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none;" />
+    </div>
+    <div class="backup-note">Telefon değiştirirsen önce "Dışa Aktar" ile bir yedek dosyası indir, yeni telefonda bu uygulamayı açıp "İçe Aktar" ile geri yükle.</div>
   </div>
 
 <script>
   const STORAGE_KEY = 'borc-takibi-data';
   const PALETTE = ['#C9A24B','#4FA8A0','#8C86D6','#D07A6A','#6FA8D6','#8FBF7F','#D6A0C4','#B7935A'];
+
+  const BANK_COLORS = [
+    { k: ['ziraat'], c: '#00693C' },
+    { k: ['akbank'], c: '#E4032E' },
+    { k: ['garanti', 'bbva'], c: '#009B72' },
+    { k: ['iş bankası','isbank','iş bankasi','is bankasi','işbank'], c: '#0F3F82' },
+    { k: ['yapı kredi','yapikredi','yapı kredi bankası'], c: '#00447C' },
+    { k: ['halkbank','halk bankası'], c: '#004C97' },
+    { k: ['vakıfbank','vakifbank','vakıf bankası'], c: '#FFB81C' },
+    { k: ['qnb','finansbank'], c: '#6E2585' },
+    { k: ['denizbank','deniz bank'], c: '#0033A0' },
+    { k: ['teb','türk ekonomi'], c: '#00A19A' },
+    { k: ['ing'], c: '#FF6200' },
+    { k: ['şekerbank','sekerbank'], c: '#A6192E' },
+    { k: ['kuveyt türk','kuveyt turk'], c: '#F7A600' },
+    { k: ['albaraka'], c: '#1B7B3D' },
+    { k: ['türkiye finans','turkiye finans'], c: '#00A651' },
+    { k: ['fibabanka'], c: '#00A19A' },
+    { k: ['odeabank'], c: '#7A1F2B' },
+    { k: ['anadolubank'], c: '#004C97' },
+    { k: ['hsbc'], c: '#DB0011' },
+    { k: ['citibank','citi'], c: '#003B70' },
+    { k: ['enpara'], c: '#5C2D91' },
+    { k: ['papara'], c: '#7A3FF2' },
+  ];
+
+  function bankInitial(name) {
+    const trimmed = (name || '').trim();
+    return trimmed ? trimmed[0].toUpperCase() : '?';
+  }
+
+  function getBankColor(name, fallbackIdx) {
+    const lower = (name || '').toLowerCase();
+    for (const entry of BANK_COLORS) {
+      if (entry.k.some(kw => lower.includes(kw))) return entry.c;
+    }
+    return PALETTE[fallbackIdx % PALETTE.length];
+  }
 
   function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
 
@@ -247,10 +363,14 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        return { banks: parsed.banks || [], assets: parsed.assets || [] };
+        return {
+          banks: parsed.banks || [],
+          assets: parsed.assets || [],
+          monthlyIncome: parsed.monthlyIncome || 0
+        };
       }
     } catch (e) {}
-    return { banks: [], assets: [] };
+    return { banks: [], assets: [], monthlyIncome: 0 };
   }
   function saveData() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
@@ -258,7 +378,8 @@
 
   let state = loadData();
   let expanded = {};
-  let addingEntryFor = null; // { group, id }
+  let addingEntryFor = null;
+  let editingPriceFor = null;
 
   function currency(n) {
     const val = Number.isFinite(n) ? n : 0;
@@ -275,7 +396,6 @@
     return Number.isFinite(n) ? n : 0;
   }
 
-  // remaining amount owed for one entry
   function entryRemaining(entry) {
     if (entry.isInstallment) {
       const remainingCount = Math.max(0, (entry.totalInstallments || 0) - (entry.paidInstallments || 0));
@@ -283,15 +403,30 @@
     }
     return entry.amount || 0;
   }
-  // this month's due for one entry (0 if fully paid or not installment)
   function entryMonthlyDue(entry) {
     if (!entry.isInstallment) return 0;
     const remainingCount = Math.max(0, (entry.totalInstallments || 0) - (entry.paidInstallments || 0));
     return remainingCount > 0 ? (entry.monthlyAmount || 0) : 0;
   }
 
-  function itemTotal(item) { return item.debts.reduce((s,d) => s + entryRemaining(d), 0); }
-  function itemMonthlyDue(item) { return item.debts.reduce((s,d) => s + entryMonthlyDue(d), 0); }
+  function stockStats(item) {
+    const totalQty = item.debts.reduce((s,l) => s + (l.qty || 0), 0);
+    const costBasis = item.debts.reduce((s,l) => s + (l.qty || 0) * (l.price || 0), 0);
+    const avgCost = totalQty > 0 ? costBasis / totalQty : 0;
+    const currentPrice = item.currentPrice || 0;
+    const currentValue = currentPrice > 0 ? currentPrice * totalQty : costBasis;
+    const gain = currentPrice > 0 ? currentValue - costBasis : 0;
+    return { totalQty, costBasis, avgCost, currentPrice, currentValue, gain };
+  }
+
+  function itemValue(item) {
+    if (item.type === 'stock') return stockStats(item).currentValue;
+    return item.debts.reduce((s,d) => s + entryRemaining(d), 0);
+  }
+  function itemMonthlyDue(item) {
+    if (item.type === 'stock') return 0;
+    return item.debts.reduce((s,d) => s + entryMonthlyDue(d), 0);
+  }
 
   function esc(str) {
     const d = document.createElement('div');
@@ -309,17 +444,21 @@
     items.forEach(item => {
       const expKey = groupKey + ':' + item.id;
       const isOpen = !!expanded[expKey];
-      const total = itemTotal(item);
+      const total = itemValue(item);
+      const isStock = item.type === 'stock';
 
       const card = document.createElement('div');
       card.className = 'item-card';
 
       const head = document.createElement('button');
       head.className = 'item-head';
+      const subText = isStock
+        ? (stockStats(item).totalQty + ' adet · Ort. ' + currency(stockStats(item).avgCost))
+        : (item.debts.length + ' ' + entryNoun);
       head.innerHTML =
-        '<span class="item-dot" style="background:' + item.color + '"></span>' +
+        '<span class="item-dot" style="background:' + item.color + '">' + (groupKey === 'banks' ? esc(bankInitial(item.name)) : '') + '</span>' +
         '<span class="item-name">' + esc(item.name) +
-          '<div class="item-sub">' + item.debts.length + ' ' + entryNoun + '</div>' +
+          '<div class="item-sub">' + subText + '</div>' +
         '</span>' +
         '<span class="item-total">' + currency(total) + '</span>' +
         '<svg class="chevron' + (isOpen ? ' open' : '') + '" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
@@ -329,32 +468,77 @@
       const body = document.createElement('div');
       body.className = 'item-body' + (isOpen ? ' open' : '');
 
+      if (isStock) {
+        const stats = stockStats(item);
+        const statsWrap = document.createElement('div');
+        statsWrap.className = 'stock-stats';
+        let statsHtml =
+          '<div class="stock-stat"><div class="stock-stat-label">Toplam Adet</div><div class="stock-stat-value">' + stats.totalQty + '</div></div>' +
+          '<div class="stock-stat"><div class="stock-stat-label">Ort. Maliyet</div><div class="stock-stat-value">' + currency(stats.avgCost) + '</div></div>';
+        if (stats.currentPrice > 0) {
+          const gainClass = stats.gain >= 0 ? 'gain' : 'loss';
+          statsHtml += '<div class="stock-stat"><div class="stock-stat-label">Güncel Değer</div><div class="stock-stat-value">' + currency(stats.currentValue) + '</div></div>' +
+            '<div class="stock-stat"><div class="stock-stat-label">Kâr / Zarar</div><div class="stock-stat-value ' + gainClass + '">' + (stats.gain >= 0 ? '+' : '') + currency(stats.gain) + '</div></div>';
+        }
+        statsWrap.innerHTML = statsHtml;
+        body.appendChild(statsWrap);
+
+        const priceBtn = document.createElement('button');
+        priceBtn.className = 'price-btn';
+        priceBtn.textContent = stats.currentPrice > 0 ? 'Güncel fiyatı güncelle (₺' + stats.currentPrice.toLocaleString('tr-TR') + ')' : '+ Güncel fiyat gir';
+        priceBtn.onclick = () => { editingPriceFor = editingPriceFor === item.id ? null : item.id; renderAll(); };
+        body.appendChild(priceBtn);
+
+        if (editingPriceFor === item.id) {
+          const pf = document.createElement('form');
+          pf.className = 'price-form open';
+          pf.innerHTML = '<input class="price-input" placeholder="Güncel fiyat (₺)" inputmode="decimal" value="' + (stats.currentPrice || '') + '" />' +
+            '<button type="submit" class="btn btn-primary" style="background:var(--teal)">Kaydet</button>';
+          pf.onsubmit = (e) => {
+            e.preventDefault();
+            item.currentPrice = parseAmount(pf.querySelector('.price-input').value);
+            editingPriceFor = null;
+            saveData(); renderAll();
+          };
+          body.appendChild(pf);
+        }
+      }
+
       if (item.debts.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'empty-entries';
-        empty.textContent = 'Henüz kayıt yok.';
+        empty.textContent = isStock ? 'Henüz alım eklenmedi.' : 'Henüz kayıt yok.';
         body.appendChild(empty);
       } else {
         item.debts.forEach(d => {
           const block = document.createElement('div');
           block.className = 'entry-block';
-
           const row = document.createElement('div');
           row.className = 'entry-row';
-          const badge = d.isInstallment ? '<span class="entry-badge">' + d.paidInstallments + '/' + d.totalInstallments + ' taksit</span>' : '';
-          row.innerHTML =
-            '<span class="entry-desc">' + esc(d.desc) + badge + '</span>' +
-            '<span class="entry-right">' +
-              '<span class="entry-amount">' + currency(entryRemaining(d)) + '</span>' +
-              '<button class="icon-btn" aria-label="Sil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>' +
-            '</span>';
+
+          if (isStock) {
+            row.innerHTML =
+              '<span class="entry-desc">' + esc(d.desc || 'Alım') + '<span class="entry-badge">' + d.qty + ' adet · ₺' + Number(d.price).toLocaleString('tr-TR') + '</span></span>' +
+              '<span class="entry-right">' +
+                '<span class="entry-amount">' + currency(d.qty * d.price) + '</span>' +
+                '<button class="icon-btn" aria-label="Sil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>' +
+              '</span>';
+          } else {
+            const badge = d.isInstallment ? '<span class="entry-badge">' + d.paidInstallments + '/' + d.totalInstallments + ' taksit</span>' : '';
+            row.innerHTML =
+              '<span class="entry-desc">' + esc(d.desc) + badge + '</span>' +
+              '<span class="entry-right">' +
+                '<span class="entry-amount">' + currency(entryRemaining(d)) + '</span>' +
+                '<button class="icon-btn" aria-label="Sil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>' +
+              '</span>';
+          }
           row.querySelector('.icon-btn').onclick = () => {
             item.debts = item.debts.filter(x => x.id !== d.id);
             saveData(); renderAll();
           };
           block.appendChild(row);
 
-          if (d.isInstallment) {
+          if (!isStock && d.isInstallment) {
             const meta = document.createElement('div');
             meta.className = 'entry-meta';
             meta.textContent = 'Aylık ' + currency(d.monthlyAmount) + ' · kalan ' + Math.max(0, d.totalInstallments - d.paidInstallments) + ' taksit — ödenenleri işaretlemek için dokun';
@@ -389,83 +573,99 @@
         const form = document.createElement('form');
         form.className = 'inline-form open';
 
-        let formHtml = '<input class="entry-desc-input" placeholder="Açıklama (örn. Kredi kartı, market alışverişi)" />';
-
-        if (allowInstallments) {
-          formHtml +=
-            '<div class="mode-toggle">' +
-              '<button type="button" class="mode-btn active" data-mode="simple">Tek Kalem</button>' +
-              '<button type="button" class="mode-btn" data-mode="installment">Taksitli</button>' +
+        if (isStock) {
+          form.innerHTML =
+            '<input class="entry-desc-input" placeholder="Not (opsiyonel, örn. 1. alım)" />' +
+            '<div class="stock-fields-row">' +
+              '<input class="stock-price-input" placeholder="Alış fiyatı (₺)" inputmode="decimal" />' +
+              '<input class="stock-qty-input" placeholder="Adet" inputmode="decimal" />' +
             '</div>' +
-            '<div class="simple-fields">' +
-              '<input class="entry-amount-input" placeholder="Tutar (₺)" inputmode="decimal" />' +
-            '</div>' +
-            '<div class="installment-fields">' +
-              '<div class="installment-fields-row">' +
-                '<input class="inst-monthly-input" placeholder="Aylık taksit (₺)" inputmode="decimal" />' +
-                '<input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" />' +
-              '</div>' +
-              '<input class="inst-paid-input" placeholder="Şimdiye kadar ödenen taksit sayısı (örn. 2)" inputmode="numeric" />' +
+            '<div class="form-actions">' +
+              '<button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button>' +
+              '<button type="submit" class="btn btn-primary" style="background:' + item.color + '">Ekle</button>' +
             '</div>';
+          form.onsubmit = (e) => {
+            e.preventDefault();
+            const desc = form.querySelector('.entry-desc-input').value.trim();
+            const price = parseAmount(form.querySelector('.stock-price-input').value);
+            const qty = parseAmount(form.querySelector('.stock-qty-input').value);
+            if (price <= 0 || qty <= 0) return;
+            item.debts.push({ id: uid(), desc, price, qty });
+            addingEntryFor = null;
+            saveData(); renderAll();
+          };
         } else {
-          formHtml += '<input class="entry-amount-input" placeholder="Tutar (₺)" inputmode="decimal" />';
-        }
-
-        formHtml +=
-          '<div class="form-actions">' +
-            '<button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button>' +
-            '<button type="submit" class="btn btn-primary" style="background:' + item.color + '">Ekle</button>' +
-          '</div>';
-
-        form.innerHTML = formHtml;
-
-        if (allowInstallments) {
-          const simpleFieldsEl = form.querySelector('.simple-fields');
-          const instFieldsEl = form.querySelector('.installment-fields');
-          const modeBtns = form.querySelectorAll('.mode-btn');
-          modeBtns.forEach(btn => {
-            btn.onclick = () => {
-              modeBtns.forEach(b => b.classList.remove('active'));
-              btn.classList.add('active');
-              if (btn.dataset.mode === 'installment') {
-                simpleFieldsEl.classList.add('hidden');
-                instFieldsEl.classList.add('open');
-              } else {
-                simpleFieldsEl.classList.remove('hidden');
-                instFieldsEl.classList.remove('open');
-              }
-            };
-          });
-        }
-
-        form.onsubmit = (e) => {
-          e.preventDefault();
-          const desc = form.querySelector('.entry-desc-input').value.trim() || 'Kayıt';
-          const isInstMode = allowInstallments && form.querySelector('.mode-btn[data-mode="installment"]').classList.contains('active');
-
-          if (isInstMode) {
-            const monthlyAmount = parseAmount(form.querySelector('.inst-monthly-input').value);
-            const totalInstallments = parseInt2(form.querySelector('.inst-total-input').value);
-            let paidInstallments = parseInt2(form.querySelector('.inst-paid-input').value);
-            if (monthlyAmount <= 0 || totalInstallments <= 0) return;
-            if (paidInstallments > totalInstallments) paidInstallments = totalInstallments;
-            item.debts.push({ id: uid(), desc, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments });
+          let formHtml = '<input class="entry-desc-input" placeholder="Açıklama (örn. Kredi kartı, market alışverişi)" />';
+          if (allowInstallments) {
+            formHtml +=
+              '<div class="mode-toggle">' +
+                '<button type="button" class="mode-btn active" data-mode="simple">Tek Kalem</button>' +
+                '<button type="button" class="mode-btn" data-mode="installment">Taksitli</button>' +
+              '</div>' +
+              '<div class="simple-fields"><input class="entry-amount-input" placeholder="Tutar (₺)" inputmode="decimal" /></div>' +
+              '<div class="installment-fields">' +
+                '<div class="installment-fields-row">' +
+                  '<input class="inst-monthly-input" placeholder="Aylık taksit (₺)" inputmode="decimal" />' +
+                  '<input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" />' +
+                '</div>' +
+                '<input class="inst-paid-input" placeholder="Şimdiye kadar ödenen taksit (örn. 2)" inputmode="numeric" />' +
+              '</div>';
           } else {
-            const amount = parseAmount(form.querySelector('.entry-amount-input').value);
-            if (amount <= 0) return;
-            item.debts.push({ id: uid(), desc, isInstallment: false, amount });
+            formHtml += '<input class="entry-amount-input" placeholder="Tutar (₺)" inputmode="decimal" />';
           }
-          addingEntryFor = null;
-          saveData(); renderAll();
-        };
+          formHtml +=
+            '<div class="form-actions">' +
+              '<button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button>' +
+              '<button type="submit" class="btn btn-primary" style="background:' + item.color + '">Ekle</button>' +
+            '</div>';
+          form.innerHTML = formHtml;
+
+          if (allowInstallments) {
+            const simpleFieldsEl = form.querySelector('.simple-fields');
+            const instFieldsEl = form.querySelector('.installment-fields');
+            const modeBtns = form.querySelectorAll('.mode-btn');
+            modeBtns.forEach(btn => {
+              btn.onclick = () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (btn.dataset.mode === 'installment') {
+                  simpleFieldsEl.classList.add('hidden'); instFieldsEl.classList.add('open');
+                } else {
+                  simpleFieldsEl.classList.remove('hidden'); instFieldsEl.classList.remove('open');
+                }
+              };
+            });
+          }
+
+          form.onsubmit = (e) => {
+            e.preventDefault();
+            const desc = form.querySelector('.entry-desc-input').value.trim() || 'Kayıt';
+            const isInstMode = allowInstallments && form.querySelector('.mode-btn[data-mode="installment"]').classList.contains('active');
+            if (isInstMode) {
+              const monthlyAmount = parseAmount(form.querySelector('.inst-monthly-input').value);
+              const totalInstallments = parseInt2(form.querySelector('.inst-total-input').value);
+              let paidInstallments = parseInt2(form.querySelector('.inst-paid-input').value);
+              if (monthlyAmount <= 0 || totalInstallments <= 0) return;
+              if (paidInstallments > totalInstallments) paidInstallments = totalInstallments;
+              item.debts.push({ id: uid(), desc, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments });
+            } else {
+              const amount = parseAmount(form.querySelector('.entry-amount-input').value);
+              if (amount <= 0) return;
+              item.debts.push({ id: uid(), desc, isInstallment: false, amount });
+            }
+            addingEntryFor = null;
+            saveData(); renderAll();
+          };
+        }
+
         form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
         body.appendChild(form);
-        setTimeout(() => form.querySelector('.entry-desc-input').focus(), 0);
+        setTimeout(() => { const f = form.querySelector('.entry-desc-input'); if (f) f.focus(); }, 0);
       } else {
         const addBtn = document.createElement('button');
         addBtn.className = 'add-entry-btn';
         addBtn.style.color = item.color;
-        addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ekle';
+        addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> ' + (isStock ? 'Alım ekle' : 'Ekle');
         addBtn.onclick = () => { addingEntryFor = { group: groupKey, id: item.id }; renderAll(); };
         body.appendChild(addBtn);
       }
@@ -485,8 +685,8 @@
   }
 
   function renderAll() {
-    const totalDebts = state.banks.reduce((s,b) => s + itemTotal(b), 0);
-    const totalAssets = state.assets.reduce((s,a) => s + itemTotal(a), 0);
+    const totalDebts = state.banks.reduce((s,b) => s + itemValue(b), 0);
+    const totalAssets = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const monthlyDue = state.banks.reduce((s,b) => s + itemMonthlyDue(b), 0);
     const net = totalAssets - totalDebts;
 
@@ -499,12 +699,21 @@
     netEl.textContent = (net < 0 ? '-' : '') + currency(Math.abs(net));
     netEl.className = 'net-total ' + (net >= 0 ? 'positive' : 'negative');
 
-    const dueWrap = document.getElementById('monthlyDueWrap');
-    if (monthlyDue > 0) {
-      dueWrap.style.display = 'flex';
-      document.getElementById('monthlyDueValue').textContent = currency(monthlyDue);
+    const monthlyBox = document.getElementById('monthlyBox');
+    const hasIncome = state.monthlyIncome > 0;
+    monthlyBox.style.display = (monthlyDue > 0 || hasIncome) ? 'block' : 'none';
+    document.getElementById('monthlyDueValue').textContent = currency(monthlyDue);
+    document.getElementById('incomeValue').textContent = hasIncome ? currency(state.monthlyIncome) : 'Gir';
+
+    const leftRow = document.getElementById('incomeLeftRow');
+    if (hasIncome) {
+      leftRow.style.display = 'flex';
+      const left = state.monthlyIncome - monthlyDue;
+      const leftEl = document.getElementById('incomeLeftValue');
+      leftEl.textContent = (left < 0 ? '-' : '') + currency(Math.abs(left));
+      leftEl.className = 'monthly-value left ' + (left >= 0 ? 'positive' : 'negative');
     } else {
-      dueWrap.style.display = 'none';
+      leftRow.style.display = 'none';
     }
 
     renderGroup('banks', 'bankList', 'bankEmptyState', 'borç kalemi', true);
@@ -513,10 +722,38 @@
 
   document.getElementById('today').textContent = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  function setupAddForm(showBtnId, formId, inputId, cancelBtnId, groupKey) {
+  document.getElementById('incomeValue').onclick = () => {
+    const form = document.getElementById('incomeEditForm');
+    form.classList.toggle('open');
+    if (form.classList.contains('open')) {
+      document.getElementById('incomeInput').value = state.monthlyIncome || '';
+      document.getElementById('incomeInput').focus();
+    }
+  };
+  document.getElementById('incomeEditForm').onsubmit = (e) => {
+    e.preventDefault();
+    state.monthlyIncome = parseAmount(document.getElementById('incomeInput').value);
+    document.getElementById('incomeEditForm').classList.remove('open');
+    saveData(); renderAll();
+  };
+
+  function setupAddForm(showBtnId, formId, inputId, cancelBtnId, groupKey, hasTypeToggle) {
     const showBtn = document.getElementById(showBtnId);
     const form = document.getElementById(formId);
     const input = document.getElementById(inputId);
+    let selectedType = 'simple';
+
+    if (hasTypeToggle) {
+      const typeBtns = form.querySelectorAll('.mode-btn[data-atype]');
+      typeBtns.forEach(btn => {
+        btn.onclick = () => {
+          typeBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedType = btn.dataset.atype;
+        };
+      });
+    }
+
     showBtn.onclick = () => { form.classList.add('open'); showBtn.style.display = 'none'; input.focus(); };
     document.getElementById(cancelBtnId).onclick = () => { form.classList.remove('open'); showBtn.style.display = 'flex'; input.value = ''; };
     form.onsubmit = (e) => {
@@ -524,17 +761,62 @@
       const name = input.value.trim();
       if (!name) return;
       const id = uid();
-      state[groupKey].push({ id, name, color: PALETTE[state[groupKey].length % PALETTE.length], debts: [] });
+      const color = groupKey === 'banks' ? getBankColor(name, state[groupKey].length) : PALETTE[state[groupKey].length % PALETTE.length];
+      const newItem = { id, name, color, debts: [] };
+      if (hasTypeToggle) newItem.type = selectedType;
+      state[groupKey].push(newItem);
       expanded[groupKey + ':' + id] = true;
       input.value = '';
       form.classList.remove('open');
       showBtn.style.display = 'flex';
+      if (hasTypeToggle) {
+        selectedType = 'simple';
+        form.querySelectorAll('.mode-btn[data-atype]').forEach(b => b.classList.toggle('active', b.dataset.atype === 'simple'));
+      }
       saveData(); renderAll();
     };
   }
 
-  setupAddForm('showAddBankBtn', 'newBankForm', 'newBankInput', 'cancelBankBtn', 'banks');
-  setupAddForm('showAddAssetBtn', 'newAssetForm', 'newAssetInput', 'cancelAssetBtn', 'assets');
+  setupAddForm('showAddBankBtn', 'newBankForm', 'newBankInput', 'cancelBankBtn', 'banks', false);
+  setupAddForm('showAddAssetBtn', 'newAssetForm', 'newAssetInput', 'cancelAssetBtn', 'assets', true);
+
+  document.getElementById('exportBtn').onclick = () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = 'borc-takibi-yedek-' + dateStr + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+  document.getElementById('importFile').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || !Array.isArray(parsed.banks) || !Array.isArray(parsed.assets)) {
+          alert('Bu dosya geçerli bir yedek dosyası değil.');
+          return;
+        }
+        if (confirm('Mevcut verilerin üzerine yedekteki veriler yüklenecek. Devam edilsin mi?')) {
+          state = { banks: parsed.banks, assets: parsed.assets, monthlyIncome: parsed.monthlyIncome || 0 };
+          expanded = {};
+          saveData(); renderAll();
+        }
+      } catch (err) {
+        alert('Dosya okunamadı, lütfen doğru yedek dosyasını seç.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   renderAll();
 </script>

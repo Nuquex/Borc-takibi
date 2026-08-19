@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Borç Takibim" />
+<meta name="theme-color" content="#12161d" />
+<title>Borç Takibim</title>
+<link rel="icon" href="data:,">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #12161d;
+    --surface: #1b212b;
+    --surface-2: #232b37;
+    --border: #313b49;
+    --text: #edeff3;
+    --text-muted: #8b93a3;
+    --gold: #c9a24b;
+    --danger: #d6746a;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    padding: 20px 16px 64px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(64px, env(safe-area-inset-bottom));
+  }
+
+  *:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .container { width: 100%; max-width: 480px; margin: 0 auto; }
+
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .header h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+  .header .date { font-size: 12px; color: var(--text-muted); font-variant: small-caps; }
+
+  .summary {
+    background: linear-gradient(155deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px 20px 18px;
+    margin-bottom: 22px;
+  }
+  .summary-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin-bottom: 6px; }
+  .summary-total { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 34px; color: var(--gold); line-height: 1.1; margin-bottom: 16px; word-break: break-word; }
+
+  .stack-bar { display: flex; width: 100%; height: 10px; border-radius: 6px; overflow: hidden; background: var(--border); margin-bottom: 12px; }
+  .stack-seg { height: 100%; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .tear { height: 1px; border-top: 1px dashed var(--border); margin: 0 0 22px; }
+
+  .section-title { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--text-muted); margin: 0 0 12px; letter-spacing: 0.3px; }
+
+  .bank-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+
+  .bank-head {
+    display: flex; align-items: center; gap: 12px; padding: 14px;
+    cursor: pointer; background: none; border: none; width: 100%;
+    text-align: left; color: var(--text); font-family: inherit;
+  }
+  .bank-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .bank-name { flex: 1; font-size: 15px; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bank-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+  .bank-total { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; }
+  .chevron { color: var(--text-muted); transition: transform .25s ease; flex-shrink: 0; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .bank-body { border-top: 1px solid var(--border); padding: 6px 14px 14px; display: none; }
+  .bank-body.open { display: block; }
+
+  .debt-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); gap: 10px; }
+  .debt-row:last-of-type { border-bottom: none; }
+  .debt-desc { font-size: 13.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .debt-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .debt-amount { font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; }
+
+  .icon-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; }
+  .icon-btn:hover { color: var(--danger); background: rgba(214,116,106,0.1); }
+
+  .empty-debts { font-size: 12.5px; color: var(--text-muted); padding: 10px 0; font-style: italic; }
+
+  .add-debt-btn, .del-bank-btn {
+    display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gold);
+    background: none; border: none; cursor: pointer; padding: 6px 0; font-family: inherit; margin-top: 4px;
+  }
+  .del-bank-btn { color: var(--danger); }
+
+  .inline-form { display: none; flex-direction: column; gap: 8px; margin-top: 8px; background: var(--surface-2); border-radius: 10px; padding: 10px; }
+  .inline-form.open { display: flex; }
+  .inline-form input {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 10px; color: var(--text); font-size: 13.5px; font-family: inherit; width: 100%;
+  }
+  .inline-form input::placeholder { color: var(--text-muted); }
+
+  .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn { font-family: inherit; font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 8px; border: none; cursor: pointer; }
+  .btn-primary { background: var(--gold); color: #1b1607; }
+  .btn-ghost { background: none; color: var(--text-muted); }
+  .btn-ghost:hover { color: var(--text); }
+
+  .add-bank-btn {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px; border-radius: 14px; border: 1px dashed var(--border); background: none;
+    color: var(--text-muted); font-family: inherit; font-size: 14px; cursor: pointer; margin-top: 4px;
+  }
+  .add-bank-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .new-bank-form {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; margin-top: 4px; display: none; flex-direction: column; gap: 10px;
+  }
+  .new-bank-form.open { display: flex; }
+  .new-bank-form input {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 10px; color: var(--text); font-size: 13.5px; font-family: inherit; width: 100%;
+  }
+
+  .empty-state { text-align: center; padding: 30px 10px 20px; color: var(--text-muted); }
+  .empty-state .icon-wrap {
+    width: 44px; height: 44px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: var(--gold); font-size: 20px;
+  }
+  .empty-state p { font-size: 13.5px; margin: 0; line-height: 1.5; }
+
+  svg { display: block; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Borç Takibim</h1>
+      <span class="date" id="today"></span>
+    </div>
+
+    <div class="summary">
+      <div class="summary-label">Toplam Borç</div>
+      <div class="summary-total" id="totalAmount">₺0,00</div>
+      <div class="stack-bar" id="stackBar"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="tear"></div>
+
+    <div class="section-title">Bankalar</div>
+
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <div class="icon-wrap">🏦</div>
+      <p>Henüz banka eklemedin.<br>Başlamak için aşağıdan bir banka ekle.</p>
+    </div>
+
+    <div id="bankList"></div>
+
+    <form class="new-bank-form" id="newBankForm">
+      <input id="newBankInput" placeholder="Banka adı (örn. Ziraat Bankası)" />
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" id="cancelBankBtn">Vazgeç</button>
+        <button type="submit" class="btn btn-primary">Banka ekle</button>
+      </div>
+    </form>
+
+    <button class="add-bank-btn" id="showAddBankBtn">+ Yeni banka ekle</button>
+  </div>
+
+<script>
+  const STORAGE_KEY = 'borc-takibi-data';
+  const PALETTE = ['#C9A24B','#4FA8A0','#8C86D6','#D07A6A','#6FA8D6','#8FBF7F','#D6A0C4','#B7935A'];
+
+  function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { banks: [] };
+  }
+
+  function saveData() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  let state = loadData();
+  let expanded = {};
+  let addingDebtFor = null;
+
+  function currency(n) {
+    const val = Number.isFinite(n) ? n : 0;
+    return '₺' + val.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function parseAmount(str) {
+    if (!str) return 0;
+    const cleaned = str.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '');
+    const n = parseFloat(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function bankTotal(bank) { return bank.debts.reduce((s,d) => s + d.amount, 0); }
+
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function render() {
+    const banks = state.banks;
+    const total = banks.reduce((s,b) => s + bankTotal(b), 0);
+
+    document.getElementById('totalAmount').textContent = currency(total);
+
+    const stackBar = document.getElementById('stackBar');
+    const legend = document.getElementById('legend');
+    stackBar.innerHTML = '';
+    legend.innerHTML = '';
+    if (banks.length > 0 && total > 0) {
+      banks.filter(b => bankTotal(b) > 0).forEach(b => {
+        const seg = document.createElement('div');
+        seg.className = 'stack-seg';
+        seg.style.flexBasis = ((bankTotal(b) / total) * 100) + '%';
+        seg.style.background = b.color;
+        stackBar.appendChild(seg);
+
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = '<span class="dot" style="background:' + b.color + '"></span>' +
+          esc(b.name) + ' · ' + Math.round((bankTotal(b) / total) * 100) + '%';
+        legend.appendChild(item);
+      });
+    }
+
+    document.getElementById('emptyState').style.display = banks.length === 0 ? 'block' : 'none';
+
+    const bankList = document.getElementById('bankList');
+    bankList.innerHTML = '';
+
+    banks.forEach(bank => {
+      const isOpen = !!expanded[bank.id];
+      const bTotal = bankTotal(bank);
+
+      const card = document.createElement('div');
+      card.className = 'bank-card';
+
+      const head = document.createElement('button');
+      head.className = 'bank-head';
+      head.innerHTML =
+        '<span class="bank-dot" style="background:' + bank.color + '"></span>' +
+        '<span class="bank-name">' + esc(bank.name) +
+          '<div class="bank-sub">' + bank.debts.length + ' borç kalemi</div>' +
+        '</span>' +
+        '<span class="bank-total">' + currency(bTotal) + '</span>' +
+        '<svg class="chevron' + (isOpen ? ' open' : '') + '" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+      head.onclick = () => { expanded[bank.id] = !expanded[bank.id]; render(); };
+      card.appendChild(head);
+
+      const body = document.createElement('div');
+      body.className = 'bank-body' + (isOpen ? ' open' : '');
+
+      if (bank.debts.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-debts';
+        empty.textContent = 'Bu bankada henüz borç kaydı yok.';
+        body.appendChild(empty);
+      } else {
+        bank.debts.forEach(d => {
+          const row = document.createElement('div');
+          row.className = 'debt-row';
+          row.innerHTML =
+            '<span class="debt-desc">' + esc(d.desc) + '</span>' +
+            '<span class="debt-right">' +
+              '<span class="debt-amount">' + currency(d.amount) + '</span>' +
+              '<button class="icon-btn" aria-label="Borcu sil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>' +
+            '</span>';
+          row.querySelector('.icon-btn').onclick = () => {
+            bank.debts = bank.debts.filter(x => x.id !== d.id);
+            saveData(); render();
+          };
+          body.appendChild(row);
+        });
+      }
+
+      if (addingDebtFor === bank.id) {
+        const form = document.createElement('form');
+        form.className = 'inline-form open';
+        form.innerHTML =
+          '<input class="debt-desc-input" placeholder="Açıklama (örn. Kredi kartı)" />' +
+          '<input class="debt-amount-input" placeholder="Tutar (₺)" inputmode="decimal" />' +
+          '<div class="form-actions">' +
+            '<button type="button" class="btn btn-ghost cancel-debt">Vazgeç</button>' +
+            '<button type="submit" class="btn btn-primary">Ekle</button>' +
+          '</div>';
+        form.onsubmit = (e) => {
+          e.preventDefault();
+          const desc = form.querySelector('.debt-desc-input').value.trim() || 'Borç';
+          const amount = parseAmount(form.querySelector('.debt-amount-input').value);
+          if (amount <= 0) return;
+          bank.debts.push({ id: uid(), desc, amount });
+          addingDebtFor = null;
+          saveData(); render();
+        };
+        form.querySelector('.cancel-debt').onclick = () => { addingDebtFor = null; render(); };
+        body.appendChild(form);
+        setTimeout(() => form.querySelector('.debt-desc-input').focus(), 0);
+      } else {
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-debt-btn';
+        addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Borç ekle';
+        addBtn.onclick = () => { addingDebtFor = bank.id; render(); };
+        body.appendChild(addBtn);
+      }
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'del-bank-btn';
+      delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Bankayı sil';
+      delBtn.onclick = () => {
+        state.banks = state.banks.filter(b => b.id !== bank.id);
+        saveData(); render();
+      };
+      body.appendChild(delBtn);
+
+      card.appendChild(body);
+      bankList.appendChild(card);
+    });
+  }
+
+  document.getElementById('today').textContent = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const showAddBankBtn = document.getElementById('showAddBankBtn');
+  const newBankForm = document.getElementById('newBankForm');
+  const newBankInput = document.getElementById('newBankInput');
+
+  showAddBankBtn.onclick = () => {
+    newBankForm.classList.add('open');
+    showAddBankBtn.style.display = 'none';
+    newBankInput.focus();
+  };
+  document.getElementById('cancelBankBtn').onclick = () => {
+    newBankForm.classList.remove('open');
+    showAddBankBtn.style.display = 'flex';
+    newBankInput.value = '';
+  };
+  newBankForm.onsubmit = (e) => {
+    e.preventDefault();
+    const name = newBankInput.value.trim();
+    if (!name) return;
+    const id = uid();
+    state.banks.push({ id, name, color: PALETTE[state.banks.length % PALETTE.length], debts: [] });
+    expanded[id] = true;
+    newBankInput.value = '';
+    newBankForm.classList.remove('open');
+    showAddBankBtn.style.display = 'flex';
+    saveData(); render();
+  };
+
+  render();
+</script>
+</body>
+</html>

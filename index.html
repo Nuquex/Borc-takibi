@@ -142,6 +142,18 @@
   .stock-add-row { display:flex; gap:8px; margin-top:4px; }
 
   .entry-block { padding:10px 0; border-bottom:1px solid var(--border); }
+
+  .swipe-wrap { position:relative; overflow:hidden; }
+  .swipe-actions { position:absolute; top:0; right:0; height:100%; display:flex; align-items:center; gap:8px; padding-right:4px; }
+  .swipe-act {
+    width:38px; height:38px; border-radius:50%; border:none; display:flex; align-items:center;
+    justify-content:center; color:#fff; cursor:pointer; flex-shrink:0;
+  }
+  .swipe-act.edit { background:#5B5BD6; }
+  .swipe-act.del { background:#E5484D; }
+  .swipe-content { position:relative; background:var(--surface); transition:transform .22s cubic-bezier(.2,.8,.3,1); will-change:transform; }
+  .swipe-wrap.open .swipe-content { transform:translateX(-96px); }
+  .swipe-hint { font-size:10px; color:var(--text-muted); opacity:.65; }
   .entry-block:last-of-type { border-bottom:none; }
   .entry-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .entry-desc { font-size:13.5px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -150,10 +162,17 @@
   .entry-amount { font-family:'IBM Plex Mono',monospace; font-size:13.5px; }
   .entry-meta { font-size:11px; color:var(--text-muted); margin-top:4px; }
 
-  .dots { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
-  .dot-inst { width:16px; height:16px; border-radius:5px; border:1px solid var(--border); background:var(--bg); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
-  .dot-inst.paid { background:var(--gold); border-color:var(--gold); }
-  .dot-inst svg { width:10px; height:10px; }
+  .dots { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+  .dot-inst {
+    min-width:26px; height:26px; border-radius:7px; border:1px solid var(--border); background:var(--bg);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 4px;
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; color:var(--text-muted);
+    transition:background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .dot-inst.paid { background:var(--gold); border-color:var(--gold); color:#1b1607; }
+  .dot-inst.next { border-color:var(--gold); color:var(--gold); border-style:dashed; }
+  .progress-bar { height:5px; border-radius:3px; background:var(--border); overflow:hidden; margin-top:8px; }
+  .progress-fill { height:100%; background:var(--gold); border-radius:3px; transition:width .25s ease; }
 
   .icon-btn { background:none; border:none; color:var(--text-muted); cursor:pointer; padding:4px; display:flex; align-items:center; border-radius:6px; }
   .icon-btn:hover { color:var(--danger); background:rgba(214,116,106,0.1); }
@@ -303,7 +322,7 @@
       <input id="expenseAmountInput" placeholder="Tutar (₺)" inputmode="decimal" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
       <div class="form-actions">
         <button type="button" class="btn btn-ghost" id="cancelExpenseBtn">Vazgeç</button>
-        <button type="submit" class="btn btn-primary" style="background:var(--danger)">Ekle</button>
+        <button type="submit" class="btn btn-primary" id="expenseSubmitBtn" style="background:var(--danger)">Ekle</button>
       </div>
     </form>
     <button class="add-item-btn" id="showAddExpenseBtn" style="display:none;">+ Harcama ekle</button>
@@ -465,9 +484,106 @@
   const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
   const SIMPLE_ASSET_OPTIONS = [
-    'Nakit','Vadesiz Mevduat','Vadeli Mevduat','Para Piyasası Fonu','Repo','Ters Repo','Döviz Hesabı (Dolar)',
-    'Döviz Hesabı (Euro)','Altın Hesabı (Gram Altın)','Çeyrek Altın','Cumhuriyet Altını','Kira Sertifikası (Sukuk)',
-    'Devlet Tahvili','Hazine Bonosu','Katılım Hesabı'
+    'Nakit','Gram Altın','Çeyrek Altın','Yarım Altın','Tam Altın','Cumhuriyet Altını','Gümüş',
+    'Dolar (Nakit)','Euro (Nakit)','Sterlin (Nakit)'
+  ];
+  const FUND_OPTIONS = [
+    // Tera Portföy
+    'TP2 - Tera Portföy Para Piyasası (TL) Fonu','TLY - Tera Portföy Birinci Serbest Fon',
+    'THF - Tera Portföy Hisse Senedi (TL) Fonu','TLV - Tera Portföy Para Piyasası Katılım (TL) Fonu',
+    'TRJ - Tera Portföy Birinci Borçlanma Araçları (TL) Fonu','TRU - Tera Portföy Katılım Serbest (Döviz) Fon',
+    'TMM - Tera Portföy İkinci Serbest (Döviz) Fon','DOH - Tera Portföy Dördüncü Hisse Senedi Serbest (TL) Fon',
+    'FSU - Tera Portföy Fon Sepeti Fonu',
+    // Ziraat Portföy
+    'TZD - Ziraat Portföy Hisse Senedi Fonu','TZT - Ziraat Portföy Borçlanma Araçları (TL) Fonu',
+    'TCA - Ziraat Portföy Altın Katılım Fonu','VFK - Ziraat Portföy Kısa Vadeli Kira Sertifikaları Katılım (TL) Fonu',
+    // İş Portföy
+    'TPP - İş Portföy Para Piyasası Fonu','TI2 - İş Portföy Hisse Senedi (TL) Fonu',
+    'TI3 - İş Portföy İş Bankası İştirakleri Endeksi Hisse Senedi Fonu','TI6 - İş Portföy Borçlanma Araçları (TL) Fonu',
+    'TI7 - İş Portföy Dengeli Değişken Fon','TIE - İş Portföy BIST 30 Endeksi Hisse Senedi Fonu',
+    'IPV - İş Portföy Eurobond Borçlanma Araçları (Döviz) Fonu','TTA - İş Portföy Altın Fonu',
+    'IAT - İş Portföy Kira Sertifikaları Katılım (TL) Fonu','KPI - İş Portföy Para Piyasası Katılım (TL) Fonu',
+    'TAU - İş Portföy BIST Banka Endeksi Hisse Senedi Fonu','IOG - İş Portföy Gümüş Serbest Fonu',
+    // Ak Portföy
+    'AK3 - Ak Portföy Hisse Senedi (TL) Fonu (Hisse Senedi Yoğun Fon)','AK2 - Ak Portföy Uzun Vadeli Borçlanma Araçları Fonu',
+    'APT - Ak Portföy Orta Vadeli Borçlanma Araçları Fonu','AFO - Ak Portföy Altın Fonu',
+    'AIS - Ak Portföy Para Piyasası Katılım Fonu','AKU - Ak Portföy BIST 30 Endeksi Hisse Senedi Fonu',
+    'GMI - Ak Portföy Gümüş Serbest Fonu','KLI - Ak Portföy Para Piyasası Katılım Serbest Fon',
+    // Garanti Portföy
+    'GA1 - Garanti Portföy Borçlanma Araçları Fonu','GHS - Garanti Portföy Hisse Senedi (TL) Fonu',
+    'GTA - Garanti Portföy Altın Fonu','GAE - Garanti Portföy BIST30 Endeksi Hisse Senedi Fonu',
+    'GKV - Garanti Portföy Katılım Hisse Senedi (TL) Fonu','GPN - Garanti Portföy Para Piyasası Katılım (TL) Fonu',
+    'GOL - Garanti Portföy Altın Katılım Fonu','GTZ - Garanti Portföy Gümüş Fon Sepeti Fonu',
+    // Yapı Kredi Portföy
+    'BIG - Yapı Kredi Portföy Üçüncü Hisse Senedi Fonu','PPI - Yapı Kredi Portföy Üçüncü Para Piyasası (TL) Fonu',
+    'PKT - Yapı Kredi Portföy Para Piyasası Katılım Serbest (TL) Fon','BKY - Yapı Kredi Portföy Birinci Katılım Serbest (Döviz) Fon',
+    'CKL - Yapı Kredi Portföy Çoklu Varlık Değişken Fon','KMN - Yapı Kredi Portföy Kıymetli Madenler Katılım Fonu',
+    'SSS - Yapı Kredi Portföy Savunma Sanayii Şirketleri Endeksi Hisse Senedi Fonu',
+    // QNB Portföy
+    'FYD - QNB Portföy Birinci Hisse Senedi Fonu','FI3 - QNB Portföy Borçlanma Araçları Fonu',
+    'FSK - QNB Portföy İkinci Para Piyasası (TL) Fonu','PPK - QNB Portföy Para Piyasası Katılım (TL) Fonu',
+    'OJK - QNB Portföy Altın Fonu','FMG - QNB Portföy Gümüş Serbest Fonu','FFH - QNB Portföy Çoklu Varlık Katılım Fonu',
+    'FUB - QNB Portföy Eurobond (Döviz) Borçlanma Araçları Fonu',
+    // Deniz Portföy
+    'DLY - Deniz Portföy Para Piyasası (TL) Fonu','DAH - Deniz Portföy Hisse Senedi Fonu',
+    'DBB - Deniz Portföy Borçlanma Araçları Fonu','DBA - Deniz Portföy Altın Fonu',
+    'DNP - Deniz Portföy Para Piyasası Katılım Serbest (TL) Fon','DKH - Deniz Portföy Katılım Hisse Senedi (TL) Fonu',
+    'DPK - Deniz Portföy Kira Sertifikaları Katılım (TL) Fonu','DMG - Deniz Portföy Gümüş Fon Sepeti Fonu',
+    'DZE - Deniz Portföy BIST 100 Endeksi Hisse Senedi Fonu',
+    // TEB Portföy
+    'TBT - TEB Portföy Borçlanma Araçları Fonu','TYH - TEB Portföy Hisse Senedi Fonu',
+    'PTE - TEB Portföy Birinci Para Piyasası Serbest (TL) Fon','TUA - TEB Portföy Altın Fonu',
+    'GMC - TEB Portföy Gümüş Fon Sepeti Fonu','ICE - TEB Portföy ICBC Turkey Para Piyasası (TL) Fonu',
+    'ICA - TEB Portföy ICBC Turkey Altın Fonu',
+    // Vakıf Portföy
+    'VEH - Vakıf Portföy Hisse Senedi Fonu (bkz. kendi kurum adına göre ara)',
+    // Fiba Portföy
+    'FIL - Fiba Portföy Para Piyasası (TL) Fonu','FPH - Fiba Portföy Hisse Senedi (TL) Fonu',
+    'FIT - Fiba Portföy Borçlanma Araçları (TL) Fonu','FIB - Fiba Portföy Altın Fonu',
+    'FPG - Fiba Portföy Gümüş Serbest Fonu','FSF - Fiba Portföy Para Piyasası Serbest (TL) Fon',
+    // Azimut Portföy
+    'PPZ - Azimut Portföy Para Piyasası (TL) Fonu','GL1 - Azimut Portföy Birinci Hisse Senedi Fonu',
+    'GTF - Azimut Portföy Birinci Borçlanma Araçları Fonu','KMF - Azimut Portföy Altın Katılım Fonu',
+    'GBZ - Azimut Portföy Emtia Fon Sepeti Fonu','GLS - Azimut Portföy Kira Sertifikaları (Sukuk) Katılım Fonu',
+    // ATA Portföy
+    'AAL - ATA Portföy Para Piyasası (TL) Fonu','AAV - ATA Portföy İkinci Hisse Senedi (TL) Fonu',
+    'DGH - ATA Portföy Para Piyasası Serbest (TL) Fon','AYA - ATA Portföy Kar Payı Ödeyen Hisse Senedi Fonu',
+    'PKF - ATA Portföy Altın Katılım Fonu',
+    // Oyak Portföy
+    'OHB - Oyak Portföy Birinci Hisse Senedi (TL) Fonu','OKT - Oyak Portföy Birinci Borçlanma Araçları Fonu',
+    'OGD - Oyak Portföy Altın Katılım Fonu','OFS - Oyak Portföy Birinci Fon Sepeti Fonu',
+    // Tacirler Portföy
+    'TCB - Tacirler Portföy Para Piyasası Fonu','TKF - Tacirler Portföy Hisse Senedi Fonu',
+    'TPF - Tacirler Portföy Borçlanma Araçları Fonu','TCD - Tacirler Portföy Değişken Fonu',
+    'DNK - Tacirler Portföy Denge Katılım Serbest Fon',
+    // İstanbul Portföy
+    'IJV - İstanbul Portföy Birinci Para Piyasası (TL) Fonu','IIH - İstanbul Portföy Üçüncü Hisse Senedi Fonu',
+    'IST - İstanbul Portföy Kısa Vadeli Borçlanma Araçları (TL) Fonu','BIP - İstanbul Portföy Birinci Para Piyasası Serbest (TL) Fon',
+    // Kuveyt Türk Portföy
+    'KLU - Kuveyt Türk Portföy Para Piyasası Katılım (TL) Fonu','KPC - Kuveyt Türk Portföy Katılım Hisse Senedi (TL) Fonu',
+    'KZL - Kuveyt Türk Portföy Altın Katılım Fonu','KTN - Kuveyt Türk Portföy Kira Sertifikaları Katılım (TL) Fonu',
+    'KTM - Kuveyt Türk Portföy Birinci Katılım (TL) Fonu',
+    // Diğer kurumlar
+    'HSL - HSBC Portföy Para Piyasası (TL) Fonu','HVS - HSBC Portföy Hisse Senedi (TL) Fonu','HBF - HSBC Portföy Altın Fonu',
+    'IDL - Aktif Portföy Para Piyasası (TL) Fonu','MPK - Aktif Portföy Kira Sertifikası Katılım (TL) Fonu','MKG - Aktif Portföy Altın Katılım Fonu',
+    'HYV - Hedef Portföy Para Piyasası (TL) Fonu','NNF - Hedef Portföy Birinci Hisse Senedi Fonu',
+    'NRG - Neo Portföy Birinci Para Piyasası Fonu','NHY - Neo Portföy Birinci Hisse Senedi Fonu','NAU - Neo Portföy Altın Fonu',
+    'NPH - Nurol Portföy Birinci Hisse Senedi Fonu','NJR - Nurol Portföy Birinci Borçlanma Araçları Fonu',
+    'MPL - MT Portföy Para Piyasası (TL) Fonu','MTH - MT Portföy Birinci Hisse Senedi Fonu',
+    'PPT - Atlas Portföy Para Piyasası (TL) Fonu','AHI - Atlas Portföy Birinci Hisse Senedi Fonu',
+    'RPP - Rota Portföy Para Piyasası (TL) Fonu','RHS - Rota Portföy Hisse Senedi (TL) Fonu','RPG - Rota Portföy Altın Fonu',
+    'GO6 - ONE Portföy Para Piyasası (TL) Fonu','GO9 - ONE Portföy Birinci Hisse Senedi Fonu','FAL - ONE Portföy Altın Fonu',
+    'PLR - Osmanlı Portföy Para Piyasası Fonu','OPH - Osmanlı Portföy Birinci Hisse Senedi Fonu',
+    'GAF - İnveo Portföy Birinci Hisse Senedi Fonu','GGK - İnveo Portföy Altın Fonu','IIN - İnveo Portföy Para Piyasası Serbest (TL) Fon',
+    'BIH - Pardus Portföy Birinci Hisse Senedi (TL) Fonu','PAF - Pardus Portföy Altın Fonu','AC4 - Pardus Portföy Para Piyasası (TL) Fon',
+    'UPP - Ünlü Portföy Para Piyasası (TL) Fonu','UPH - Ünlü Portföy Hisse Senedi (TL) Fonu','UP1 - Ünlü Portföy Altın Fonu',
+    'SPP - Sparta Portföy Birinci Para Piyasası (TL) Fonu','SBH - Sparta Portföy Birinci Hisse Senedi Serbest Fon',
+    'ALP - Albaraka Portföy Katılım Hisse Senedi Fonu','PPG - Albaraka Portföy Para Piyasası Katılım Fonu','RBT - Albaraka Portföy Kira Sertifikaları Katılım Fonu',
+    // Emeklilik şirketleri (BES) — genel yatırım fonları değil emeklilik fonlarıdır, referans amaçlı
+    'AEA - Anadolu Hayat Emeklilik Altın Katılım Emeklilik Yatırım Fonu','AH5 - Anadolu Hayat Emeklilik Hisse Senedi Emeklilik Yatırım Fonu',
+    'GEH - Garanti Emeklilik Hisse Senedi Emeklilik Yatırım Fonu','ALU - Allianz Yaşam ve Emeklilik Katılım Hisse Senedi Emeklilik Yatırım Fonu',
+    // Repo ve benzeri
+    'Repo — Gecelik Repo','Repo — Ters Repo'
   ];
   const BROKER_OPTIONS = [
     'Ziraat Yatırım','İş Yatırım','Garanti BBVA Yatırım','Yapı Kredi Yatırım','Halk Yatırım','Vakıf Yatırım',
@@ -522,13 +638,7 @@
     'PENGD - Penguen Gıda','PTOFS - Petrol Ofisi','RYGYO - Reysaş GYO','TBORG - Türk Tuborg','TTRAK - Türk Traktör',
     'UNYEC - Ünye Çimento','VKGYO - Vakıf GYO','VESBE - Vestel Beyaz Eşya','YKSGR - Yapı Kredi Sigorta','YAZIC - Yazıcılar Holding','YUNSA - Yünsa',
     // 2025-2026 döneminde halka arz olan bazı yeni şirketler (liste zamanla değişir)
-    'NETCD - Netcad Yazılım (Yeni Halka Arz)','ARFYE - ARF Bio Yenilenebilir Enerji (Yeni Halka Arz)',
-    // Popüler yatırım fonu kategorileri (TEFAS) — tam fon adın için "Diğer" ile kendi fon adını da yazabilirsin
-    'Fon — Ziraat Portföy Hisse Senedi Fonu','Fon — İş Portföy Hisse Senedi Fonu','Fon — Ak Portföy Hisse Senedi Fonu',
-    'Fon — Garanti Portföy Hisse Senedi Fonu','Fon — QNB Portföy Hisse Senedi Fonu','Fon — Yapı Kredi Portföy Hisse Senedi Fonu',
-    'Fon — Deniz Portföy Hisse Senedi Fonu','Fon — TEB Portföy Hisse Senedi Fonu','Fon — Fiba Portföy Hisse Senedi Fonu',
-    'Fon — Katılım Endeks Fonu','Fon — Altın Fonu','Fon — Para Piyasası Fonu','Fon — Değişken Fon','Fon — Serbest Fon',
-    'Repo — Gecelik Repo','Repo — Ters Repo'
+    'NETCD - Netcad Yazılım (Yeni Halka Arz)','ARFYE - ARF Bio Yenilenebilir Enerji (Yeni Halka Arz)'
   ];
 
   function setupCombo(inputEl, dropdownEl, getOptions, onSelect) {
@@ -656,6 +766,54 @@
   let addingEntryFor = null;
   let editingPriceFor = null;
   let addingStockFor = null;
+  let swipeOpenFor = null;
+
+  function attachSwipe(wrapEl, contentEl, itemId) {
+    let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, horizontal = false;
+    const THRESHOLD = 45;
+    const OPEN_PX = 96;
+
+    contentEl.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+      dx = 0; dragging = true; decided = false; horizontal = false;
+      contentEl.style.transition = 'none';
+    }, { passive: true });
+
+    contentEl.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
+      const rawDx = cx - startX, rawDy = cy - startY;
+      if (!decided) {
+        if (Math.abs(rawDx) < 6 && Math.abs(rawDy) < 6) return;
+        horizontal = Math.abs(rawDx) > Math.abs(rawDy);
+        decided = true;
+        if (!horizontal) { dragging = false; contentEl.style.transition = ''; return; }
+      }
+      const base = (swipeOpenFor === itemId) ? -OPEN_PX : 0;
+      dx = Math.max(-OPEN_PX - 20, Math.min(0, base + rawDx));
+      contentEl.style.transform = 'translateX(' + dx + 'px)';
+    }, { passive: true });
+
+    function finish() {
+      if (!dragging) return;
+      dragging = false;
+      contentEl.style.transition = '';
+      contentEl.style.transform = '';
+      if (!horizontal) return;
+      const shouldOpen = dx <= -THRESHOLD;
+      swipeOpenFor = shouldOpen ? itemId : null;
+      renderAll();
+    }
+    contentEl.addEventListener('touchend', finish, { passive: true });
+    contentEl.addEventListener('touchcancel', finish, { passive: true });
+
+    // masaüstü / fare için: kutuya tıklayınca aç-kapa
+    contentEl.addEventListener('dblclick', () => {
+      swipeOpenFor = (swipeOpenFor === itemId) ? null : itemId;
+      renderAll();
+    });
+  }
   let txnOpen = {};
   let monthCarouselIndex = null;
   let editingCarouselKey = null;
@@ -942,9 +1100,10 @@
       sub.className = 'sub-card';
       const sh = document.createElement('button');
       sh.className = 'sub-head';
+      const typeTag = stock.productType === 'fon' ? ' · Fon' : '';
       sh.innerHTML =
         '<span class="sub-dot" style="background:'+stock.color+'">'+esc(initials(stock.name))+'</span>' +
-        '<span class="sub-name">'+esc(stock.name)+'<div class="item-sub">'+stats.remainingQty+' adet · Ort. '+currency(stats.avgCost)+'</div></span>' +
+        '<span class="sub-name">'+esc(stock.name)+'<div class="item-sub">'+stats.remainingQty+' adet · Ort. '+currency(stats.avgCost)+typeTag+'</div></span>' +
         '<span class="item-total">'+currency(stats.currentValue)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       sh.onclick = () => { expanded[stKey] = !expanded[stKey]; renderAll(); };
@@ -1069,15 +1228,31 @@
     if (addingStockFor === portfolioItem.id) {
       const form = document.createElement('form');
       form.className = 'new-sub-form open';
-      form.innerHTML = '<div class="combo-wrap"><input class="new-stock-input" placeholder="Hisse ara (örn. THYAO, Migros)" autocomplete="off" /><div class="combo-dropdown new-stock-dropdown"></div></div>' +
+      form.innerHTML =
+        '<div class="mode-toggle">' +
+          '<button type="button" class="mode-btn active" data-ptype="hisse">Hisse</button>' +
+          '<button type="button" class="mode-btn" data-ptype="fon">Para Fonu</button>' +
+        '</div>' +
+        '<div class="combo-wrap"><input class="new-stock-input" placeholder="Hisse ara (örn. THYAO, Migros)" autocomplete="off" /><div class="combo-dropdown new-stock-dropdown"></div></div>' +
         '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-stock">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:var(--teal)">Ekle</button></div>';
-      setupCombo(form.querySelector('.new-stock-input'), form.querySelector('.new-stock-dropdown'), () => BIST100_OPTIONS);
+      let productType = 'hisse';
+      const stockInput = form.querySelector('.new-stock-input');
+      setupCombo(stockInput, form.querySelector('.new-stock-dropdown'), () => (productType === 'fon' ? FUND_OPTIONS : BIST100_OPTIONS));
+      form.querySelectorAll('.mode-btn[data-ptype]').forEach(btn => {
+        btn.onclick = () => {
+          form.querySelectorAll('.mode-btn[data-ptype]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          productType = btn.dataset.ptype;
+          stockInput.placeholder = productType === 'fon' ? 'Fon ara (örn. Ziraat)' : 'Hisse ara (örn. THYAO, Migros)';
+          stockInput.value = '';
+        };
+      });
       form.onsubmit = (e) => {
         e.preventDefault();
-        const name = form.querySelector('.new-stock-input').value.trim();
+        const name = stockInput.value.trim();
         if (!name) return;
         const id = uid();
-        portfolioItem.stocks.push({ id, name, color: PALETTE[portfolioItem.stocks.length % PALETTE.length], buys: [], sells: [], currentPrice: 0 });
+        portfolioItem.stocks.push({ id, name, productType, color: PALETTE[portfolioItem.stocks.length % PALETTE.length], buys: [], sells: [], currentPrice: 0 });
         expanded[portfolioItem.id + ':' + id] = true;
         logActivity(name + ' eklendi');
         addingStockFor = null; saveData(); renderAll();
@@ -1088,7 +1263,7 @@
     } else {
       const addStockBtn = document.createElement('button');
       addStockBtn.className = 'add-sub-btn';
-      addStockBtn.innerHTML = '+ Hisse ekle';
+      addStockBtn.innerHTML = '+ Ürün ekle';
       addStockBtn.onclick = () => { addingStockFor = portfolioItem.id; renderAll(); };
       body.appendChild(addStockBtn);
     }
@@ -1149,29 +1324,63 @@
         item.debts.forEach(d => {
           const block = document.createElement('div');
           block.className = 'entry-block';
+
+          const swipeWrap = document.createElement('div');
+          swipeWrap.className = 'swipe-wrap' + (swipeOpenFor === d.id ? ' open' : '');
+
+          const actions = document.createElement('div');
+          actions.className = 'swipe-actions';
+          const editAct = document.createElement('button');
+          editAct.type = 'button'; editAct.className = 'swipe-act edit';
+          editAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
+          editAct.onclick = () => { swipeOpenFor = null; addingEntryFor = { group:'banks', id: item.id, editId: d.id }; renderAll(); };
+          const delAct = document.createElement('button');
+          delAct.type = 'button'; delAct.className = 'swipe-act del';
+          delAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+          delAct.onclick = () => {
+            if (!confirm((d.note || d.debtType) + ' silinsin mi?')) return;
+            item.debts = item.debts.filter(x => x.id !== d.id);
+            swipeOpenFor = null; logActivity((d.note || d.debtType) + ' silindi');
+            saveData(); renderAll();
+          };
+          actions.appendChild(editAct); actions.appendChild(delAct);
+          swipeWrap.appendChild(actions);
+
+          const content = document.createElement('div');
+          content.className = 'swipe-content';
+
           const row = document.createElement('div');
           row.className = 'entry-row';
-          const badge = d.isInstallment ? '<span class="entry-badge">'+d.paidInstallments+'/'+d.totalInstallments+' taksit</span>' : '';
           const typeBadge = d.note ? '<span class="entry-badge" style="color:var(--text-muted);background:rgba(127,127,127,0.14)">'+esc(d.debtType)+'</span>' : '';
           row.innerHTML =
-            '<span class="entry-desc">'+esc(d.note || d.debtType)+typeBadge+badge+'</span>' +
-            '<span class="entry-right"><span class="entry-amount">'+formatMoney(entryRemaining(d), d.currency)+'</span>' +
-            '<button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></span>';
-          row.querySelector('.icon-btn').onclick = () => { item.debts = item.debts.filter(x => x.id !== d.id); saveData(); renderAll(); };
-          block.appendChild(row);
+            '<span class="entry-desc">'+esc(d.note || d.debtType)+typeBadge+'</span>' +
+            '<span class="entry-right"><span class="entry-amount">'+formatMoney(entryRemaining(d), d.currency)+'</span></span>';
+          content.appendChild(row);
 
           if (d.isInstallment) {
+            const remaining = Math.max(0, d.totalInstallments - d.paidInstallments);
             const meta = document.createElement('div');
             meta.className = 'entry-meta';
-            meta.textContent = 'Aylık '+formatMoney(d.monthlyAmount, d.currency)+' · kalan '+Math.max(0,d.totalInstallments-d.paidInstallments)+' taksit — dokunarak işaretle';
-            block.appendChild(meta);
+            meta.textContent = 'Aylık '+formatMoney(d.monthlyAmount, d.currency)+' · '+d.paidInstallments+'/'+d.totalInstallments+' ödendi · kalan '+remaining;
+            content.appendChild(meta);
+
+            const bar = document.createElement('div');
+            bar.className = 'progress-bar';
+            const fill = document.createElement('div');
+            fill.className = 'progress-fill';
+            fill.style.width = (d.totalInstallments > 0 ? (d.paidInstallments / d.totalInstallments * 100) : 0) + '%';
+            bar.appendChild(fill);
+            content.appendChild(bar);
+
             const dots = document.createElement('div');
             dots.className = 'dots';
             for (let i = 0; i < d.totalInstallments; i++) {
               const dot = document.createElement('button');
               dot.type = 'button';
-              dot.className = 'dot-inst' + (i < d.paidInstallments ? ' paid' : '');
-              if (i < d.paidInstallments) dot.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#1b1607" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+              const isPaid = i < d.paidInstallments;
+              const isNext = i === d.paidInstallments;
+              dot.className = 'dot-inst' + (isPaid ? ' paid' : (isNext ? ' next' : ''));
+              dot.textContent = (i + 1);
               dot.onclick = (() => { const idx = i; return () => {
                 const oldPaid = d.paidInstallments;
                 const newPaid = (d.paidInstallments === idx + 1) ? idx : idx + 1;
@@ -1183,8 +1392,12 @@
               };})();
               dots.appendChild(dot);
             }
-            block.appendChild(dots);
+            content.appendChild(dots);
           }
+
+          swipeWrap.appendChild(content);
+          attachSwipe(swipeWrap, content, d.id);
+          block.appendChild(swipeWrap);
           body.appendChild(block);
         });
       }
@@ -1194,15 +1407,17 @@
         form.className = 'inline-form open';
         let typeOpts = DEBT_TYPES.map(t => '<option value="'+t+'">'+t+'</option>').join('');
         let curOpts = CURRENCIES.map(c => '<option value="'+c.code+'">'+c.label+'</option>').join('');
+        const editing = addingEntryFor.editId ? (item.debts || []).find(x => x.id === addingEntryFor.editId) : null;
+        let typeOptsSel = DEBT_TYPES.map(t => '<option value="'+t+'"'+(editing && editing.debtType === t ? ' selected' : '')+'>'+t+'</option>').join('');
+        let curOptsSel = CURRENCIES.map(c => '<option value="'+c.code+'"'+(editing && (editing.currency||'TRY') === c.code ? ' selected' : '')+'>'+c.label+'</option>').join('');
         form.innerHTML =
-          '<select class="sel-input debt-type-sel">'+typeOpts+'</select>' +
-          '<input class="entry-note-input" placeholder="Açıklama (opsiyonel, örn. Araba kredisi)" />' +
-          '<select class="sel-input debt-cur-sel">'+curOpts+'</select>' +
+          '<select class="sel-input debt-type-sel">'+typeOptsSel+'</select>' +
+          '<input class="entry-note-input" placeholder="Açıklama (opsiyonel, örn. Araba kredisi)" value="'+(editing && editing.note ? esc(editing.note) : '')+'" />' +
+          '<select class="sel-input debt-cur-sel">'+curOptsSel+'</select>' +
           '<div class="installment-fields open">' +
-            '<div class="installment-fields-row"><input class="inst-monthly-input" placeholder="Aylık taksit" inputmode="decimal" /><input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" /></div>' +
-            '<input class="inst-paid-input" placeholder="Şimdiye kadar ödenen taksit (örn. 2)" inputmode="numeric" />' +
+            '<div class="installment-fields-row"><input class="inst-monthly-input" placeholder="Aylık taksit" inputmode="decimal" value="'+(editing ? editing.monthlyAmount : '')+'" /><input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" value="'+(editing ? editing.totalInstallments : '')+'" /></div>' +
           '</div>' +
-          '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+item.color+'">Ekle</button></div>';
+          '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+item.color+'">'+(editing ? 'Kaydet' : 'Ekle')+'</button></div>';
 
         form.onsubmit = (e) => {
           e.preventDefault();
@@ -1211,13 +1426,16 @@
           const cur = form.querySelector('.debt-cur-sel').value;
           const monthlyAmount = parseAmount(form.querySelector('.inst-monthly-input').value);
           const totalInstallments = parseInt2(form.querySelector('.inst-total-input').value);
-          let paidInstallments = parseInt2(form.querySelector('.inst-paid-input').value);
-          if (monthlyAmount <= 0 || totalInstallments <= 0) return;
-          if (paidInstallments > totalInstallments) paidInstallments = totalInstallments;
-          const newEntry = { id: uid(), debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0 };
-          item.debts.push(newEntry);
-          if (paidInstallments > 0) { logPaymentRange(item, newEntry, 0, paidInstallments); newEntry.paidInstallments = paidInstallments; }
-          logActivity((note || debtType) + ' eklendi', monthlyAmount * totalInstallments);
+          if (monthlyAmount <= 0 || totalInstallments <= 0) { alert('Aylık taksit ve toplam taksit sayısını gir.'); return; }
+          if (editing) {
+            editing.debtType = debtType; editing.note = note; editing.currency = cur;
+            editing.monthlyAmount = monthlyAmount; editing.totalInstallments = totalInstallments;
+            if (editing.paidInstallments > totalInstallments) editing.paidInstallments = totalInstallments;
+            logActivity((note || debtType) + ' düzenlendi', monthlyAmount * totalInstallments);
+          } else {
+            item.debts.push({ id: uid(), debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0 });
+            logActivity((note || debtType) + ' eklendi', monthlyAmount * totalInstallments);
+          }
           addingEntryFor = null; saveData(); renderAll();
         };
         form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
@@ -1287,7 +1505,7 @@
       const page = document.createElement('div');
       page.className = 'month-page';
       let html = '<div class="month-card-title">'+(isCurrent ? 'Bu Ay · ' : '')+monthLabel(key)+'</div>';
-      html += '<div class="monthly-row"><span class="monthly-label">Gelir</span><span class="monthly-value editable" data-editkey="'+key+'">'+(income>0?currency(income):'Gir')+'</span></div>';
+      html += '<div class="monthly-row"><span class="monthly-label">Gelir</span><span class="monthly-value">'+(income>0?currency(income):'—')+'</span></div>';
       if (isCurrent) {
         html += '<div class="monthly-row"><span class="monthly-label">Bu ayki toplam taksit (₺)</span><span class="monthly-value due">'+currency(due)+'</span></div>';
       }
@@ -1298,16 +1516,6 @@
       if (expenseTotal > 0) {
         html += '<div class="monthly-row"><span class="monthly-label">Harcamalar</span><span class="monthly-value due" style="color:var(--danger)">'+currency(expenseTotal)+'</span></div>';
       }
-      if (editingCarouselKey === key) {
-        html += '<form class="income-edit-form open" data-formkey="'+key+'"><input class="carousel-income-input" placeholder="Gelir (₺)" inputmode="decimal" value="'+(income||'')+'" /><button type="submit" class="btn btn-primary" style="background:var(--gold)">Kaydet</button></form>';
-      }
-      if (items.length > 0) {
-        html += '<div class="archive-items">';
-        items.forEach(p => {
-          html += '<div class="archive-item-row"><span>'+esc(p.bankName)+' — '+esc(p.debtType)+'</span><span>'+currency(p.amount)+'</span></div>';
-        });
-        html += '</div>';
-      }
       page.innerHTML = html;
       carousel.appendChild(page);
 
@@ -1315,23 +1523,6 @@
       dot.className = 'carousel-dot' + (idx === monthCarouselIndex ? ' active' : '');
       dotsWrap.appendChild(dot);
     });
-
-    carousel.querySelectorAll('.monthly-value.editable').forEach(el => {
-      el.onclick = () => { editingCarouselKey = editingCarouselKey === el.dataset.editkey ? null : el.dataset.editkey; renderAll(); };
-    });
-    const openForm = carousel.querySelector('form[data-formkey]');
-    if (openForm) {
-      openForm.onsubmit = (e) => {
-        e.preventDefault();
-        const key = openForm.dataset.formkey;
-        const amount = parseAmount(openForm.querySelector('.carousel-income-input').value);
-        state.incomeByMonth[key] = amount;
-        logActivity('Gelir (' + monthLabel(key) + ')', amount);
-        editingCarouselKey = null;
-        saveData(); renderAll();
-      };
-      setTimeout(() => { const f = openForm.querySelector('.carousel-income-input'); if (f) f.focus(); }, 0);
-    }
 
     requestAnimationFrame(() => {
       carousel.scrollLeft = monthCarouselIndex * carousel.clientWidth;
@@ -1347,16 +1538,40 @@
     document.getElementById('expensesSectionTotal').textContent = currency(total);
     listEl.innerHTML = '';
     list.forEach(ex => {
+      const wrap = document.createElement('div');
+      wrap.className = 'swipe-wrap' + (swipeOpenFor === ex.id ? ' open' : '');
+      wrap.style.borderBottom = '1px solid var(--border)';
+
+      const actions = document.createElement('div');
+      actions.className = 'swipe-actions';
+      const editAct = document.createElement('button');
+      editAct.type = 'button'; editAct.className = 'swipe-act edit';
+      editAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
+      editAct.onclick = () => { swipeOpenFor = null; editingExpenseId = ex.id; openExpenseForm(ex); };
+      const delAct = document.createElement('button');
+      delAct.type = 'button'; delAct.className = 'swipe-act del';
+      delAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+      delAct.onclick = () => {
+        if (!confirm(ex.desc + ' silinsin mi?')) return;
+        state.expenses = state.expenses.filter(x => x.id !== ex.id);
+        swipeOpenFor = null; logActivity(ex.desc + ' silindi');
+        saveData(); renderAll();
+      };
+      actions.appendChild(editAct); actions.appendChild(delAct);
+      wrap.appendChild(actions);
+
+      const content = document.createElement('div');
+      content.className = 'swipe-content';
       const row = document.createElement('div');
       row.className = 'entry-row';
       row.style.padding = '9px 0';
-      row.style.borderBottom = '1px solid var(--border)';
       row.innerHTML =
         '<span class="entry-desc">'+esc(ex.desc)+'<span class="entry-badge">'+esc(ex.bankName)+'</span></span>' +
-        '<span class="entry-right"><span class="entry-amount">'+currency(ex.amount)+'</span>' +
-        '<button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></span>';
-      row.querySelector('.icon-btn').onclick = () => { state.expenses = state.expenses.filter(x => x.id !== ex.id); saveData(); renderAll(); };
-      listEl.appendChild(row);
+        '<span class="entry-right"><span class="entry-amount">'+currency(ex.amount)+'</span></span>';
+      content.appendChild(row);
+      wrap.appendChild(content);
+      attachSwipe(wrap, content, ex.id);
+      listEl.appendChild(wrap);
     });
   }
 
@@ -1617,29 +1832,50 @@
     };
   })();
 
-  // Expense add form
+  // Expense add/edit form
+  let editingExpenseId = null;
+  function openExpenseForm(ex) {
+    refreshExpenseBankOptions();
+    if (state.banks.length === 0) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
+    const form = document.getElementById('newExpenseForm');
+    const showBtn = document.getElementById('showAddExpenseBtn');
+    document.getElementById('expenseDescInput').value = ex ? ex.desc : '';
+    document.getElementById('expenseAmountInput').value = ex ? ex.amount : '';
+    if (ex && state.banks.some(b => b.id === ex.bankId)) document.getElementById('expenseBankSelect').value = ex.bankId;
+    document.getElementById('expenseSubmitBtn').textContent = ex ? 'Kaydet' : 'Ekle';
+    form.classList.add('open'); showBtn.style.display = 'none';
+    renderAll();
+    setTimeout(() => { form.scrollIntoView({ behavior:'smooth', block:'center' }); document.getElementById('expenseDescInput').focus(); }, 60);
+  }
   (function() {
     const showBtn = document.getElementById('showAddExpenseBtn');
     const form = document.getElementById('newExpenseForm');
-    showBtn.onclick = () => {
-      refreshExpenseBankOptions();
-      if (state.banks.length === 0) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
-      form.classList.add('open'); showBtn.style.display = 'none'; document.getElementById('expenseDescInput').focus();
+    showBtn.onclick = () => { editingExpenseId = null; openExpenseForm(null); };
+    document.getElementById('cancelExpenseBtn').onclick = () => {
+      editingExpenseId = null;
+      document.getElementById('expenseDescInput').value = '';
+      document.getElementById('expenseAmountInput').value = '';
+      form.classList.remove('open'); showBtn.style.display = 'none';
     };
-    document.getElementById('cancelExpenseBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'none'; };
     form.onsubmit = (e) => {
       e.preventDefault();
-      refreshExpenseBankOptions();
       const bankId = document.getElementById('expenseBankSelect').value;
-      let bank = state.banks.find(b => b.id === bankId);
-      if (!bank) bank = state.banks[0];
+      let bank = state.banks.find(b => b.id === bankId) || state.banks[0];
       if (!bank) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
       const desc = document.getElementById('expenseDescInput').value.trim() || 'Harcama';
       const amount = parseAmount(document.getElementById('expenseAmountInput').value);
       if (amount <= 0) { alert('Lütfen geçerli bir tutar gir.'); return; }
-      const month = expenseBucketForBank(bank);
-      state.expenses.push({ id: uid(), bankId: bank.id, bankName: bank.name, desc, amount, month, ts: Date.now() });
-      logActivity(desc, amount);
+      if (editingExpenseId) {
+        const ex = state.expenses.find(x => x.id === editingExpenseId);
+        if (ex) {
+          ex.bankId = bank.id; ex.bankName = bank.name; ex.desc = desc; ex.amount = amount;
+          logActivity(desc + ' düzenlendi', amount);
+        }
+        editingExpenseId = null;
+      } else {
+        state.expenses.push({ id: uid(), bankId: bank.id, bankName: bank.name, desc, amount, month: currentMonthKey(), ts: Date.now() });
+        logActivity(desc, amount);
+      }
       document.getElementById('expenseDescInput').value = '';
       document.getElementById('expenseAmountInput').value = '';
       form.classList.remove('open'); showBtn.style.display = 'none';

@@ -59,6 +59,43 @@
   .month-card-title { font-family:'Fraunces',serif; font-size:14px; font-weight:600; margin-bottom:10px; }
 
   .month-carousel-wrap { margin-bottom:6px; border-radius:16px; overflow:hidden; }
+  .net-carousel-wrap { margin-bottom:4px; border-radius:18px; overflow:hidden; }
+  #netCarousel { align-items:flex-start; transition:height .22s ease; }
+  #netCarouselDots { margin-bottom:22px; }
+  .net-page {
+    flex:0 0 100%; scroll-snap-align:start; box-sizing:border-box;
+    background:linear-gradient(155deg, var(--surface-2), var(--surface)); border:1px solid var(--border);
+    border-radius:18px; padding:20px 20px 18px;
+  }
+  .donut-wrap { display:flex; justify-content:center; margin:14px 0 10px; }
+  .donut-legend { display:flex; flex-direction:column; gap:8px; }
+  .donut-legend-row { display:flex; align-items:center; gap:9px; font-size:12.5px; }
+  .donut-swatch { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+  .donut-legend-label { flex:1; color:var(--text); }
+  .donut-legend-pct { color:var(--text-muted); font-family:'IBM Plex Mono',monospace; font-size:11.5px; }
+  .donut-legend-amt { font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; }
+  .net-page-title { font-size:12px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-muted); margin-bottom:6px; }
+  .net-page-total { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:24px; margin-bottom:4px; }
+  .date-leaf { cursor:pointer; }
+
+  .cal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:70; display:none; align-items:center; justify-content:center; padding:20px; }
+  .cal-backdrop.open { display:flex; }
+  .cal-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:16px; width:100%; max-width:320px; }
+  .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .cal-title { font-family:'Fraunces',serif; font-size:15px; font-weight:600; }
+  .cal-nav-btn { background:none; border:1px solid var(--border); border-radius:8px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); cursor:pointer; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:3px; }
+  .cal-dow { text-align:center; font-size:10px; color:var(--text-muted); padding-bottom:4px; }
+  .cal-day {
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:8px; font-size:12.5px; cursor:pointer; border:none; background:none; color:var(--text); position:relative;
+  }
+  .cal-day.other-month { color:var(--text-muted); opacity:0.35; }
+  .cal-day.today { border:1px solid var(--gold); }
+  .cal-day.selected { background:var(--gold); color:#1b1607; font-weight:700; }
+  .cal-day .cal-dot { width:4px; height:4px; border-radius:50%; background:var(--teal); position:absolute; bottom:3px; }
+  .cal-day.selected .cal-dot { background:#1b1607; }
+  .cal-close-btn { margin-top:12px; width:100%; padding:9px; border-radius:10px; border:none; background:var(--surface-2); color:var(--text-muted); font-family:inherit; font-size:13px; cursor:pointer; }
   .month-carousel {
     display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
     scrollbar-width:none; -ms-overflow-style:none;
@@ -103,7 +140,7 @@
 
   .item-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:12px; overflow:hidden; }
   .item-head { display:flex; align-items:center; gap:12px; padding:14px; cursor:pointer; background:none; border:none; width:100%; text-align:left; color:var(--text); font-family:inherit; }
-  .item-dot { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; }
+  .item-dot { width:28px; height:28px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; }
   .item-name { flex:1; font-size:15px; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .item-sub { font-size:11px; color:var(--text-muted); font-weight:400; }
   .item-total { font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; }
@@ -114,7 +151,7 @@
 
   .sub-card { background:rgba(127,127,127,0.04); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden; }
   .sub-head { display:flex; align-items:center; gap:10px; padding:11px 12px; cursor:pointer; background:none; border:none; width:100%; text-align:left; color:var(--text); font-family:inherit; }
-  .sub-dot { width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; }
+  .sub-dot { width:24px; height:24px; border-radius:7px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; }
   .sub-name { flex:1; font-size:13.5px; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .sub-body { border-top:1px solid var(--border); padding:10px 12px 12px; display:none; }
   .sub-body.open { display:block; }
@@ -142,20 +179,46 @@
   .stock-add-row { display:flex; gap:8px; margin-top:4px; }
 
   .entry-block { padding:10px 0; border-bottom:1px solid var(--border); }
+  .debt-subgroup-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin:12px 0 4px; }
+  .debt-subgroup-title:first-child { margin-top:0; }
   .entry-desc-wrap { display:flex; align-items:center; gap:6px; min-width:0; flex:1; }
   .entry-desc-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; font-size:13.5px; }
-  #expensesList { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:2px 14px; margin-bottom:4px; }
+  #expensesList { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:4px; }
+  #expensesList .entry-row { padding-left:14px; padding-right:14px; }
+  #expensesList .swipe-actions { padding-right:10px; }
 
-  .swipe-wrap { position:relative; overflow:hidden; }
-  .swipe-actions { position:absolute; top:0; right:0; height:100%; display:flex; align-items:center; gap:8px; padding-right:4px; }
+  .swipe-wrap { overflow:hidden; }
+  .swipe-wrap3 { overflow:hidden; border-radius:inherit; }
+  .swipe-scroll3 {
+    display:flex; overflow-x:auto; scroll-snap-type:x mandatory; position:relative;
+    scrollbar-width:none; -ms-overflow-style:none; touch-action:pan-x;
+  }
+  .swipe-scroll3::-webkit-scrollbar { display:none; }
+  .swipe-content3 { flex:0 0 100%; scroll-snap-align:start; background:var(--surface); min-width:0; }
+  .swipe-zone {
+    flex:0 0 92px; scroll-snap-align:start; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:4px; color:#fff; font-size:10px; font-weight:600; text-align:center; padding:0 6px;
+  }
+  .swipe-zone-lock { background:#8b93a3; }
+  .swipe-zone-lock.locked { background:var(--gold); color:#1b1607; }
+  .swipe-zone-del1 { background:#c9695c; }
+  .swipe-zone-del1.primed { background:#E5484D; }
+  .swipe-zone-del2 { background:#E5484D; }
+  .swipe-scroll {
+    display:flex; overflow-x:auto; scroll-snap-type:x mandatory;
+    scrollbar-width:none; -ms-overflow-style:none; touch-action:pan-x;
+  }
+  .swipe-scroll::-webkit-scrollbar { display:none; }
+  .swipe-content { flex:0 0 100%; scroll-snap-align:start; background:var(--surface); min-width:0; }
+  .swipe-actions { flex:0 0 auto; scroll-snap-align:end; display:flex; align-items:center; gap:8px; padding:0 4px 0 10px; }
   .swipe-act {
-    width:38px; height:38px; border-radius:50%; border:none; display:flex; align-items:center;
+    width:38px; height:38px; border-radius:10px; border:none; display:flex; align-items:center;
     justify-content:center; color:#fff; cursor:pointer; flex-shrink:0;
   }
   .swipe-act.edit { background:#5B5BD6; }
   .swipe-act.del { background:#E5484D; }
-  .swipe-content { position:relative; background:var(--surface); transition:transform .22s cubic-bezier(.2,.8,.3,1); will-change:transform; }
-  .swipe-wrap.open .swipe-content { transform:translateX(-96px); }
+  .swipe-act.lock { background:#8b93a3; }
+  .swipe-act.lock.locked { background:var(--gold); }
   .swipe-hint { font-size:10px; color:var(--text-muted); opacity:.65; }
   .entry-block:last-of-type { border-bottom:none; }
   .entry-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -297,18 +360,22 @@
       </div>
     </div>
 
-    <div class="summary">
-      <div class="summary-label">Net Durum</div>
-      <div class="net-total" id="netTotal">₺0,00</div>
-      <div class="sub-stats">
-        <div class="sub-stat"><div class="sub-stat-label">Toplam Varlık</div><div class="sub-stat-value assets" id="totalAssets">₺0,00</div></div>
-        <div class="sub-stat"><div class="sub-stat-label">Toplam Borç (₺)</div><div class="sub-stat-value debts" id="totalDebts">₺0,00</div></div>
+    <div class="cal-backdrop" id="calBackdrop">
+      <div class="cal-card">
+        <div class="cal-header">
+          <button type="button" class="cal-nav-btn" id="calPrevBtn">‹</button>
+          <span class="cal-title" id="calTitle"></span>
+          <button type="button" class="cal-nav-btn" id="calNextBtn">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <button type="button" class="cal-close-btn" id="calCloseBtn">Kapat</button>
       </div>
-      <div class="sub-stats" id="curExpenseRow" style="display:none; margin-top:10px;">
-        <div class="sub-stat"><div class="sub-stat-label">Bu Ay Harcanan</div><div class="sub-stat-value" style="color:var(--danger)" id="curExpenseValue">₺0,00</div></div>
-      </div>
-      <div class="fx-chips" id="fxChips"></div>
     </div>
+
+    <div class="net-carousel-wrap">
+      <div class="month-carousel" id="netCarousel"></div>
+    </div>
+    <div class="carousel-dots" id="netCarouselDots"></div>
 
     <div class="month-carousel-wrap">
       <div class="month-carousel" id="monthCarousel"></div>
@@ -316,14 +383,26 @@
     <div class="carousel-dots" id="carouselDots"></div>
     <div class="carousel-hint">← kaydırarak diğer ayları gör →</div>
 
-    <div class="section-title"><span>Bu Ayki Harcamalar</span><span class="section-total" id="expensesSectionTotal" style="color:var(--danger)"></span></div>
+    <div class="section-title"><span>Harcamalar <span id="expensesDayLabel" style="font-weight:400; color:var(--text-muted); font-size:12px;"></span></span><span class="section-total" id="expensesSectionTotal" style="color:var(--danger)"></span></div>
+    <button id="expensesBackToday" style="display:none; font-size:11.5px; color:var(--gold); background:none; border:none; cursor:pointer; padding:0 0 8px; font-family:inherit;">← Bugüne dön</button>
+    <div class="mode-toggle" id="expenseFilterToggle" style="margin-bottom:10px;">
+      <button type="button" class="mode-btn active" data-filter="all">Tümü</button>
+      <button type="button" class="mode-btn" data-filter="gider">Gider</button>
+      <button type="button" class="mode-btn" data-filter="gelir">Gelir</button>
+    </div>
     <div id="expensesEmptyState" class="empty-state" style="display:none;">
-      <div class="icon-wrap">🧾</div><p>Bu ay için henüz harcama eklemedin.<br>Tek seferlik alışveriş/harcamalarını buraya ekle.</p>
+      <div class="icon-wrap">🧾</div><p>Bu gün için henüz harcama/gelir eklemedin.</p>
     </div>
     <div id="expensesList"></div>
+    <div class="carousel-dots" id="expensesDots" style="margin-bottom:4px;"></div>
     <form class="new-item-form" id="newExpenseForm">
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn active" data-ekind="gider">Gider</button>
+        <button type="button" class="mode-btn" data-ekind="gelir">Gelir</button>
+      </div>
       <select class="sel-input" id="expenseBankSelect"></select>
       <input id="expenseDescInput" placeholder="Açıklama (örn. Market alışverişi)" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
+      <select class="sel-input" id="expenseCurrencySelect" style="display:none;"></select>
       <input id="expenseAmountInput" placeholder="Tutar (₺)" inputmode="decimal" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
       <div class="form-actions">
         <button type="button" class="btn btn-ghost" id="cancelExpenseBtn">Vazgeç</button>
@@ -704,6 +783,17 @@
   }
   function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
   function currentMonthKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+  function todayKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function dayKeyOf(ex) {
+    if (ex.day) return ex.day;
+    const d = new Date(ex.ts || Date.now());
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function monthOfDayKey(dayKey) { return dayKey.slice(0,7); }
+  function dayLabel(dayKey) {
+    const [y,m,d] = dayKey.split('-').map(Number);
+    return new Date(y, m-1, d).toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
+  }
   function nextMonthKeyOf(key) { let [y,m] = key.split('-').map(Number); m++; if (m>12) { m=1; y++; } return y+'-'+String(m).padStart(2,'0'); }
   function effectiveCurrentMonthKey() {
     const real = currentMonthKey();
@@ -741,28 +831,30 @@
           incomeByMonth: p.incomeByMonth || (p.monthlyIncome ? { [currentMonthKey()]: p.monthlyIncome } : {}),
           paymentLog: p.paymentLog || [],
           expenses: p.expenses || [],
-          activityLog: p.activityLog || []
+          activityLog: p.activityLog || [],
+          dismissedFixedBanks: p.dismissedFixedBanks || []
         };
       }
     } catch (e) {}
-    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [], expenses: [], activityLog: [] };
+    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [], expenses: [], activityLog: [], dismissedFixedBanks: [] };
   }
   function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }
 
   let state = loadData();
 
-  // Seed the three fixed banks for this version, if not already present, and mark them undeletable
+  // Seed the three fixed banks for this version, if not already present and not previously deleted by the user
   (function seedFixedBanks() {
     const fixed = ['Ziraat Bankası', 'İş Bankası', 'Akbank'];
     let changed = false;
     fixed.forEach(name => {
+      if ((state.dismissedFixedBanks || []).includes(name)) return;
       let b = state.banks.find(x => x.name === name);
       if (!b) {
-        b = { id: uid(), name, entityType: 'bank', color: getEntityColor(name, state.banks.length), debts: [], kesimTarihi: null };
+        b = { id: uid(), name, entityType: 'bank', color: getEntityColor(name, state.banks.length), debts: [], kesimTarihi: null, locked: true };
         state.banks.push(b);
         changed = true;
       }
-      if (!b.fixed) { b.fixed = true; changed = true; }
+      if (b.locked === undefined) { b.locked = true; changed = true; }
     });
     if (changed) saveData();
   })();
@@ -816,51 +908,19 @@
   }
   let swipeOpenFor = null;
 
-  function attachSwipe(wrapEl, contentEl, itemId) {
-    let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, horizontal = false;
-    const THRESHOLD = 45;
-    const OPEN_PX = 96;
-
-    contentEl.addEventListener('touchstart', (e) => {
-      if (e.touches.length !== 1) return;
-      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
-      dx = 0; dragging = true; decided = false; horizontal = false;
-      contentEl.style.transition = 'none';
-    }, { passive: true });
-
-    contentEl.addEventListener('touchmove', (e) => {
-      if (!dragging) return;
-      const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
-      const rawDx = cx - startX, rawDy = cy - startY;
-      if (!decided) {
-        if (Math.abs(rawDx) < 6 && Math.abs(rawDy) < 6) return;
-        horizontal = Math.abs(rawDx) > Math.abs(rawDy);
-        decided = true;
-        if (!horizontal) { dragging = false; contentEl.style.transition = ''; return; }
-      }
-      const base = (swipeOpenFor === itemId) ? -OPEN_PX : 0;
-      dx = Math.max(-OPEN_PX - 20, Math.min(0, base + rawDx));
-      contentEl.style.transform = 'translateX(' + dx + 'px)';
-    }, { passive: true });
-
-    function finish() {
-      if (!dragging) return;
-      dragging = false;
-      contentEl.style.transition = '';
-      contentEl.style.transform = '';
-      if (!horizontal) return;
-      const shouldOpen = dx <= -THRESHOLD;
-      swipeOpenFor = shouldOpen ? itemId : null;
-      renderAll();
-    }
-    contentEl.addEventListener('touchend', finish, { passive: true });
-    contentEl.addEventListener('touchcancel', finish, { passive: true });
-
-    // masaüstü / fare için: kutuya tıklayınca aç-kapa
-    contentEl.addEventListener('dblclick', () => {
-      swipeOpenFor = (swipeOpenFor === itemId) ? null : itemId;
-      renderAll();
-    });
+  function makeSwipeRow(contentEl, actionButtons) {
+    contentEl.classList.add('swipe-content');
+    const wrap = document.createElement('div');
+    wrap.className = 'swipe-wrap';
+    const scroll = document.createElement('div');
+    scroll.className = 'swipe-scroll';
+    scroll.appendChild(contentEl);
+    const actions = document.createElement('div');
+    actions.className = 'swipe-actions';
+    actionButtons.forEach(b => actions.appendChild(b));
+    scroll.appendChild(actions);
+    wrap.appendChild(scroll);
+    return wrap;
   }
   let txnOpen = {};
   let monthCarouselIndex = null;
@@ -941,6 +1001,68 @@
     }
   }
 
+  function attachCardSwipe(card, head, item, onDelete) {
+    const scroll = document.createElement('div');
+    scroll.className = 'swipe-scroll3';
+    scroll.style.position = 'relative';
+
+    const lockZone = document.createElement('div');
+    lockZone.className = 'swipe-zone swipe-zone-lock' + (item.locked ? ' locked' : '');
+    lockZone.innerHTML = (item.locked
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>')
+      + '<span>' + (item.locked ? 'Kilidi Aç' : 'Kilitle') + '</span>';
+
+    head.classList.add('swipe-content3');
+
+    const delZone = document.createElement('div');
+    delZone.className = 'swipe-zone swipe-zone-del1';
+    delZone.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg><span>Kaydır</span>';
+
+    scroll.appendChild(lockZone);
+    scroll.appendChild(head);
+    scroll.appendChild(delZone);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'swipe-wrap3';
+    wrap.appendChild(scroll);
+    card.appendChild(wrap);
+
+    let primed = false;
+
+    requestAnimationFrame(() => {
+      const restLeft = lockZone.offsetWidth;
+      scroll.scrollLeft = restLeft;
+      let settleTimeout;
+      scroll.addEventListener('scroll', () => {
+        clearTimeout(settleTimeout);
+        settleTimeout = setTimeout(() => {
+          const maxScroll = scroll.scrollWidth - scroll.clientWidth;
+          if (scroll.scrollLeft <= 2) {
+            // fully scrolled to the lock zone
+            item.locked = !item.locked;
+            if (item.locked) logActivity(item.name + ' kilitlendi'); else logActivity(item.name + ' kilidi açıldı');
+            saveData(); renderAll();
+          } else if (scroll.scrollLeft >= maxScroll - 2) {
+            if (item.locked) {
+              alert(item.name + ' kilitli. Silmek için önce sola kaydırıp kilidi aç.');
+              scroll.scrollLeft = restLeft;
+              return;
+            }
+            if (primed) {
+              onDelete();
+            } else {
+              primed = true;
+              delZone.classList.add('primed');
+              delZone.querySelector('span').textContent = 'Silmek için tekrar kaydır';
+              scroll.scrollLeft = maxScroll - 22;
+            }
+          }
+        }, 140);
+      }, { passive: true });
+    });
+  }
+
   function renderAssetGroup() {
     const items = state.assets;
     const listEl = document.getElementById('assetList');
@@ -956,8 +1078,10 @@
       const card = document.createElement('div');
       card.className = 'item-card';
       card.id = 'asset-card-' + item.id;
-      const head = document.createElement('button');
+      const head = document.createElement('div');
       head.className = 'item-head';
+      head.setAttribute('role', 'button');
+      head.setAttribute('tabindex', '0');
       const subText = isPortfolio ? ((item.stocks||[]).length + ' hisse') : ((item.debts||[]).length + ' kayıt');
       head.innerHTML =
         '<span class="item-dot" style="background:'+item.color+'"></span>' +
@@ -965,7 +1089,7 @@
         '<span class="item-total">'+currency(total)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
-      card.appendChild(head);
+      attachCardSwipe(card, head, item, () => { state.assets = state.assets.filter(x => x.id !== item.id); saveData(); renderAll(); });
 
       const body = document.createElement('div');
       body.className = 'item-body' + (isOpen ? ' open' : '');
@@ -976,11 +1100,13 @@
         renderSimpleEntries(body, item, 'assets');
       }
 
-      const delBtn = document.createElement('button');
-      delBtn.className = 'del-item-btn';
-      delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Kategoriyi sil';
-      delBtn.onclick = () => { state.assets = state.assets.filter(x => x.id !== item.id); saveData(); renderAll(); };
-      body.appendChild(delBtn);
+      if (!item.locked) {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del-item-btn';
+        delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Kategoriyi sil';
+        delBtn.onclick = () => { state.assets = state.assets.filter(x => x.id !== item.id); saveData(); renderAll(); };
+        body.appendChild(delBtn);
+      }
 
       card.appendChild(body);
       listEl.appendChild(card);
@@ -1001,25 +1127,28 @@
       const card = document.createElement('div');
       card.className = 'item-card';
       card.id = 'bes-card-' + item.id;
-      const head = document.createElement('button');
+      const head = document.createElement('div');
       head.className = 'item-head';
+      head.setAttribute('role', 'button');
+      head.setAttribute('tabindex', '0');
       head.innerHTML =
         '<span class="item-dot" style="background:'+item.color+'">'+esc(initials(item.name))+'</span>' +
         '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+(item.contributions||[]).length+' ödeme</div></span>' +
         '<span class="item-total">'+currency(total)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
-      head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
-      card.appendChild(head);
+      attachCardSwipe(card, head, item, () => { state.bes = state.bes.filter(x => x.id !== item.id); saveData(); renderAll(); });
 
       const body = document.createElement('div');
       body.className = 'item-body' + (isOpen ? ' open' : '');
       renderBesInto(body, item, 'bes');
 
-      const delBtn = document.createElement('button');
-      delBtn.className = 'del-item-btn';
-      delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> BES hesabını sil';
-      delBtn.onclick = () => { state.bes = state.bes.filter(x => x.id !== item.id); saveData(); renderAll(); };
-      body.appendChild(delBtn);
+      if (!item.locked) {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del-item-btn';
+        delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> BES hesabını sil';
+        delBtn.onclick = () => { state.bes = state.bes.filter(x => x.id !== item.id); saveData(); renderAll(); };
+        body.appendChild(delBtn);
+      }
 
       card.appendChild(body);
       listEl.appendChild(card);
@@ -1313,83 +1442,26 @@
     return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0);
   }
 
-  function renderBankGroup() {
-    const items = state.banks.slice().sort((a,b) => bankDebtTRY(b) - bankDebtTRY(a));
-    const listEl = document.getElementById('bankList');
-    document.getElementById('bankEmptyState').style.display = items.length === 0 ? 'block' : 'none';
-    listEl.innerHTML = '';
-
-    items.forEach(item => {
-      const expKey = 'banks:' + item.id;
-      const isOpen = !!expanded[expKey];
-      const total = bankDebtTRY(item);
-
-      const card = document.createElement('div');
-      card.className = 'item-card';
-      card.id = 'bank-card-' + item.id;
-      const head = document.createElement('button');
-      head.className = 'item-head';
-      const subText = item.kesimTarihi ? ("Her ayın " + item.kesimTarihi + "'i") : 'Hesap Kesim Tarihi Ekle';
-      head.innerHTML =
-        '<span class="item-dot" style="background:'+item.color+'">'+esc(initials(item.name))+'</span>' +
-        '<span class="item-name">'+esc(item.name)+'<div class="item-sub" id="kesimSub-'+item.id+'" style="text-decoration:underline dotted;text-underline-offset:2px;">'+subText+'</div></span>' +
-        '<span class="item-total">'+currency(total)+'</span>' +
-        '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
-      head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
-      card.appendChild(head);
-      const subEl = head.querySelector('#kesimSub-' + item.id);
-      if (subEl) subEl.onclick = (e) => { e.stopPropagation(); editingKesimFor = editingKesimFor === item.id ? null : item.id; expanded[expKey] = true; renderAll(); };
-
-      const body = document.createElement('div');
-      body.className = 'item-body' + (isOpen ? ' open' : '');
-
-      if (editingKesimFor === item.id) {
-        const kf = document.createElement('form');
-        kf.className = 'kesim-form open';
-        kf.innerHTML = '<input class="kesim-input" placeholder="Ayın kaçı (1-31)" inputmode="numeric" value="'+(item.kesimTarihi||'')+'" /><button type="submit" class="btn btn-primary" style="background:'+item.color+'">Kaydet</button>';
-        kf.onsubmit = (e) => {
-          e.preventDefault();
-          let day = parseInt2(kf.querySelector('.kesim-input').value);
-          if (day < 1) day = null; if (day > 31) day = 31;
-          item.kesimTarihi = day || null;
-          editingKesimFor = null; saveData(); renderAll();
-        };
-        body.appendChild(kf);
-      }
-
-      if ((item.debts||[]).length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'empty-entries'; empty.textContent = 'Henüz kayıt yok.';
-        body.appendChild(empty);
-      } else {
-        item.debts.forEach(d => {
+  function renderDebtRow(container, item, d) {
           const block = document.createElement('div');
           block.className = 'entry-block';
 
-          const swipeWrap = document.createElement('div');
-          swipeWrap.className = 'swipe-wrap' + (swipeOpenFor === d.id ? ' open' : '');
-          swipeWrap.id = 'debt-row-' + d.id;
-
-          const actions = document.createElement('div');
-          actions.className = 'swipe-actions';
           const editAct = document.createElement('button');
           editAct.type = 'button'; editAct.className = 'swipe-act edit';
           editAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
-          editAct.onclick = () => { swipeOpenFor = null; addingEntryFor = { group:'banks', id: item.id, editId: d.id }; renderAll(); };
+          editAct.onclick = () => { addingEntryFor = { group:'banks', id: item.id, editId: d.id }; renderAll(); };
           const delAct = document.createElement('button');
           delAct.type = 'button'; delAct.className = 'swipe-act del';
           delAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
           delAct.onclick = () => {
             if (!confirm((d.note || d.debtType) + ' silinsin mi?')) return;
             item.debts = item.debts.filter(x => x.id !== d.id);
-            swipeOpenFor = null; logActivity((d.note || d.debtType) + ' silindi');
+            logActivity((d.note || d.debtType) + ' silindi');
             saveData(); renderAll();
           };
-          actions.appendChild(editAct); actions.appendChild(delAct);
-          swipeWrap.appendChild(actions);
 
           const content = document.createElement('div');
-          content.className = 'swipe-content';
+          content.id = 'debt-row-' + d.id;
 
           const row = document.createElement('div');
           row.className = 'entry-row';
@@ -1437,11 +1509,84 @@
             content.appendChild(dots);
           }
 
-          swipeWrap.appendChild(content);
-          attachSwipe(swipeWrap, content, d.id);
-          block.appendChild(swipeWrap);
-          body.appendChild(block);
-        });
+          block.appendChild(makeSwipeRow(content, [editAct, delAct]));
+          container.appendChild(block);
+  }
+
+  function renderBankGroup() {
+    const items = state.banks.slice().sort((a,b) => bankDebtTRY(b) - bankDebtTRY(a));
+    const listEl = document.getElementById('bankList');
+    document.getElementById('bankEmptyState').style.display = items.length === 0 ? 'block' : 'none';
+    listEl.innerHTML = '';
+
+    items.forEach(item => {
+      const expKey = 'banks:' + item.id;
+      const isOpen = !!expanded[expKey];
+      const total = bankDebtTRY(item);
+
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.id = 'bank-card-' + item.id;
+      const head = document.createElement('div');
+      head.className = 'item-head';
+      head.setAttribute('role', 'button');
+      head.setAttribute('tabindex', '0');
+      const subText = item.kesimTarihi ? ("Her ayın " + item.kesimTarihi + "'i") : 'Hesap Kesim Tarihi Ekle';
+      head.innerHTML =
+        '<span class="item-dot" style="background:'+item.color+'">'+esc(initials(item.name))+'</span>' +
+        '<span class="item-name">'+esc(item.name)+'<div class="item-sub" id="kesimSub-'+item.id+'" style="text-decoration:underline dotted;text-underline-offset:2px;">'+subText+'</div></span>' +
+        '<span class="item-total">'+currency(total)+'</span>' +
+        '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+      head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
+      attachCardSwipe(card, head, item, () => {
+        state.banks = state.banks.filter(x => x.id !== item.id);
+        if (['Ziraat Bankası','İş Bankası','Akbank'].includes(item.name)) {
+          state.dismissedFixedBanks = state.dismissedFixedBanks || [];
+          if (!state.dismissedFixedBanks.includes(item.name)) state.dismissedFixedBanks.push(item.name);
+        }
+        saveData(); renderAll();
+      });
+      const subEl = head.querySelector('#kesimSub-' + item.id);
+      if (subEl) subEl.onclick = (e) => { e.stopPropagation(); editingKesimFor = editingKesimFor === item.id ? null : item.id; expanded[expKey] = true; renderAll(); };
+
+      const body = document.createElement('div');
+      body.className = 'item-body' + (isOpen ? ' open' : '');
+
+      if (editingKesimFor === item.id) {
+        const kf = document.createElement('form');
+        kf.className = 'kesim-form open';
+        kf.innerHTML = '<input class="kesim-input" placeholder="Ayın kaçı (1-31)" inputmode="numeric" value="'+(item.kesimTarihi||'')+'" /><button type="submit" class="btn btn-primary" style="background:'+item.color+'">Kaydet</button>';
+        kf.onsubmit = (e) => {
+          e.preventDefault();
+          let day = parseInt2(kf.querySelector('.kesim-input').value);
+          if (day < 1) day = null; if (day > 31) day = 31;
+          item.kesimTarihi = day || null;
+          editingKesimFor = null; saveData(); renderAll();
+        };
+        body.appendChild(kf);
+      }
+
+      if ((item.debts||[]).length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-entries'; empty.textContent = 'Henüz kayıt yok.';
+        body.appendChild(empty);
+      } else {
+        const cardDebts = item.debts.filter(d => d.debtType === 'Kredi Kartı');
+        const loanDebts = item.debts.filter(d => d.debtType !== 'Kredi Kartı');
+        if (cardDebts.length > 0) {
+          const h = document.createElement('div');
+          h.className = 'debt-subgroup-title';
+          h.textContent = '💳 Kredi Kartları';
+          body.appendChild(h);
+          cardDebts.forEach(d => renderDebtRow(body, item, d));
+        }
+        if (loanDebts.length > 0) {
+          const h = document.createElement('div');
+          h.className = 'debt-subgroup-title';
+          h.textContent = '🏦 Krediler';
+          body.appendChild(h);
+          loanDebts.forEach(d => renderDebtRow(body, item, d));
+        }
       }
 
       if (addingEntryFor && addingEntryFor.group === 'banks' && addingEntryFor.id === item.id) {
@@ -1491,11 +1636,18 @@
         body.appendChild(addBtn);
       }
 
-      if (!item.fixed) {
+      if (!item.locked) {
         const delBtn = document.createElement('button');
         delBtn.className = 'del-item-btn';
         delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Sil';
-        delBtn.onclick = () => { state.banks = state.banks.filter(x => x.id !== item.id); saveData(); renderAll(); };
+        delBtn.onclick = () => {
+          state.banks = state.banks.filter(x => x.id !== item.id);
+          if (['Ziraat Bankası','İş Bankası','Akbank'].includes(item.name)) {
+            state.dismissedFixedBanks = state.dismissedFixedBanks || [];
+            if (!state.dismissedFixedBanks.includes(item.name)) state.dismissedFixedBanks.push(item.name);
+          }
+          saveData(); renderAll();
+        };
         body.appendChild(delBtn);
       }
 
@@ -1504,10 +1656,158 @@
     });
   }
 
+  function categorizeSimpleAssetName(name) {
+    const n = (name || '').toLocaleLowerCase('tr-TR');
+    if (n.includes('altın')) return 'Altın';
+    if (n.includes('gümüş')) return 'Gümüş';
+    if (n.includes('dolar')) return 'Dolar';
+    if (n.includes('euro')) return 'Euro';
+    if (n.includes('sterlin')) return 'Sterlin';
+    return 'Nakit';
+  }
+  const CATEGORY_COLORS = {
+    'Nakit':'#4FA8A0','Altın':'#C9A24B','Gümüş':'#B7935A','Dolar':'#6FA8D6','Euro':'#8C86D6','Sterlin':'#D07A6A',
+    'Hisse':'#8FBF7F','Fon':'#D6A0C4','BES':'#5B5BD6',
+    'Kredi Kartı':'#E5484D','İhtiyaç Kredisi':'#D07A6A','Taşıt Kredisi':'#C9A24B','Konut Kredisi':'#6FA8D6','Nakit Avans':'#8C86D6','Diğer':'#8b93a3'
+  };
+  function colorForLabel(label, i) { return CATEGORY_COLORS[label] || PALETTE[i % PALETTE.length]; }
+
+  function computeAssetBreakdown() {
+    const map = {};
+    state.assets.forEach(a => {
+      if (a.type === 'portfolio') {
+        (a.stocks||[]).forEach(st => {
+          const label = st.productType === 'fon' ? 'Fon' : 'Hisse';
+          map[label] = (map[label]||0) + stockStats(st).currentValue;
+        });
+      } else {
+        const label = categorizeSimpleAssetName(a.name);
+        map[label] = (map[label]||0) + itemValue(a);
+      }
+    });
+    const besTotal = state.bes.reduce((s,b) => s + itemValue(b), 0);
+    if (besTotal > 0) map['BES'] = (map['BES']||0) + besTotal;
+    return map;
+  }
+  function computeDebtBreakdown() {
+    const map = {};
+    state.banks.forEach(b => (b.debts||[]).forEach(d => {
+      if ((d.currency||'TRY') !== 'TRY') return;
+      const label = d.debtType || 'Diğer';
+      map[label] = (map[label]||0) + entryRemaining(d);
+    }));
+    return map;
+  }
+  function buildDonutSVG(categories) {
+    const total = categories.reduce((s,c) => s + c.value, 0);
+    const r = 62, cx = 85, cy = 85, sw = 26;
+    const circumference = 2 * Math.PI * r;
+    let offset = 0, circles = '';
+    if (total <= 0) {
+      circles = '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="'+sw+'" />';
+    } else {
+      categories.forEach(c => {
+        const frac = c.value / total;
+        const segLen = frac * circumference;
+        circles += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+c.color+'" stroke-width="'+sw+'" stroke-dasharray="'+segLen+' '+(circumference-segLen)+'" stroke-dashoffset="'+(-offset)+'" />';
+        offset += segLen;
+      });
+    }
+    return '<svg width="170" height="170" viewBox="0 0 170 170"><g transform="rotate(-90 85 85)">'+circles+'</g></svg>';
+  }
+  function buildLegendHTML(categories, total) {
+    if (categories.length === 0) return '<div class="txn-empty">Henüz veri yok.</div>';
+    return '<div class="donut-legend">' + categories.map(c => {
+      const pct = total > 0 ? Math.round(c.value/total*100) : 0;
+      return '<div class="donut-legend-row"><span class="donut-swatch" style="background:'+c.color+'"></span><span class="donut-legend-label">'+esc(c.label)+'</span><span class="donut-legend-pct">%'+pct+'</span><span class="donut-legend-amt">'+currency(c.value)+'</span></div>';
+    }).join('') + '</div>';
+  }
+
+  let netCarouselIndex = 0;
+  function renderNetDurumCarousel() {
+    const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
+    const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
+    const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
+    const totalAssets = totalAssetsOnly + totalBes;
+    const curMonthList = state.expenses.filter(e => monthOfDayKey(dayKeyOf(e)) === currentMonthKey());
+    const curMonthGider = curMonthList.filter(e => (e.kind||'gider')==='gider').reduce((s,e)=>s+(e.amount||0),0);
+    const curMonthGelirTRY = curMonthList.filter(e => e.kind==='gelir' && (e.currency||'TRY')==='TRY').reduce((s,e)=>s+(e.amount||0),0);
+    const curMonthNet = curMonthGider - curMonthGelirTRY;
+    const net = totalAssets - totalDebtsTRY - curMonthNet;
+
+    const fxTotals = {};
+    state.banks.forEach(b => (b.debts||[]).forEach(d => {
+      const cur = d.currency || 'TRY';
+      if (cur === 'TRY') return;
+      fxTotals[cur] = (fxTotals[cur]||0) + entryRemaining(d);
+    }));
+
+    const assetMap = computeAssetBreakdown();
+    const debtMap = computeDebtBreakdown();
+    const assetCats = Object.keys(assetMap).map((label,i) => ({ label, value: assetMap[label], color: colorForLabel(label,i) })).filter(c=>c.value>0).sort((a,b)=>b.value-a.value);
+    const debtCats = Object.keys(debtMap).map((label,i) => ({ label, value: debtMap[label], color: colorForLabel(label,i) })).filter(c=>c.value>0).sort((a,b)=>b.value-a.value);
+    const assetCatsTotal = assetCats.reduce((s,c)=>s+c.value,0);
+    const debtCatsTotal = debtCats.reduce((s,c)=>s+c.value,0);
+
+    const carousel = document.getElementById('netCarousel');
+    const dotsWrap = document.getElementById('netCarouselDots');
+    carousel.innerHTML = '';
+    dotsWrap.innerHTML = '';
+
+    const p1 = document.createElement('div');
+    p1.className = 'net-page';
+    let html1 = '<div class="summary-label">Net Durum</div>';
+    html1 += '<div class="net-total ' + (net>=0?'positive':'negative') + '">' + (net<0?'-':'') + currency(Math.abs(net)) + '</div>';
+    html1 += '<div class="sub-stats"><div class="sub-stat"><div class="sub-stat-label">Toplam Varlık</div><div class="sub-stat-value assets">' + currency(totalAssets) + '</div></div><div class="sub-stat"><div class="sub-stat-label">Toplam Borç (₺)</div><div class="sub-stat-value debts">' + currency(totalDebtsTRY) + '</div></div></div>';
+    if (curMonthNet !== 0) {
+      html1 += '<div class="sub-stats" style="margin-top:10px;"><div class="sub-stat"><div class="sub-stat-label">Bu Ay Harcanan</div><div class="sub-stat-value" style="color:' + (curMonthNet<0?'var(--teal)':'var(--danger)') + '">' + (curMonthNet<0?'+':'-') + currency(Math.abs(curMonthNet)) + '</div></div></div>';
+    }
+    if (Object.keys(fxTotals).length > 0) {
+      html1 += '<div class="fx-chips">' + Object.keys(fxTotals).map(cur => '<span class="fx-chip">'+formatMoney(fxTotals[cur], cur)+' borç</span>').join('') + '</div>';
+    }
+    p1.innerHTML = html1;
+    carousel.appendChild(p1);
+
+    const p2 = document.createElement('div');
+    p2.className = 'net-page';
+    let html2 = '<div class="net-page-title">Varlık Dağılımı</div>';
+    html2 += '<div class="net-page-total" style="color:var(--teal)">' + currency(assetCatsTotal) + '</div>';
+    html2 += '<div class="donut-wrap">' + buildDonutSVG(assetCats) + '</div>';
+    html2 += buildLegendHTML(assetCats, assetCatsTotal);
+    p2.innerHTML = html2;
+    carousel.appendChild(p2);
+
+    const p3 = document.createElement('div');
+    p3.className = 'net-page';
+    let html3 = '<div class="net-page-title">Borç Dağılımı</div>';
+    html3 += '<div class="net-page-total" style="color:var(--gold)">' + currency(debtCatsTotal) + '</div>';
+    html3 += '<div class="donut-wrap">' + buildDonutSVG(debtCats) + '</div>';
+    html3 += buildLegendHTML(debtCats, debtCatsTotal);
+    p3.innerHTML = html3;
+    carousel.appendChild(p3);
+
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'carousel-dot' + (i === netCarouselIndex ? ' active' : '');
+      dotsWrap.appendChild(dot);
+    }
+
+    requestAnimationFrame(() => {
+      carousel.scrollLeft = netCarouselIndex * carousel.clientWidth;
+      updateNetCarouselHeight();
+    });
+  }
+
+  function updateNetCarouselHeight() {
+    const carousel = document.getElementById('netCarousel');
+    const active = carousel.children[netCarouselIndex];
+    if (active) carousel.style.height = active.offsetHeight + 'px';
+  }
+
   function renderMonthCarousel() {
     const curKey = currentMonthKey();
     const maxKey = effectiveCurrentMonthKey();
-    const allKeys = [curKey, ...state.paymentLog.map(p => p.month), ...state.expenses.map(e => e.month)];
+    const allKeys = [curKey, ...state.paymentLog.map(p => p.month), ...state.expenses.map(e => monthOfDayKey(dayKeyOf(e)))];
     let minKey = allKeys.reduce((min, k) => (k < min ? k : min), curKey);
     // always show at least 3 months of past history, even without data
     let [fy, fm] = curKey.split('-').map(Number);
@@ -1540,7 +1840,7 @@
       const income = state.incomeByMonth[key] || 0;
       const items = state.paymentLog.filter(p => p.month === key && (p.currency||'TRY') === 'TRY');
       const paid = items.reduce((s,p) => s + (p.amount||0), 0);
-      const monthExpenses = state.expenses.filter(e => e.month === key);
+      const monthExpenses = state.expenses.filter(e => monthOfDayKey(dayKeyOf(e)) === key);
       const due = isCurrent ? state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0) : null;
       const compareBase = isCurrent ? due : paid;
       const net = income - compareBase;
@@ -1555,7 +1855,7 @@
       if (income > 0) {
         html += '<div class="monthly-row"><span class="monthly-label">Elde kalan</span><span class="monthly-value left '+(net>=0?'positive':'negative')+'">'+(net<0?'-':'')+currency(Math.abs(net))+'</span></div>';
       }
-      const expenseTotal = monthExpenses.reduce((s,e) => s + (e.amount||0), 0);
+      const expenseTotal = monthExpenses.filter(e => (e.kind||'gider')==='gider').reduce((s,e) => s + (e.amount||0), 0);
       if (expenseTotal > 0) {
         html += '<div class="monthly-row"><span class="monthly-label">Harcamalar</span><span class="monthly-value due" style="color:var(--danger)">'+currency(expenseTotal)+'</span></div>';
       }
@@ -1572,51 +1872,86 @@
     });
   }
 
+  let expenseFilter = 'all';
+  let expensePageIndex = 0;
+  const EXPENSE_PAGE_SIZE = 7;
+  let viewedDayKey = todayKey();
+
   function renderExpenses() {
-    const curKey = currentMonthKey();
     const listEl = document.getElementById('expensesList');
-    const list = state.expenses.filter(e => e.month === curKey);
+    const dotsEl = document.getElementById('expensesDots');
+    let all = state.expenses.filter(e => dayKeyOf(e) === viewedDayKey);
+    const giderTotal = all.filter(e => (e.kind||'gider') === 'gider').reduce((s,e) => s + (e.amount||0), 0);
+    const gelirTotalTRY = all.filter(e => e.kind === 'gelir' && (e.currency||'TRY') === 'TRY').reduce((s,e) => s + (e.amount||0), 0);
+    document.getElementById('expensesSectionTotal').textContent = (giderTotal - gelirTotalTRY < 0 ? '-' : '') + currency(Math.abs(giderTotal - gelirTotalTRY));
+
+    const isToday = viewedDayKey === todayKey();
+    const titleEl = document.getElementById('expensesDayLabel');
+    if (titleEl) {
+      titleEl.textContent = isToday ? '' : ('· ' + dayLabel(viewedDayKey));
+      titleEl.style.display = isToday ? 'none' : 'inline';
+    }
+    const backBtn = document.getElementById('expensesBackToday');
+    if (backBtn) backBtn.style.display = isToday ? 'none' : 'inline-block';
+
+    let list = all;
+    if (expenseFilter === 'gider') list = all.filter(e => (e.kind||'gider') === 'gider');
+    else if (expenseFilter === 'gelir') list = all.filter(e => e.kind === 'gelir');
+
     document.getElementById('expensesEmptyState').style.display = list.length === 0 ? 'block' : 'none';
     listEl.style.display = list.length === 0 ? 'none' : 'block';
-    const total = list.reduce((s,e) => s + (e.amount||0), 0);
-    document.getElementById('expensesSectionTotal').textContent = currency(total);
-    listEl.innerHTML = '';
-    list.forEach((ex, idx) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'swipe-wrap' + (swipeOpenFor === ex.id ? ' open' : '');
-      wrap.id = 'expense-row-' + ex.id;
 
-      const actions = document.createElement('div');
-      actions.className = 'swipe-actions';
+    const pageCount = Math.max(1, Math.ceil(list.length / EXPENSE_PAGE_SIZE));
+    if (expensePageIndex > pageCount - 1) expensePageIndex = pageCount - 1;
+    if (expensePageIndex < 0) expensePageIndex = 0;
+    const pageList = list.slice(expensePageIndex * EXPENSE_PAGE_SIZE, expensePageIndex * EXPENSE_PAGE_SIZE + EXPENSE_PAGE_SIZE);
+
+    dotsEl.innerHTML = '';
+    if (pageCount > 1) {
+      for (let i = 0; i < pageCount; i++) {
+        const dot = document.createElement('span');
+        dot.className = 'carousel-dot' + (i === expensePageIndex ? ' active' : '');
+        dot.style.cursor = 'pointer';
+        dot.onclick = () => { expensePageIndex = i; renderAll(); };
+        dotsEl.appendChild(dot);
+      }
+    }
+
+    listEl.innerHTML = '';
+    pageList.forEach((ex, idx) => {
+      const isIncome = ex.kind === 'gelir';
+
       const editAct = document.createElement('button');
       editAct.type = 'button'; editAct.className = 'swipe-act edit';
       editAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
-      editAct.onclick = () => { swipeOpenFor = null; editingExpenseId = ex.id; openExpenseForm(ex); };
+      editAct.onclick = () => { editingExpenseId = ex.id; openExpenseForm(ex); };
       const delAct = document.createElement('button');
       delAct.type = 'button'; delAct.className = 'swipe-act del';
       delAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
       delAct.onclick = () => {
-        if (!confirm(ex.desc + ' silinsin mi?')) return;
+        if (!confirm((isIncome ? 'Gelir' : ex.desc) + ' silinsin mi?')) return;
         state.expenses = state.expenses.filter(x => x.id !== ex.id);
-        swipeOpenFor = null; logActivity(ex.desc + ' silindi');
+        logActivity((isIncome ? 'Gelir' : ex.desc) + ' silindi');
         saveData(); renderAll();
       };
-      actions.appendChild(editAct); actions.appendChild(delAct);
-      wrap.appendChild(actions);
 
       const content = document.createElement('div');
-      content.className = 'swipe-content';
+      content.id = 'expense-row-' + ex.id;
       const row = document.createElement('div');
       row.className = 'entry-row';
       row.style.padding = '10px 0';
-      if (idx < list.length - 1) row.style.borderBottom = '1px solid var(--border)';
-      row.innerHTML =
-        '<span class="entry-desc-wrap"><span class="entry-desc-text">'+esc(ex.desc)+'</span><span class="entry-badge">'+esc(ex.bankName)+'</span></span>' +
-        '<span class="entry-right"><span class="entry-amount">'+currency(ex.amount)+'</span></span>';
+      if (idx < pageList.length - 1) row.style.borderBottom = '1px solid var(--border)';
+      if (isIncome) {
+        row.innerHTML =
+          '<span class="entry-desc-wrap"><span class="entry-desc-text">Gelir</span></span>' +
+          '<span class="entry-right"><span class="entry-amount" style="color:var(--teal)">+'+formatMoney(ex.amount, ex.currency)+'</span></span>';
+      } else {
+        row.innerHTML =
+          '<span class="entry-desc-wrap"><span class="entry-desc-text">'+esc(ex.desc)+'</span><span class="entry-badge">'+esc(ex.bankName)+'</span></span>' +
+          '<span class="entry-right"><span class="entry-amount">'+currency(ex.amount)+'</span></span>';
+      }
       content.appendChild(row);
-      wrap.appendChild(content);
-      attachSwipe(wrap, content, ex.id);
-      listEl.appendChild(wrap);
+      listEl.appendChild(makeSwipeRow(content, [editAct, delAct]));
     });
   }
 
@@ -1636,6 +1971,7 @@
     if (ref.type === 'expense') {
       const ex = state.expenses.find(x => x.id === ref.expenseId);
       if (!ex) { alert('Bu kayıt artık mevcut değil (silinmiş olabilir).'); return; }
+      viewedDayKey = dayKeyOf(ex);
       editingExpenseId = ex.id;
       openExpenseForm(ex);
       return;
@@ -1720,48 +2056,16 @@
     const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
-    const totalSalary = Object.values(state.incomeByMonth).reduce((s,v) => s + (v||0), 0);
-    const totalAssets = totalAssetsOnly + totalBes + totalSalary;
     const monthlyDue = state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0);
-    const curMonthExpenses = state.expenses.filter(e => e.month === currentMonthKey()).reduce((s,e) => s + (e.amount||0), 0);
-    const net = totalAssets - totalDebtsTRY - curMonthExpenses;
 
-    document.getElementById('totalDebts').textContent = currency(totalDebtsTRY);
-    document.getElementById('totalAssets').textContent = currency(totalAssets);
     document.getElementById('banksSectionTotal').textContent = currency(totalDebtsTRY);
     document.getElementById('assetsSectionTotal').textContent = currency(totalAssetsOnly);
     document.getElementById('besSectionTotal').textContent = currency(totalBes);
 
-    const netEl = document.getElementById('netTotal');
-    netEl.textContent = (net < 0 ? '-' : '') + currency(Math.abs(net));
-    netEl.className = 'net-total ' + (net >= 0 ? 'positive' : 'negative');
-
-    const curExpenseRow = document.getElementById('curExpenseRow');
-    if (curMonthExpenses > 0) {
-      curExpenseRow.style.display = 'flex';
-      document.getElementById('curExpenseValue').textContent = '-' + currency(curMonthExpenses);
-    } else {
-      curExpenseRow.style.display = 'none';
-    }
-
-    const fxTotals = {};
-    state.banks.forEach(b => (b.debts||[]).forEach(d => {
-      const cur = d.currency || 'TRY';
-      if (cur === 'TRY') return;
-      fxTotals[cur] = (fxTotals[cur]||0) + entryRemaining(d);
-    }));
-    const fxWrap = document.getElementById('fxChips');
-    fxWrap.innerHTML = '';
-    Object.keys(fxTotals).forEach(cur => {
-      const chip = document.createElement('span');
-      chip.className = 'fx-chip';
-      chip.textContent = formatMoney(fxTotals[cur], cur) + ' borç';
-      fxWrap.appendChild(chip);
-    });
-
     const curKey = currentMonthKey();
 
     refreshExpenseBankOptions();
+    renderNetDurumCarousel();
     renderMonthCarousel();
     renderExpenses();
     renderSalaryHistory();
@@ -1777,6 +2081,80 @@
     document.getElementById('todayMonthAbbr').textContent = now.toLocaleDateString('tr-TR', { month:'short' }).replace('.','');
   })();
 
+  // Calendar picker
+  const TR_DOW = ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'];
+  let calViewYear, calViewMonth;
+  function renderCalendar() {
+    document.getElementById('calTitle').textContent = new Date(calViewYear, calViewMonth-1, 1).toLocaleDateString('tr-TR', { month:'long', year:'numeric' });
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = TR_DOW.map(d => '<div class="cal-dow">'+d+'</div>').join('');
+
+    const firstDow = (new Date(calViewYear, calViewMonth-1, 1).getDay() + 6) % 7; // Monday = 0
+    const daysInMonth = new Date(calViewYear, calViewMonth, 0).getDate();
+    const prevDaysInMonth = new Date(calViewYear, calViewMonth-1, 0).getDate();
+    const todK = todayKey();
+
+    const daysWithData = new Set(state.expenses.map(e => dayKeyOf(e)));
+
+    const cells = [];
+    for (let i = firstDow - 1; i >= 0; i--) cells.push({ day: prevDaysInMonth - i, other: true });
+    for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, other: false });
+    while (cells.length % 7 !== 0) cells.push({ day: cells.length - firstDow - daysInMonth + 1, other: true });
+
+    cells.forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      let cls = 'cal-day';
+      let key = null;
+      if (!c.other) {
+        key = calViewYear + '-' + String(calViewMonth).padStart(2,'0') + '-' + String(c.day).padStart(2,'0');
+        if (key === todK) cls += ' today';
+        if (key === viewedDayKey) cls += ' selected';
+      } else {
+        cls += ' other-month';
+      }
+      btn.className = cls;
+      btn.innerHTML = c.day + (!c.other && daysWithData.has(key) ? '<span class="cal-dot"></span>' : '');
+      if (!c.other) {
+        btn.onclick = () => {
+          viewedDayKey = key;
+          expensePageIndex = 0;
+          closeCalendar();
+          renderAll();
+          setTimeout(() => { const el = document.getElementById('expensesList'); if (el) el.scrollIntoView({ behavior:'smooth', block:'center' }); }, 60);
+        };
+      }
+      grid.appendChild(btn);
+    });
+  }
+  function openCalendar() {
+    const [y,m] = viewedDayKey.split('-').map(Number);
+    calViewYear = y; calViewMonth = m;
+    renderCalendar();
+    document.getElementById('calBackdrop').classList.add('open');
+  }
+  function closeCalendar() { document.getElementById('calBackdrop').classList.remove('open'); }
+  document.getElementById('todayLeaf').onclick = openCalendar;
+  document.getElementById('calBackdrop').onclick = (e) => { if (e.target.id === 'calBackdrop') closeCalendar(); };
+  document.getElementById('calCloseBtn').onclick = closeCalendar;
+  document.getElementById('calPrevBtn').onclick = () => { calViewMonth--; if (calViewMonth < 1) { calViewMonth = 12; calViewYear--; } renderCalendar(); };
+  document.getElementById('calNextBtn').onclick = () => { calViewMonth++; if (calViewMonth > 12) { calViewMonth = 1; calViewYear++; } renderCalendar(); };
+
+  // Net Durum carousel swipe tracking
+  (function() {
+    const carousel = document.getElementById('netCarousel');
+    let scrollTimeout;
+    carousel.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const idx = Math.round(carousel.scrollLeft / carousel.clientWidth);
+        netCarouselIndex = idx;
+        document.querySelectorAll('#netCarouselDots .carousel-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
+        updateNetCarouselHeight();
+      }, 100);
+    });
+  })();
+
   // Month carousel swipe tracking
   (function() {
     const carousel = document.getElementById('monthCarousel');
@@ -1786,7 +2164,7 @@
       scrollTimeout = setTimeout(() => {
         const idx = Math.round(carousel.scrollLeft / carousel.clientWidth);
         monthCarouselIndex = idx;
-        document.querySelectorAll('.carousel-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
+        document.querySelectorAll('#carouselDots .carousel-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
       }, 100);
     });
   })();
@@ -1953,24 +2331,49 @@
     };
   })();
 
-  // Expense add/edit form
+  // Expense/income add-edit form
   let editingExpenseId = null;
   function openExpenseForm(ex) {
     refreshExpenseBankOptions();
-    if (state.banks.length === 0) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
     const form = document.getElementById('newExpenseForm');
     const showBtn = document.getElementById('showAddExpenseBtn');
-    document.getElementById('expenseDescInput').value = ex ? ex.desc : '';
+    const kind = ex ? (ex.kind || 'gider') : 'gider';
+    form.querySelectorAll('.mode-btn[data-ekind]').forEach(b => b.classList.toggle('active', b.dataset.ekind === kind));
+    setExpenseKindUI(kind);
+    document.getElementById('expenseDescInput').value = ex && !ex.kind ? ex.desc : (ex && ex.kind === 'gider' ? ex.desc : '');
     document.getElementById('expenseAmountInput').value = ex ? ex.amount : '';
-    if (ex && state.banks.some(b => b.id === ex.bankId)) document.getElementById('expenseBankSelect').value = ex.bankId;
+    if (kind === 'gelir') {
+      document.getElementById('expenseCurrencySelect').value = ex ? (ex.currency || 'TRY') : 'TRY';
+    } else {
+      if (state.banks.length === 0) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
+      if (ex && state.banks.some(b => b.id === ex.bankId)) document.getElementById('expenseBankSelect').value = ex.bankId;
+    }
     document.getElementById('expenseSubmitBtn').textContent = ex ? 'Kaydet' : 'Ekle';
     form.classList.add('open'); showBtn.style.display = 'none';
     renderAll();
-    setTimeout(() => { form.scrollIntoView({ behavior:'smooth', block:'center' }); document.getElementById('expenseDescInput').focus(); }, 60);
+    setTimeout(() => { form.scrollIntoView({ behavior:'smooth', block:'center' }); }, 60);
+  }
+  function setExpenseKindUI(kind) {
+    const isIncome = kind === 'gelir';
+    document.getElementById('expenseBankSelect').style.display = isIncome ? 'none' : 'block';
+    document.getElementById('expenseDescInput').style.display = isIncome ? 'none' : 'block';
+    document.getElementById('expenseCurrencySelect').style.display = isIncome ? 'block' : 'none';
+    document.getElementById('expenseSubmitBtn').style.background = isIncome ? 'var(--teal)' : 'var(--danger)';
   }
   (function() {
     const showBtn = document.getElementById('showAddExpenseBtn');
     const form = document.getElementById('newExpenseForm');
+    const curSel = document.getElementById('expenseCurrencySelect');
+    curSel.innerHTML = CURRENCIES.map(c => '<option value="'+c.code+'">'+c.label+'</option>').join('');
+
+    form.querySelectorAll('.mode-btn[data-ekind]').forEach(btn => {
+      btn.onclick = () => {
+        form.querySelectorAll('.mode-btn[data-ekind]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        setExpenseKindUI(btn.dataset.ekind);
+      };
+    });
+
     showBtn.onclick = () => { editingExpenseId = null; openExpenseForm(null); };
     document.getElementById('cancelExpenseBtn').onclick = () => {
       editingExpenseId = null;
@@ -1980,29 +2383,62 @@
     };
     form.onsubmit = (e) => {
       e.preventDefault();
-      const bankId = document.getElementById('expenseBankSelect').value;
-      let bank = state.banks.find(b => b.id === bankId) || state.banks[0];
-      if (!bank) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
-      const desc = document.getElementById('expenseDescInput').value.trim() || 'Harcama';
+      const kind = form.querySelector('.mode-btn[data-ekind].active').dataset.ekind;
       const amount = parseAmount(document.getElementById('expenseAmountInput').value);
       if (amount <= 0) { alert('Lütfen geçerli bir tutar gir.'); return; }
-      if (editingExpenseId) {
-        const ex = state.expenses.find(x => x.id === editingExpenseId);
-        if (ex) {
-          ex.bankId = bank.id; ex.bankName = bank.name; ex.desc = desc; ex.amount = amount;
-          logActivity(desc + ' düzenlendi', amount, { type:'expense', expenseId: ex.id });
+
+      if (kind === 'gelir') {
+        const cur = curSel.value;
+        if (editingExpenseId) {
+          const ex = state.expenses.find(x => x.id === editingExpenseId);
+          if (ex) {
+            ex.kind = 'gelir'; ex.currency = cur; ex.amount = amount; ex.desc = 'Gelir'; delete ex.bankId; delete ex.bankName;
+            logActivity('Gelir düzenlendi', amount, { type:'expense', expenseId: ex.id });
+          }
+          editingExpenseId = null;
+        } else {
+          const newId = uid();
+          state.expenses.push({ id: newId, kind:'gelir', currency: cur, amount, desc:'Gelir', day: viewedDayKey, ts: Date.now() });
+          logActivity('Gelir eklendi', amount, { type:'expense', expenseId: newId });
         }
-        editingExpenseId = null;
       } else {
-        const newExId = uid();
-        state.expenses.push({ id: newExId, bankId: bank.id, bankName: bank.name, desc, amount, month: currentMonthKey(), ts: Date.now() });
-        logActivity(desc, amount, { type:'expense', expenseId: newExId });
+        const bankId = document.getElementById('expenseBankSelect').value;
+        let bank = state.banks.find(b => b.id === bankId) || state.banks[0];
+        if (!bank) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
+        const desc = document.getElementById('expenseDescInput').value.trim() || 'Harcama';
+        if (editingExpenseId) {
+          const ex = state.expenses.find(x => x.id === editingExpenseId);
+          if (ex) {
+            ex.kind = 'gider'; ex.bankId = bank.id; ex.bankName = bank.name; ex.desc = desc; ex.amount = amount; delete ex.currency;
+            logActivity(desc + ' düzenlendi', amount, { type:'expense', expenseId: ex.id });
+          }
+          editingExpenseId = null;
+        } else {
+          const newExId = uid();
+          state.expenses.push({ id: newExId, kind:'gider', bankId: bank.id, bankName: bank.name, desc, amount, day: viewedDayKey, ts: Date.now() });
+          logActivity(desc, amount, { type:'expense', expenseId: newExId });
+        }
       }
       document.getElementById('expenseDescInput').value = '';
       document.getElementById('expenseAmountInput').value = '';
       form.classList.remove('open'); showBtn.style.display = 'none';
       saveData(); renderAll();
     };
+  })();
+
+  document.getElementById('expensesBackToday').onclick = () => { viewedDayKey = todayKey(); expensePageIndex = 0; renderAll(); };
+
+  // Expense filter tabs
+  (function() {
+    document.querySelectorAll('#expenseFilterToggle .mode-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('#expenseFilterToggle .mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        expenseFilter = btn.dataset.filter;
+        expensePageIndex = 0;
+        renderAll();
+      };
+    });
   })();
 
   document.getElementById('exportBtn').onclick = () => {
@@ -2023,7 +2459,7 @@
         const parsed = JSON.parse(reader.result);
         if (!parsed || !Array.isArray(parsed.banks) || !Array.isArray(parsed.assets)) { alert('Bu dosya geçerli bir yedek dosyası değil.'); return; }
         if (confirm('Mevcut verilerin üzerine yedekteki veriler yüklenecek. Devam edilsin mi?')) {
-          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [] };
+          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [], dismissedFixedBanks: parsed.dismissedFixedBanks || [] };
           expanded = {}; saveData(); renderAll();
         }
       } catch (err) { alert('Dosya okunamadı, lütfen doğru yedek dosyasını seç.'); }

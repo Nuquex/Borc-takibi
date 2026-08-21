@@ -205,7 +205,7 @@
   .swipe-content-real { position:relative; background:var(--surface); }
 
   .undo-toast {
-    position:fixed; right:16px; bottom:calc(80px + env(safe-area-inset-bottom));
+    position:fixed; left:16px; bottom:calc(24px + env(safe-area-inset-bottom));
     background:var(--surface-2); border:1px solid var(--border); color:var(--gold); border-radius:11px;
     padding:10px 16px; display:flex; align-items:center; gap:8px;
     box-shadow:0 6px 18px rgba(0,0,0,0.4); z-index:80;
@@ -399,11 +399,13 @@
 
     <div class="section-title"><span>Para Akışı <span id="expensesDayLabel" style="font-weight:400; color:var(--text-muted); font-size:12px;"></span></span><span class="section-total" id="expensesSectionTotal"></span></div>
     <button id="expensesBackToday" style="display:none; font-size:11.5px; color:var(--gold); background:none; border:none; cursor:pointer; padding:0 0 8px; font-family:inherit;">← Bugüne dön</button>
-    <div class="mode-toggle" id="expenseFilterToggle" style="margin-bottom:10px;">
+    <div class="mode-toggle" id="expenseFilterToggle" style="margin-bottom:8px;">
       <button type="button" class="mode-btn active" data-filter="all">Tümü</button>
       <button type="button" class="mode-btn" data-filter="gider">Gider</button>
       <button type="button" class="mode-btn" data-filter="gelir">Gelir</button>
     </div>
+    <button type="button" id="catFilterBtn" style="font-size:11.5px; color:var(--text-muted); background:none; border:1px dashed var(--border); border-radius:8px; padding:6px 11px; cursor:pointer; font-family:inherit; margin-bottom:10px;">⌕ Kategoriye göre filtrele</button>
+    <div id="catFilterPanel" style="display:none; flex-wrap:wrap; gap:6px; margin-bottom:10px;"></div>
     <div id="expensesEmptyState" class="empty-state" style="display:none;">
       <div class="icon-wrap">🧾</div><p>Bu gün için henüz harcama/gelir eklemedin.</p>
     </div>
@@ -415,7 +417,8 @@
         <button type="button" class="mode-btn" data-ekind="gelir">Gelir</button>
       </div>
       <select class="sel-input" id="expenseBankSelect"></select>
-      <input id="expenseDescInput" placeholder="Açıklama (örn. Market alışverişi)" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
+      <div id="expenseMetaLabel" style="display:none; font-size:12px; color:var(--gold); font-weight:600; padding:2px 2px 4px;"></div>
+      <input id="expenseDescInput" placeholder="Not (opsiyonel)" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
       <select class="sel-input" id="expenseCurrencySelect" style="display:none;"></select>
       <input id="expenseAmountInput" placeholder="Tutar (₺)" inputmode="decimal" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
       <div class="form-actions">
@@ -559,7 +562,7 @@
   <div class="cal-backdrop" id="debtPickerBackdrop">
     <div class="cal-card">
       <div class="cal-header"><span class="cal-title" id="debtPickerTitle">Borç Türü</span></div>
-      <div id="debtPickerList" style="display:flex; flex-direction:column; gap:6px;"></div>
+      <div id="debtPickerList" style="display:flex; flex-direction:column; gap:6px; max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch;"></div>
       <button type="button" class="cal-close-btn" id="debtPickerClose">Vazgeç</button>
     </div>
   </div>
@@ -573,6 +576,27 @@
   const STORAGE_KEY = 'borc-takibi-data';
   const PALETTE = ['#C9A24B','#4FA8A0','#8C86D6','#D07A6A','#6FA8D6','#8FBF7F','#D6A0C4','#B7935A'];
   const DEBT_TYPES = ['Kredi Kartı','İhtiyaç Kredisi','Taşıt Kredisi','Konut Kredisi','Nakit Avans','Diğer'];
+
+  const EXPENSE_CATEGORIES = [
+    { name:'Market & Gıda', icon:'🛒', subs:['Market Alışverişi','Manav','Kasap','Fırın','Su','Şarküteri','Online Market (Getir, Migros vb.)','Diğer'] },
+    { name:'Yeme & İçme', icon:'🍽️', subs:['Restoran','Kafe','Fast Food','Kahve','Yemek Siparişi (Yemeksepeti, Trendyol Yemek)','Diğer'] },
+    { name:'Ulaşım', icon:'⛽', subs:['Benzin','Motorin','LPG','Elektrikli Şarj','Toplu Taşıma','Taksi','Uber/BiTaksi','Otopark','Köprü/Otoyol (HGS)','Araç Bakım','Lastik','Araç Sigortası','Muayene','Diğer'] },
+    { name:'Dijital Harcamalar', icon:'💻', subs:['Spotify','Netflix','YouTube Premium','Apple (iCloud, Music, TV+)','Google One','Amazon Prime','Disney+','BluTV','Exxen','Steam','PlayStation','Xbox','Epic Games','Mobil Oyun','Uygulama Satın Alma','ChatGPT / AI Aboneliği','Adobe','Microsoft 365','VPN','Alan Adı / Hosting','Diğer'] },
+    { name:'Faturalar', icon:'🧾', subs:['Elektrik','Su','Doğalgaz','İnternet','Telefon (Faturalı)','Telefon (TL Yükleme)','Aidat','Çöp/Vergi','Diğer'] },
+    { name:'Konut', icon:'🏠', subs:['Kira','Tadilat','Mobilya','Beyaz Eşya','Ev Tekstili','Temizlik Malzemeleri','Diğer'] },
+    { name:'Sağlık', icon:'🏥', subs:['Eczane','Doktor/Muayene','Hastane','Diş','Gözlük/Lens','Tahlil','Özel Sağlık Sigortası','Diğer'] },
+    { name:'Giyim & Kişisel Bakım', icon:'👕', subs:['Giyim','Ayakkabı','Aksesuar','Kuaför/Berber','Kozmetik','Parfüm','Kişisel Bakım','Diğer'] },
+    { name:'Eğitim', icon:'📚', subs:['Okul/Üniversite Ücreti','Kurs','Online Eğitim','Kitap','Kırtasiye','Sınav Ücreti','Diğer'] },
+    { name:'Eğlence & Sosyal', icon:'🎬', subs:['Sinema','Tiyatro','Konser','Spor Müsabakası','Bar/Gece Hayatı','Hobi','Oyun/Aktivite','Diğer'] },
+    { name:'Spor & Sağlıklı Yaşam', icon:'🏋️', subs:['Spor Salonu','Yüzme','Spor Ekipmanı','Takviye/Protein','Diğer'] },
+    { name:'Seyahat & Tatil', icon:'✈️', subs:['Uçak Bileti','Otobüs/Tren Bileti','Otel/Konaklama','Tatil Paketi','Araç Kiralama','Vize','Diğer'] },
+    { name:'Alışveriş', icon:'🛍️', subs:['Elektronik','Telefon/Bilgisayar','Online Alışveriş (Trendyol, Hepsiburada)','Hediye','Ev Eşyası','Diğer'] },
+    { name:'Evcil Hayvan', icon:'🐾', subs:['Mama','Veteriner','Kum/Malzeme','Bakım','Diğer'] },
+    { name:'Finansal', icon:'💳', subs:['Kredi Kartı Ödemesi','Kredi Ödemesi','Banka Masrafı','Havale/EFT Ücreti','Sigorta','Vergi','Diğer'] },
+    { name:'Aile & Çocuk', icon:'👨‍👩‍👦', subs:['Çocuk Giyim','Oyuncak','Bakıcı','Kreş/Okul','Harçlık','Diğer'] },
+    { name:'Bağış & Yardım', icon:'🤝', subs:['Bağış','Zekat/Sadaka','Yardım','Diğer'] },
+    { name:'Diğer', icon:'📌', subs:['Diğer'] }
+  ];
   const CURRENCIES = [
     { code:'TRY', label:'TL', symbol:'₺' },
     { code:'USD', label:'Dolar', symbol:'$' },
@@ -858,19 +882,6 @@
   let state = loadData();
 
   // Seed the three fixed banks for this version, if not already present and not previously deleted by the user
-  // Eski sürümlerde basit varlıklar birden çok satır tutabiliyordu; tek tutara indir.
-  (function mergeSimpleAssetEntries() {
-    let changed = false;
-    state.assets.forEach(a => {
-      if (a.type !== 'portfolio' && Array.isArray(a.debts) && a.debts.length > 1) {
-        const sum = a.debts.reduce((s,d) => s + (d.amount||0), 0);
-        a.debts = [{ id: uid(), desc: a.name, amount: sum }];
-        changed = true;
-      }
-    });
-    if (changed) saveData();
-  })();
-
   (function seedFixedBanks() {
     const fixed = ['Ziraat Bankası', 'İş Bankası', 'Akbank'];
     let changed = false;
@@ -1203,7 +1214,7 @@
       head.className = 'item-head';
       head.setAttribute('role', 'button');
       head.setAttribute('tabindex', '0');
-      const subText = isPortfolio ? ((item.stocks||[]).length + ' ürün') : 'Tutarı düzenlemek için dokun';
+      const subText = isPortfolio ? ((item.stocks||[]).length + ' ürün') : ((item.debts||[]).length + ' kayıt');
       head.innerHTML =
         '<span class="item-dot" style="background:'+item.color+'"></span>' +
         '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+subText+'</div></span>' +
@@ -1257,6 +1268,7 @@
         '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+(item.contributions||[]).length+' ödeme</div></span>' +
         '<span class="item-total">'+currency(total)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+      head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
       attachCardSwipe(card, head, item, () => {
         const idx = state.bes.indexOf(item);
         state.bes = state.bes.filter(x => x.id !== item.id);
@@ -1277,51 +1289,112 @@
   }
 
   function renderSimpleEntries(body, item, groupKey) {
-    // Basit varlık: tek bir tutar; dokunarak düzenlenir
-    const current = (item.debts && item.debts.length > 0) ? item.debts[0] : null;
-    const val = current ? current.amount : 0;
+    // Basit varlık: birden çok kayıt (opsiyonel banka etiketiyle)
+    item.debts = item.debts || [];
+    const total = item.debts.reduce((s,d)=>s+(d.amount||0),0);
 
-    const row = document.createElement('div');
-    row.className = 'monthly-row';
-    row.style.cssText = 'align-items:center; padding:10px 0; border:none;';
-    row.innerHTML = '<span class="monthly-label">Tutar</span>';
+    if (item.debts.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-entries';
+      empty.textContent = 'Henüz tutar eklemedin.';
+      body.appendChild(empty);
+    }
 
-    const valEl = document.createElement('span');
-    valEl.className = 'monthly-value editable';
-    valEl.textContent = currency(val);
-    valEl.style.color = item.color;
-    valEl.onclick = () => {
-      const input = document.createElement('input');
-      input.inputMode = 'decimal';
-      input.value = val > 0 ? val : '';
-      input.placeholder = '0';
-      attachAmountFormatting(input);
-      input.style.cssText = 'width:120px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; text-align:right;';
-      let committed = false;
-      function commit() {
-        if (committed) return;
-        committed = true;
-        const newVal = parseAmount(input.value);
-        if (newVal !== val) {
-          if (newVal > 0) {
-            if (current) current.amount = newVal;
-            else item.debts = [{ id: uid(), desc: item.name, amount: newVal }];
-          } else {
-            item.debts = [];
+    item.debts.forEach((d, i) => {
+      const row = document.createElement('div');
+      row.className = 'monthly-row';
+      row.style.cssText = 'align-items:center; padding:9px 0;';
+
+      const labelWrap = document.createElement('span');
+      labelWrap.className = 'monthly-label';
+      labelWrap.style.cssText = 'display:flex; align-items:center; gap:6px; flex:1; min-width:0;';
+      labelWrap.textContent = d.bankName || 'Tutar';
+      row.appendChild(labelWrap);
+
+      const right = document.createElement('span');
+      right.style.cssText = 'display:flex; align-items:center; gap:8px; flex-shrink:0;';
+
+      const valEl = document.createElement('span');
+      valEl.className = 'monthly-value editable';
+      valEl.textContent = currency(d.amount||0);
+      valEl.style.color = item.color;
+      valEl.onclick = () => {
+        const input = document.createElement('input');
+        input.inputMode = 'decimal';
+        input.value = d.amount > 0 ? d.amount : '';
+        input.placeholder = '0';
+        attachAmountFormatting(input);
+        input.style.cssText = 'width:110px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; text-align:right;';
+        let done = false;
+        function commit() {
+          if (done) return; done = true;
+          const nv = parseAmount(input.value);
+          if (nv !== d.amount) {
+            if (nv > 0) d.amount = nv;
+            else item.debts = item.debts.filter(x => x.id !== d.id);
+            logActivity(item.name + (d.bankName ? ' — ' + d.bankName : ''), nv, { type:'assetEntry', assetId: item.id });
+            saveData();
           }
-          logActivity(item.name, newVal, { type:'assetEntry', assetId: item.id });
-          saveData();
+          renderAll();
         }
-        renderAll();
-      }
-      input.onblur = commit;
-      input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } };
-      row.replaceChild(input, valEl);
-      input.focus();
-      input.select();
-    };
-    row.appendChild(valEl);
-    body.appendChild(row);
+        input.onblur = commit;
+        input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } };
+        right.replaceChild(input, valEl);
+        input.focus(); input.select();
+      };
+      right.appendChild(valEl);
+
+      const delB = document.createElement('button');
+      delB.className = 'icon-btn';
+      delB.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+      delB.onclick = () => {
+        item.debts = item.debts.filter(x => x.id !== d.id);
+        saveData(); renderAll();
+      };
+      right.appendChild(delB);
+      row.appendChild(right);
+      body.appendChild(row);
+    });
+
+    if (item.debts.length > 1) {
+      const totalRow = document.createElement('div');
+      totalRow.className = 'monthly-row monthly-row-total';
+      totalRow.innerHTML = '<span class="monthly-label" style="color:var(--text); font-weight:600;">Toplam</span>' +
+        '<span class="monthly-value" style="font-weight:700; color:' + item.color + '">' + currency(total) + '</span>';
+      body.appendChild(totalRow);
+    }
+
+    // Ekleme formu (opsiyonel banka seçimi + tutar)
+    if (addingEntryFor && addingEntryFor.group === groupKey && addingEntryFor.id === item.id) {
+      const form = document.createElement('form');
+      form.className = 'inline-form open';
+      const bankOpts = '<option value="">Banka belirtme (opsiyonel)</option>' +
+        state.banks.map(b => '<option value="'+b.id+'">'+esc(b.name)+'</option>').join('');
+      form.innerHTML =
+        '<select class="sel-input sa-bank">'+bankOpts+'</select>' +
+        '<input class="sa-amount" placeholder="Tutar (₺)" inputmode="decimal" />' +
+        '<div class="form-actions"><button type="button" class="btn btn-ghost sa-cancel">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+item.color+'">Ekle</button></div>';
+      attachAmountFormatting(form.querySelector('.sa-amount'));
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        const amount = parseAmount(form.querySelector('.sa-amount').value);
+        if (amount <= 0) { alert('Lütfen geçerli bir tutar gir.'); return; }
+        const bId = form.querySelector('.sa-bank').value;
+        const bank = state.banks.find(b => b.id === bId);
+        item.debts.push({ id: uid(), desc: item.name, amount, bankId: bank ? bank.id : null, bankName: bank ? bank.name : null });
+        logActivity(item.name + (bank ? ' — ' + bank.name : ''), amount, { type:'assetEntry', assetId: item.id });
+        addingEntryFor = null; saveData(); renderAll();
+      };
+      form.querySelector('.sa-cancel').onclick = () => { addingEntryFor = null; renderAll(); };
+      body.appendChild(form);
+    } else {
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-entry-btn';
+      addBtn.style.color = item.color;
+      addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Tutar ekle';
+      addBtn.onclick = () => { addingEntryFor = { group: groupKey, id: item.id }; renderAll(); };
+      body.appendChild(addBtn);
+    }
   }
 
   function renderBesInto(body, item) {
@@ -1876,7 +1949,7 @@
     const spent = list.filter(e => (e.kind||'gider') === 'gider').reduce((s,e) => s + (e.amount||0), 0);
     const due = state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0);
     // Taksitler zaten "Toplam Borç" içinde sayıldığı için buradan tekrar düşülmez (çift sayım olurdu).
-    return { salary, extraIncome, spent, due, left: Math.max(0, salary + extraIncome - spent) };
+    return { salary, extraIncome, spent, due, left: Math.max(0, salary + extraIncome - spent - due) };
   }
 
   function computeAssetBreakdown() {
@@ -1932,7 +2005,7 @@
     }).join('') + '</div>';
   }
 
-  let netCarouselIndex = 0;
+  let netCarouselIndex = 1; // varsayılan: Net Durum sayfası (0 = aylık akış)
   function renderNetDurumCarousel() {
     const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
@@ -1960,6 +2033,23 @@
     const dotsWrap = document.getElementById('netCarouselDots');
     carousel.innerHTML = '';
     dotsWrap.innerHTML = '';
+
+    // Sayfa 0: Bu ayın para akışı grafiği
+    const p0 = document.createElement('div');
+    p0.className = 'net-page';
+    const flowCats = [
+      { label:'Maaş', value: cash.salary, color:'#4FA8A0' },
+      { label:'Ek Gelir', value: cash.extraIncome, color:'#8FBF7F' },
+      { label:'Harcama', value: cash.spent, color:'#E5484D' },
+      { label:'Taksit', value: cash.due, color:'#C9A24B' }
+    ].filter(c => c.value > 0);
+    const flowTotal = flowCats.reduce((s,c)=>s+c.value,0);
+    let html0 = '<div class="net-page-title">' + monthLabel(currentMonthKey()) + ' · Elde Kalan</div>';
+    html0 += '<div class="net-page-total" style="color:' + (cash.left > 0 ? 'var(--teal)' : 'var(--text-muted)') + '">' + currency(cash.left) + '</div>';
+    html0 += '<div class="donut-wrap">' + buildDonutSVG(flowCats) + '</div>';
+    html0 += buildLegendHTML(flowCats, flowTotal);
+    p0.innerHTML = html0;
+    carousel.appendChild(p0);
 
     const p1 = document.createElement('div');
     p1.className = 'net-page';
@@ -1995,7 +2085,7 @@
     p3.innerHTML = html3;
     carousel.appendChild(p3);
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       const dot = document.createElement('span');
       dot.className = 'carousel-dot' + (i === netCarouselIndex ? ' active' : '');
       dotsWrap.appendChild(dot);
@@ -2135,6 +2225,7 @@
   }
 
   let expenseFilter = 'all';
+  let categoryFilter = null;
   let expensePageIndex = 0;
   const EXPENSE_PAGE_SIZE = 7;
   let viewedDayKey = todayKey();
@@ -2169,6 +2260,7 @@
     let list = all;
     if (expenseFilter === 'gider') list = all.filter(e => (e.kind||'gider') === 'gider');
     else if (expenseFilter === 'gelir') list = all.filter(e => e.kind === 'gelir');
+    if (categoryFilter) list = list.filter(e => e.category === categoryFilter);
 
     document.getElementById('expensesEmptyState').style.display = list.length === 0 ? 'block' : 'none';
     listEl.style.display = list.length === 0 ? 'none' : 'block';
@@ -2207,7 +2299,7 @@
           '<span class="entry-right"><span class="entry-amount" style="color:var(--teal)">+'+formatMoney(ex.amount, ex.currency)+'</span></span>';
       } else {
         row.innerHTML =
-          '<span class="entry-desc-wrap"><span class="entry-desc-text">'+esc(ex.desc)+'</span><span class="entry-badge">'+esc(ex.bankName)+'</span></span>' +
+          '<span class="entry-desc-wrap"><span class="entry-desc-text">'+esc(ex.desc)+'</span>'+(ex.category?'<span class="entry-badge" style="color:var(--text-muted);background:rgba(127,127,127,0.14)">'+esc(ex.category)+'</span>':'')+'<span class="entry-badge">'+esc(ex.bankName)+'</span></span>' +
           '<span class="entry-right"><span class="entry-amount" style="color:var(--danger)">-'+currency(ex.amount)+'</span></span>';
       }
       row.onclick = () => { expenseMenuOpenId = isMenuOpen ? null : ex.id; renderAll(); };
@@ -2654,20 +2746,31 @@
 
   // Expense/income add-edit form
   let editingExpenseId = null;
-  function openExpenseForm(ex, forceKind) {
+  let stagedExpenseMeta = null;
+  function openExpenseForm(ex, forceKind, meta) {
     refreshExpenseBankOptions();
     const form = document.getElementById('newExpenseForm');
     const showBtn = document.getElementById('showAddExpenseBtn');
     const kind = forceKind || (ex ? (ex.kind || 'gider') : 'gider');
+    stagedExpenseMeta = meta || (ex ? { bankId: ex.bankId, bankName: ex.bankName, category: ex.category, sub: ex.sub } : null);
     form.querySelectorAll('.mode-btn[data-ekind]').forEach(b => b.classList.toggle('active', b.dataset.ekind === kind));
     setExpenseKindUI(kind);
-    document.getElementById('expenseDescInput').value = ex && !ex.kind ? ex.desc : (ex && ex.kind === 'gider' ? ex.desc : '');
-    document.getElementById('expenseAmountInput').value = ex ? ex.amount : '';
+    document.getElementById('expenseDescInput').value = (ex && ex.kind !== 'gelir') ? (ex.desc || '') : '';
+    document.getElementById('expenseAmountInput').value = ex ? formatAmountLive(String(ex.amount)) : '';
+    const metaLabel = document.getElementById('expenseMetaLabel');
     if (kind === 'gelir') {
       document.getElementById('expenseCurrencySelect').value = ex ? (ex.currency || 'TRY') : 'TRY';
+      metaLabel.style.display = 'none';
     } else {
       if (state.banks.length === 0) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
-      if (ex && state.banks.some(b => b.id === ex.bankId)) document.getElementById('expenseBankSelect').value = ex.bankId;
+      const bId = (meta && meta.bankId) || (ex && ex.bankId);
+      if (bId && state.banks.some(b => b.id === bId)) document.getElementById('expenseBankSelect').value = bId;
+      if (stagedExpenseMeta && stagedExpenseMeta.category) {
+        metaLabel.style.display = 'block';
+        metaLabel.textContent = stagedExpenseMeta.bankName + ' · ' + stagedExpenseMeta.category + ' › ' + stagedExpenseMeta.sub;
+      } else {
+        metaLabel.style.display = 'none';
+      }
     }
     document.getElementById('expenseSubmitBtn').textContent = ex ? 'Kaydet' : 'Ekle';
     form.classList.add('open'); showBtn.style.display = 'none';
@@ -2726,20 +2829,26 @@
         const bankId = document.getElementById('expenseBankSelect').value;
         let bank = state.banks.find(b => b.id === bankId) || state.banks[0];
         if (!bank) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
-        const desc = document.getElementById('expenseDescInput').value.trim() || 'Harcama';
+        const note = document.getElementById('expenseDescInput').value.trim();
+        const meta = stagedExpenseMeta || {};
+        const desc = note || meta.sub || meta.category || 'Harcama';
         if (editingExpenseId) {
           const ex = state.expenses.find(x => x.id === editingExpenseId);
           if (ex) {
             ex.kind = 'gider'; ex.bankId = bank.id; ex.bankName = bank.name; ex.desc = desc; ex.amount = amount; delete ex.currency;
+            if (meta.category) { ex.category = meta.category; ex.sub = meta.sub; }
             logActivity(desc + ' düzenlendi', amount, { type:'expense', expenseId: ex.id });
           }
           editingExpenseId = null;
         } else {
           const newExId = uid();
-          state.expenses.push({ id: newExId, kind:'gider', bankId: bank.id, bankName: bank.name, desc, amount, day: viewedDayKey, ts: Date.now() });
+          state.expenses.push({ id: newExId, kind:'gider', bankId: bank.id, bankName: bank.name, desc, amount,
+            category: meta.category || null, sub: meta.sub || null, day: viewedDayKey, ts: Date.now() });
           logActivity(desc, amount, { type:'expense', expenseId: newExId });
         }
       }
+      stagedExpenseMeta = null;
+      document.getElementById('expenseMetaLabel').style.display = 'none';
       document.getElementById('expenseDescInput').value = '';
       document.getElementById('expenseAmountInput').value = '';
       form.classList.remove('open'); showBtn.style.display = 'none';
@@ -2772,6 +2881,28 @@
         renderAll();
       };
     });
+
+    const panel = document.getElementById('catFilterPanel');
+    const toggleBtn = document.getElementById('catFilterBtn');
+    toggleBtn.onclick = () => {
+      const showing = panel.style.display !== 'none';
+      panel.style.display = showing ? 'none' : 'flex';
+      if (!showing) buildCatFilterChips();
+    };
+    function buildCatFilterChips() {
+      panel.innerHTML = '';
+      const mkChip = (label, value) => {
+        const c = document.createElement('button');
+        c.type = 'button';
+        c.style.cssText = 'font-size:11.5px; padding:5px 10px; border-radius:20px; cursor:pointer; font-family:inherit; border:1px solid ' +
+          (categoryFilter === value ? 'var(--gold); background:var(--gold); color:#1b1607; font-weight:600;' : 'var(--border); background:none; color:var(--text-muted);');
+        c.textContent = label;
+        c.onclick = () => { categoryFilter = value; expensePageIndex = 0; buildCatFilterChips(); renderAll(); };
+        return c;
+      };
+      panel.appendChild(mkChip('Tüm kategoriler', null));
+      EXPENSE_CATEGORIES.forEach(cat => panel.appendChild(mkChip(cat.icon + ' ' + cat.name, cat.name)));
+    }
   })();
 
   document.getElementById('exportBtn').onclick = () => {
@@ -2849,6 +2980,72 @@
 
   // Borç ekleme akışı: önce tür, sonra banka
   let pendingDebtType = null;
+  // Harcama ekleme akışı: banka → kategori → alt kategori → tutar
+  let pendingExpense = { bankId:null, bankName:null, category:null, sub:null };
+  function pickerButton(label, onClick, dotColor, dotText) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'fab-menu-item';
+    b.style.cssText = 'background:var(--surface-2); justify-content:flex-start;';
+    if (dotColor) {
+      b.innerHTML = '<span class="item-dot" style="width:20px;height:20px;font-size:9px;background:'+dotColor+'">'+esc(dotText||'')+'</span> ' + esc(label);
+    } else {
+      b.textContent = label;
+    }
+    b.onclick = onClick;
+    return b;
+  }
+  function openExpenseBankPicker() {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = 'Hangi Karttan / Hesaptan?';
+    list.innerHTML = '';
+    if (state.banks.length === 0) {
+      const p = document.createElement('div');
+      p.className = 'archive-empty';
+      p.textContent = 'Önce Borçlarım kısmından bir banka/kart ekle.';
+      list.appendChild(p);
+    }
+    state.banks.forEach(bank => {
+      list.appendChild(pickerButton(bank.name, () => {
+        pendingExpense = { bankId: bank.id, bankName: bank.name, category:null, sub:null };
+        openExpenseCategoryPicker();
+      }, bank.color, initials(bank.name)));
+    });
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+  }
+  function openExpenseCategoryPicker() {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = 'Harcama Kategorisi';
+    list.innerHTML = '';
+    EXPENSE_CATEGORIES.forEach(cat => {
+      list.appendChild(pickerButton(cat.icon + '  ' + cat.name, () => {
+        pendingExpense.category = cat.name;
+        openExpenseSubPicker(cat);
+      }));
+    });
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+  }
+  function openExpenseSubPicker(cat) {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = cat.name;
+    list.innerHTML = '';
+    cat.subs.forEach(sub => {
+      list.appendChild(pickerButton(sub, () => {
+        pendingExpense.sub = sub;
+        closeDebtPicker();
+        editingExpenseId = null;
+        openExpenseForm(null, 'gider', pendingExpense);
+      }));
+    });
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'fab-menu-item';
+    back.style.cssText = 'background:none; border:1px dashed var(--border); justify-content:center; color:var(--text-muted);';
+    back.textContent = '‹ Kategorilere dön';
+    back.onclick = openExpenseCategoryPicker;
+    list.appendChild(back);
+  }
+
   function openDebtTypePicker() {
     const list = document.getElementById('debtPickerList');
     document.getElementById('debtPickerTitle').textContent = 'Borç Türü Seç';
@@ -2914,7 +3111,7 @@
       btn.onclick = () => {
         const target = btn.dataset.target;
         closeFab();
-        if (target === 'expense') { editingExpenseId = null; openExpenseForm(null, 'gider'); scrollToEl('newExpenseForm'); }
+        if (target === 'expense') { editingExpenseId = null; openExpenseBankPicker(); }
         else if (target === 'income') { editingExpenseId = null; openExpenseForm(null, 'gelir'); scrollToEl('newExpenseForm'); }
         else if (target === 'bank') { openDebtTypePicker(); }
         else if (target === 'asset') { document.getElementById('showAddAssetBtn').click(); scrollToEl('newAssetForm'); }

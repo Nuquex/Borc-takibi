@@ -1763,7 +1763,7 @@
   }
   const CATEGORY_COLORS = {
     'Nakit':'#4FA8A0','Altın':'#C9A24B','Gümüş':'#B7935A','Dolar':'#6FA8D6','Euro':'#8C86D6','Sterlin':'#D07A6A',
-    'Hisse':'#8FBF7F','Fon':'#D6A0C4','BES':'#5B5BD6',
+    'Hisse':'#8FBF7F','Fon':'#D6A0C4','BES':'#5B5BD6','Maaş':'#7FB77E',
     'Kredi Kartı':'#E5484D','İhtiyaç Kredisi':'#D07A6A','Taşıt Kredisi':'#C9A24B','Konut Kredisi':'#6FA8D6','Nakit Avans':'#8C86D6','Diğer':'#8b93a3'
   };
   function colorForLabel(label, i) { return CATEGORY_COLORS[label] || PALETTE[i % PALETTE.length]; }
@@ -1783,6 +1783,8 @@
     });
     const besTotal = state.bes.reduce((s,b) => s + itemValue(b), 0);
     if (besTotal > 0) map['BES'] = (map['BES']||0) + besTotal;
+    const curMonthSalary = state.incomeByMonth[currentMonthKey()] || 0;
+    if (curMonthSalary > 0) map['Maaş'] = (map['Maaş']||0) + curMonthSalary;
     return map;
   }
   function computeDebtBreakdown() {
@@ -1824,7 +1826,8 @@
     const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
-    const totalAssets = totalAssetsOnly + totalBes;
+    const curMonthSalary = state.incomeByMonth[currentMonthKey()] || 0;
+    const totalAssets = totalAssetsOnly + totalBes + curMonthSalary;
     const curMonthList = state.expenses.filter(e => monthOfDayKey(dayKeyOf(e)) === currentMonthKey());
     const curMonthGider = curMonthList.filter(e => (e.kind||'gider')==='gider').reduce((s,e)=>s+(e.amount||0),0);
     const curMonthGelirTRY = curMonthList.filter(e => e.kind==='gelir' && (e.currency||'TRY')==='TRY').reduce((s,e)=>s+(e.amount||0),0);
@@ -1946,7 +1949,8 @@
       const due = isCurrent ? state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0) : null;
       const compareBase = isCurrent ? due : paid;
       const totalIn = salaryVal + monthGelirTRY;
-      const net = totalIn - compareBase;
+      const expenseTotal = monthExpenses.filter(e => (e.kind||'gider')==='gider').reduce((s,e) => s + (e.amount||0), 0);
+      const net = totalIn - compareBase - expenseTotal;
 
       const page = document.createElement('div');
       page.className = 'month-page';
@@ -1955,12 +1959,11 @@
       if (isCurrent) {
         html += '<div class="monthly-row"><span class="monthly-label">Bu ayki toplam taksit (₺)</span><span class="monthly-value due">'+currency(due)+'</span></div>';
       }
-      if (totalIn > 0) {
-        html += '<div class="monthly-row"><span class="monthly-label">Elde kalan</span><span class="monthly-value left '+(net>=0?'positive':'negative')+'">'+(net<0?'-':'')+currency(Math.abs(net))+'</span></div>';
-      }
-      const expenseTotal = monthExpenses.filter(e => (e.kind||'gider')==='gider').reduce((s,e) => s + (e.amount||0), 0);
       if (expenseTotal > 0) {
         html += '<div class="monthly-row"><span class="monthly-label">Harcamalar</span><span class="monthly-value due" style="color:var(--danger)">'+currency(expenseTotal)+'</span></div>';
+      }
+      if (totalIn > 0) {
+        html += '<div class="monthly-row"><span class="monthly-label">Elde kalan</span><span class="monthly-value left '+(net>=0?'positive':'negative')+'">'+(net<0?'-':'')+currency(Math.abs(net))+'</span></div>';
       }
       page.innerHTML = html;
 

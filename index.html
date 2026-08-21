@@ -556,6 +556,14 @@
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </button>
 
+  <div class="cal-backdrop" id="debtPickerBackdrop">
+    <div class="cal-card">
+      <div class="cal-header"><span class="cal-title" id="debtPickerTitle">Borç Türü</span></div>
+      <div id="debtPickerList" style="display:flex; flex-direction:column; gap:6px;"></div>
+      <button type="button" class="cal-close-btn" id="debtPickerClose">Vazgeç</button>
+    </div>
+  </div>
+
   <div class="undo-toast" id="undoToast">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
     <span>Geri Al</span>
@@ -762,7 +770,7 @@
       dropdownEl.classList.add('open');
     }
     inputEl.oninput = () => render(inputEl.value);
-    inputEl.onfocus = () => render(inputEl.value);
+    inputEl.onclick = () => render(inputEl.value);
     inputEl.onblur = () => setTimeout(() => dropdownEl.classList.remove('open'), 150);
     inputEl._comboRender = render;
   }
@@ -850,6 +858,19 @@
   let state = loadData();
 
   // Seed the three fixed banks for this version, if not already present and not previously deleted by the user
+  // Eski sürümlerde basit varlıklar birden çok satır tutabiliyordu; tek tutara indir.
+  (function mergeSimpleAssetEntries() {
+    let changed = false;
+    state.assets.forEach(a => {
+      if (a.type !== 'portfolio' && Array.isArray(a.debts) && a.debts.length > 1) {
+        const sum = a.debts.reduce((s,d) => s + (d.amount||0), 0);
+        a.debts = [{ id: uid(), desc: a.name, amount: sum }];
+        changed = true;
+      }
+    });
+    if (changed) saveData();
+  })();
+
   (function seedFixedBanks() {
     const fixed = ['Ziraat Bankası', 'İş Bankası', 'Akbank'];
     let changed = false;
@@ -884,6 +905,8 @@
       form.innerHTML =
         '<div class="fields-row"><input class="txe-price" placeholder="Fiyat" inputmode="decimal" value="'+l.price+'" /><input class="txe-qty" placeholder="Adet" inputmode="decimal" value="'+l.qty+'" /></div>' +
         '<div class="form-actions"><button type="button" class="btn btn-ghost txe-cancel">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+(isBuy?'var(--teal)':'var(--danger)')+'">Kaydet</button></div>';
+      attachAmountFormatting(form.querySelector('.txe-price'));
+
       form.onsubmit = (e) => {
         e.preventDefault();
         const price = parseAmount(form.querySelector('.txe-price').value);
@@ -1069,6 +1092,34 @@
     return currencySymbol(code) + numStr;
   }
   function currency(n) { return formatMoney(n, 'TRY'); }
+  function formatAmountLive(raw) {
+    if (!raw) return '';
+    // sadece rakam ve tek bir virgül bırak
+    let s = String(raw).replace(/\./g, '').replace(/[^0-9,]/g, '');
+    const firstComma = s.indexOf(',');
+    if (firstComma !== -1) {
+      s = s.slice(0, firstComma + 1) + s.slice(firstComma + 1).replace(/,/g, '');
+    }
+    let [intPart, decPart] = s.split(',');
+    intPart = (intPart || '').replace(/^0+(?=\d)/, '');
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    if (decPart !== undefined) return grouped + ',' + decPart.slice(0, 2);
+    return grouped;
+  }
+  function attachAmountFormatting(inputEl) {
+    if (!inputEl) return;
+    if (inputEl.value) inputEl.value = formatAmountLive(inputEl.value);
+    inputEl.addEventListener('input', () => {
+      const before = inputEl.value;
+      const atEnd = inputEl.selectionStart === before.length;
+      const formatted = formatAmountLive(before);
+      if (formatted !== before) {
+        inputEl.value = formatted;
+        if (atEnd) inputEl.setSelectionRange(formatted.length, formatted.length);
+      }
+    });
+  }
+
   function parseAmount(str) {
     if (!str) return 0;
     const cleaned = str.replace(/\./g,'').replace(',','.').replace(/[^0-9.]/g,'');
@@ -1107,7 +1158,7 @@
 
   function itemValue(item) {
     if (item.type === 'portfolio') return portfolioValue(item);
-    if (item.type === 'bes') return (item.contributions||[]).reduce((s,c) => s + (c.amount||0), 0) + (item.govContribution || 0);
+    if (item.type === 'bes') return (item.contributions||[]).reduce((s,c) => s + (c.amount||0), 0) + (item.govContribution || 0) - (item.deductions || 0);
     return (item.debts||[]).reduce((s,d) => s + entryRemaining(d), 0);
   }
   function itemMonthlyDueTRY(item) {
@@ -1152,7 +1203,7 @@
       head.className = 'item-head';
       head.setAttribute('role', 'button');
       head.setAttribute('tabindex', '0');
-      const subText = isPortfolio ? ((item.stocks||[]).length + ' hisse') : ((item.debts||[]).length + ' kayıt');
+      const subText = isPortfolio ? ((item.stocks||[]).length + ' ürün') : 'Tutarı düzenlemek için dokun';
       head.innerHTML =
         '<span class="item-dot" style="background:'+item.color+'"></span>' +
         '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+subText+'</div></span>' +
@@ -1244,6 +1295,7 @@
       input.inputMode = 'decimal';
       input.value = val > 0 ? val : '';
       input.placeholder = '0';
+      attachAmountFormatting(input);
       input.style.cssText = 'width:120px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; text-align:right;';
       let committed = false;
       function commit() {
@@ -1275,11 +1327,11 @@
   function renderBesInto(body, item) {
     const contribTotal = (item.contributions||[]).reduce((s,c)=>s+(c.amount||0),0);
     const govTotal = item.govContribution || 0;
-    const grand = contribTotal + govTotal;
+    const grand = contribTotal + govTotal - (item.deductions || 0);
 
     const totalBox = document.createElement('div');
     totalBox.className = 'bes-total-box';
-    totalBox.innerHTML = '<span class="bes-total-label">Toplam (Katkı + Devlet)</span><span class="bes-total-value">'+currency(grand)+'</span>';
+    totalBox.innerHTML = '<span class="bes-total-label">Toplam Birikim</span><span class="bes-total-value">'+currency(grand)+'</span>';
     body.appendChild(totalBox);
 
     if (!besViewYear[item.id]) besViewYear[item.id] = new Date().getFullYear();
@@ -1316,6 +1368,7 @@
         input.inputMode = 'decimal';
         input.value = amount > 0 ? amount : '';
         input.placeholder = '0';
+        attachAmountFormatting(input);
         let done = false;
         function commit() {
           if (done) return; done = true;
@@ -1350,40 +1403,49 @@
     grid.appendChild(cL); grid.appendChild(cR);
     body.appendChild(grid);
 
-    // Devlet katkisi - ayri kutu
-    const govBox = document.createElement('div');
-    govBox.className = 'bes-total-box';
-    govBox.style.marginTop = '4px';
-    govBox.innerHTML = '<span class="bes-total-label">Devlet Katkısı</span>';
-    const govVal = document.createElement('span');
-    govVal.className = 'bes-total-value editable';
-    govVal.style.cssText = 'cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px;';
-    govVal.textContent = currency(govTotal);
-    govVal.onclick = () => {
-      const input = document.createElement('input');
-      input.className = 'salary-grid-input';
-      input.style.width = '110px';
-      input.inputMode = 'decimal';
-      input.value = govTotal > 0 ? govTotal : '';
-      input.placeholder = '0';
-      let done = false;
-      function commit() {
-        if (done) return; done = true;
-        const nv = parseAmount(input.value);
-        if (nv !== govTotal) {
-          item.govContribution = nv;
-          logActivity(item.name + ' devlet katkısı', nv, { type:'bes', besId: item.id });
-          saveData();
+    // Devlet katkısı ve Kesintiler — yan yana iki kutu
+    function extraBox(label, curVal, field, isNegative) {
+      const box = document.createElement('div');
+      box.className = 'bes-total-box';
+      box.style.cssText = 'margin-top:4px; margin-bottom:0; flex:1; flex-direction:column; align-items:flex-start; gap:4px;';
+      box.innerHTML = '<span class="bes-total-label">' + label + '</span>';
+      const valEl = document.createElement('span');
+      valEl.className = 'bes-total-value editable';
+      valEl.style.cssText = 'cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; font-size:14px;' + (isNegative ? 'color:var(--danger);' : '');
+      valEl.textContent = (isNegative && curVal > 0 ? '-' : '') + currency(curVal);
+      valEl.onclick = () => {
+        const input = document.createElement('input');
+        input.className = 'salary-grid-input';
+        input.style.width = '100%';
+        input.inputMode = 'decimal';
+        input.value = curVal > 0 ? curVal : '';
+        input.placeholder = '0';
+        attachAmountFormatting(input);
+        let done = false;
+        function commit() {
+          if (done) return; done = true;
+          const nv = parseAmount(input.value);
+          if (nv !== curVal) {
+            item[field] = nv;
+            logActivity(item.name + ' — ' + label, nv, { type:'bes', besId: item.id });
+            saveData();
+          }
+          renderAll();
         }
-        renderAll();
-      }
-      input.onblur = commit;
-      input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } };
-      govBox.replaceChild(input, govVal);
-      input.focus(); input.select();
-    };
-    govBox.appendChild(govVal);
-    body.appendChild(govBox);
+        input.onblur = commit;
+        input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } };
+        box.replaceChild(input, valEl);
+        input.focus(); input.select();
+      };
+      box.appendChild(valEl);
+      return box;
+    }
+
+    const extrasRow = document.createElement('div');
+    extrasRow.style.cssText = 'display:flex; gap:8px;';
+    extrasRow.appendChild(extraBox('Devlet Katkısı', govTotal, 'govContribution', false));
+    extrasRow.appendChild(extraBox('Kesintiler', item.deductions || 0, 'deductions', true));
+    body.appendChild(extrasRow);
   }
 
   function renderStocksInto(body, portfolioItem) {
@@ -1430,6 +1492,7 @@
         const pf = document.createElement('form');
         pf.className = 'price-form open';
         pf.innerHTML = '<input class="p-input" placeholder="Güncel fiyat (₺)" inputmode="decimal" value="'+(stats.currentPrice||'')+'" /><button type="submit" class="btn btn-primary" style="background:var(--teal)">Kaydet</button>';
+        attachAmountFormatting(pf.querySelector('.p-input'));
         pf.onsubmit = (e) => { e.preventDefault(); stock.currentPrice = parseAmount(pf.querySelector('.p-input').value); editingPriceFor = null; saveData(); renderAll(); };
         sb.appendChild(pf);
       }
@@ -1454,6 +1517,8 @@
         form.innerHTML =
           '<div class="fields-row"><input class="tx-price" placeholder="'+(isBuy?'Alış':'Satış')+' fiyatı (₺)" inputmode="decimal" /><input class="tx-qty" placeholder="Adet" inputmode="decimal" /></div>' +
           '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+(isBuy?'var(--teal)':'var(--danger)')+'">Ekle</button></div>';
+        attachAmountFormatting(form.querySelector('.tx-price'));
+
         form.onsubmit = (e) => {
           e.preventDefault();
           const price = parseAmount(form.querySelector('.tx-price').value);
@@ -1544,7 +1609,6 @@
       };
       form.querySelector('.cancel-stock').onclick = () => { addingStockFor = null; renderAll(); };
       body.appendChild(form);
-      setTimeout(() => { const f = form.querySelector('.new-stock-input'); if (f) f.focus(); }, 0);
     } else {
       const addStockBtn = document.createElement('button');
       addStockBtn.className = 'add-sub-btn';
@@ -1724,7 +1788,8 @@
         let typeOpts = DEBT_TYPES.map(t => '<option value="'+t+'">'+t+'</option>').join('');
         let curOpts = CURRENCIES.map(c => '<option value="'+c.code+'">'+c.label+'</option>').join('');
         const editing = addingEntryFor.editId ? (item.debts || []).find(x => x.id === addingEntryFor.editId) : null;
-        let typeOptsSel = DEBT_TYPES.map(t => '<option value="'+t+'"'+(editing && editing.debtType === t ? ' selected' : '')+'>'+t+'</option>').join('');
+        const presetT = addingEntryFor.presetType || null;
+        let typeOptsSel = DEBT_TYPES.map(t => '<option value="'+t+'"'+((editing && editing.debtType === t) || (!editing && presetT === t) ? ' selected' : '')+'>'+t+'</option>').join('');
         let curOptsSel = CURRENCIES.map(c => '<option value="'+c.code+'"'+(editing && (editing.currency||'TRY') === c.code ? ' selected' : '')+'>'+c.label+'</option>').join('');
         form.innerHTML =
           '<select class="sel-input debt-type-sel">'+typeOptsSel+'</select>' +
@@ -1734,6 +1799,8 @@
             '<div class="installment-fields-row"><input class="inst-monthly-input" placeholder="Aylık taksit" inputmode="decimal" value="'+(editing ? editing.monthlyAmount : '')+'" /><input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" value="'+(editing ? editing.totalInstallments : '')+'" /></div>' +
           '</div>' +
           '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+item.color+'">'+(editing ? 'Kaydet' : 'Ekle')+'</button></div>';
+
+        attachAmountFormatting(form.querySelector('.inst-monthly-input'));
 
         form.onsubmit = (e) => {
           e.preventDefault();
@@ -1808,7 +1875,8 @@
     const extraIncome = list.filter(e => e.kind === 'gelir' && (e.currency||'TRY') === 'TRY').reduce((s,e) => s + (e.amount||0), 0);
     const spent = list.filter(e => (e.kind||'gider') === 'gider').reduce((s,e) => s + (e.amount||0), 0);
     const due = state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0);
-    return { salary, extraIncome, spent, due, left: Math.max(0, salary + extraIncome - spent - due) };
+    // Taksitler zaten "Toplam Borç" içinde sayıldığı için buradan tekrar düşülmez (çift sayım olurdu).
+    return { salary, extraIncome, spent, due, left: Math.max(0, salary + extraIncome - spent) };
   }
 
   function computeAssetBreakdown() {
@@ -2015,6 +2083,7 @@
         salInput.inputMode = 'decimal';
         salInput.value = salaryVal > 0 ? salaryVal : '';
         salInput.placeholder = '0';
+        attachAmountFormatting(salInput);
         salInput.style.cssText = 'width:104px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; text-align:right;';
         let committed = false;
         function commit() {
@@ -2439,7 +2508,7 @@
       if (selectedType === 'portfolio') newItem.stocks = [];
       else newItem.debts = [];
       state.assets.push(newItem);
-      expanded['assets:' + id] = true;
+      expanded['assets:' + id] = false;
       logActivity(name + ' eklendi', null, { type:'asset', assetId: id });
       input.value = ''; form.classList.remove('open'); showBtn.style.display = 'none';
       selectedType = 'simple';
@@ -2465,7 +2534,7 @@
       const id = uid();
       const color = getEntityColor(name, state.bes.length) || PALETTE[state.bes.length % PALETTE.length];
       state.bes.push({ id, name, color, type: 'bes', contributions: [] });
-      expanded['bes:' + id] = true;
+      expanded['bes:' + id] = false;
       logActivity(name + ' eklendi', null, { type:'bes', besId: id });
       input.value = ''; form.classList.remove('open'); showBtn.style.display = 'none';
       saveData(); renderAll();
@@ -2506,6 +2575,7 @@
         input.inputMode = 'decimal';
         input.value = val > 0 ? val : '';
         input.placeholder = '0';
+        attachAmountFormatting(input);
         let committed = false;
         function commit() {
           if (committed) return;
@@ -2677,6 +2747,8 @@
     };
   })();
 
+  attachAmountFormatting(document.getElementById('expenseAmountInput'));
+
   document.getElementById('expensesBackToday').onclick = () => {
     viewedDayKey = todayKey();
     harcamalarMode = 'day';
@@ -2775,6 +2847,60 @@
     });
   })();
 
+  // Borç ekleme akışı: önce tür, sonra banka
+  let pendingDebtType = null;
+  function openDebtTypePicker() {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = 'Borç Türü Seç';
+    list.innerHTML = '';
+    DEBT_TYPES.forEach(t => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'fab-menu-item';
+      b.style.cssText = 'background:var(--surface-2); justify-content:flex-start;';
+      b.textContent = t;
+      b.onclick = () => { pendingDebtType = t; openDebtBankPicker(); };
+      list.appendChild(b);
+    });
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+  }
+  function openDebtBankPicker() {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = pendingDebtType + ' — Banka Seç';
+    list.innerHTML = '';
+    if (state.banks.length === 0) {
+      const p = document.createElement('div');
+      p.className = 'archive-empty';
+      p.textContent = 'Önce bir banka/kurum eklemelisin.';
+      list.appendChild(p);
+    }
+    state.banks.forEach(bank => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'fab-menu-item';
+      b.style.cssText = 'background:var(--surface-2); justify-content:flex-start;';
+      b.innerHTML = '<span class="item-dot" style="width:20px;height:20px;font-size:9px;background:'+bank.color+'">'+esc(initials(bank.name))+'</span> ' + esc(bank.name);
+      b.onclick = () => {
+        closeDebtPicker();
+        expanded['banks:' + bank.id] = true;
+        addingEntryFor = { group:'banks', id: bank.id, presetType: pendingDebtType };
+        renderAll();
+        scrollToId('bank-card-' + bank.id);
+      };
+      list.appendChild(b);
+    });
+    const addNew = document.createElement('button');
+    addNew.type = 'button';
+    addNew.className = 'fab-menu-item';
+    addNew.style.cssText = 'background:none; border:1px dashed var(--border); justify-content:center; color:var(--text-muted);';
+    addNew.textContent = '+ Yeni banka/kurum ekle';
+    addNew.onclick = () => { closeDebtPicker(); document.getElementById('showAddBankBtn').click(); scrollToEl('newBankForm'); };
+    list.appendChild(addNew);
+  }
+  function closeDebtPicker() { document.getElementById('debtPickerBackdrop').classList.remove('open'); }
+  document.getElementById('debtPickerClose').onclick = closeDebtPicker;
+  document.getElementById('debtPickerBackdrop').onclick = (e) => { if (e.target.id === 'debtPickerBackdrop') closeDebtPicker(); };
+
   // FAB add menu
   (function() {
     const fabBtn = document.getElementById('fabBtn');
@@ -2790,7 +2916,7 @@
         closeFab();
         if (target === 'expense') { editingExpenseId = null; openExpenseForm(null, 'gider'); scrollToEl('newExpenseForm'); }
         else if (target === 'income') { editingExpenseId = null; openExpenseForm(null, 'gelir'); scrollToEl('newExpenseForm'); }
-        else if (target === 'bank') { document.getElementById('showAddBankBtn').click(); scrollToEl('newBankForm'); }
+        else if (target === 'bank') { openDebtTypePicker(); }
         else if (target === 'asset') { document.getElementById('showAddAssetBtn').click(); scrollToEl('newAssetForm'); }
         else if (target === 'bes') { document.getElementById('showAddBesBtn').click(); scrollToEl('newBesForm'); }
       };

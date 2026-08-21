@@ -60,14 +60,15 @@
 
   .month-carousel-wrap { margin-bottom:6px; border-radius:16px; overflow:hidden; }
   .net-carousel-wrap { margin-bottom:4px; border-radius:18px; overflow:hidden; }
-  #netCarousel { align-items:flex-start; transition:height .22s ease; }
+  #netCarousel { align-items:stretch; }
+  .net-page { display:flex; flex-direction:column; justify-content:center; }
   #netCarouselDots { margin-bottom:22px; }
   .net-page {
     flex:0 0 100%; scroll-snap-align:start; box-sizing:border-box;
     background:linear-gradient(155deg, var(--surface-2), var(--surface)); border:1px solid var(--border);
     border-radius:18px; padding:20px 20px 18px;
   }
-  .donut-wrap { display:flex; justify-content:center; margin:14px 0 10px; }
+  .donut-wrap { display:flex; justify-content:center; margin:10px 0 8px; }
   .donut-legend { display:flex; flex-direction:column; gap:8px; }
   .donut-legend-row { display:flex; align-items:center; gap:9px; font-size:12.5px; }
   .donut-swatch { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
@@ -184,41 +185,34 @@
   .entry-desc-wrap { display:flex; align-items:center; gap:6px; min-width:0; flex:1; }
   .entry-desc-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; font-size:13.5px; }
   #expensesList { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:4px; }
-  #expensesList .entry-row { padding-left:14px; padding-right:14px; }
-  #expensesList .swipe-actions { padding-right:10px; }
+  .expense-tap-row { cursor:pointer; }
+  .expense-tap-row:active { background:rgba(127,127,127,0.06); }
+  .expense-tap-menu { display:flex; gap:8px; padding:4px 14px 11px; }
+  .expense-tap-menu-btn {
+    flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px; border-radius:9px;
+    border:none; font-family:inherit; font-size:12.5px; font-weight:600; color:#fff; cursor:pointer;
+  }
+  .expense-tap-menu-btn.edit { background:#5B5BD6; }
+  .expense-tap-menu-btn.del { background:#E5484D; }
 
-  .swipe-wrap { overflow:hidden; }
-  .swipe-wrap3 { overflow:hidden; border-radius:inherit; }
-  .swipe-scroll3 {
-    display:flex; overflow-x:auto; scroll-snap-type:x mandatory; position:relative;
-    scrollbar-width:none; -ms-overflow-style:none; touch-action:pan-x;
+  .swipe-wrap { position:relative; overflow:hidden; border-radius:inherit; }
+  .swipe-bg { position:absolute; inset:0; display:flex; align-items:center; opacity:0; border-radius:inherit; color:#fff; }
+  .swipe-bg-start { justify-content:flex-start; padding-left:18px; }
+  .swipe-bg-end { justify-content:flex-end; padding-right:18px; }
+  .swipe-bg-icon { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; opacity:0; transform:scale(.7); transition:opacity .12s, transform .12s; }
+  .swipe-bg-icon.visible { opacity:1; transform:scale(1); }
+  .swipe-content-real { position:relative; background:var(--surface); }
+
+  .undo-toast {
+    position:fixed; right:16px; bottom:calc(80px + env(safe-area-inset-bottom));
+    background:var(--surface-2); border:1px solid var(--border); color:var(--gold); border-radius:11px;
+    padding:10px 16px; display:flex; align-items:center; gap:8px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.4); z-index:80;
+    transform:translateY(180%); opacity:0; transition:transform .25s ease, opacity .25s ease;
+    font-size:13px; font-weight:700; pointer-events:none; cursor:pointer; white-space:nowrap;
   }
-  .swipe-scroll3::-webkit-scrollbar { display:none; }
-  .swipe-content3 { flex:0 0 100%; scroll-snap-align:start; background:var(--surface); min-width:0; }
-  .swipe-zone {
-    flex:0 0 92px; scroll-snap-align:start; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:4px; color:#fff; font-size:10px; font-weight:600; text-align:center; padding:0 6px;
-  }
-  .swipe-zone-lock { background:#8b93a3; }
-  .swipe-zone-lock.locked { background:var(--gold); color:#1b1607; }
-  .swipe-zone-del1 { background:#c9695c; }
-  .swipe-zone-del1.primed { background:#E5484D; }
-  .swipe-zone-del2 { background:#E5484D; }
-  .swipe-scroll {
-    display:flex; overflow-x:auto; scroll-snap-type:x mandatory;
-    scrollbar-width:none; -ms-overflow-style:none; touch-action:pan-x;
-  }
-  .swipe-scroll::-webkit-scrollbar { display:none; }
-  .swipe-content { flex:0 0 100%; scroll-snap-align:start; background:var(--surface); min-width:0; }
-  .swipe-actions { flex:0 0 auto; scroll-snap-align:end; display:flex; align-items:center; gap:8px; padding:0 4px 0 10px; }
-  .swipe-act {
-    width:38px; height:38px; border-radius:10px; border:none; display:flex; align-items:center;
-    justify-content:center; color:#fff; cursor:pointer; flex-shrink:0;
-  }
-  .swipe-act.edit { background:#5B5BD6; }
-  .swipe-act.del { background:#E5484D; }
-  .swipe-act.lock { background:#8b93a3; }
-  .swipe-act.lock.locked { background:var(--gold); }
+  .undo-toast.open { transform:translateY(0); opacity:1; pointer-events:auto; }
+  .undo-toast.dragging { transition:none; }
   .swipe-hint { font-size:10px; color:var(--text-muted); opacity:.65; }
   .entry-block:last-of-type { border-bottom:none; }
   .entry-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -270,6 +264,25 @@
   .bes-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
   .bes-row:last-of-type { border-bottom:none; }
   .bes-total-box { background:rgba(127,127,127,0.06); border:1px solid var(--border); border-radius:10px; padding:9px 11px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .salary-year-nav {
+    background:none; border:1px solid var(--border); border-radius:7px; width:26px; height:26px;
+    display:flex; align-items:center; justify-content:center; color:var(--text-muted); cursor:pointer;
+    font-family:inherit; font-size:15px; line-height:1;
+  }
+  .salary-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; margin-bottom:10px; }
+  .salary-grid-col { display:flex; flex-direction:column; }
+  .salary-grid-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; gap:6px; }
+  .salary-grid-row:last-child { border-bottom:none; }
+  .salary-grid-month { color:var(--text-muted); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .salary-grid-amt {
+    font-family:'IBM Plex Mono',monospace; font-weight:600; flex-shrink:0; cursor:pointer;
+    text-decoration:underline dotted; text-underline-offset:3px;
+  }
+  .salary-grid-amt.empty { color:var(--text-muted); font-weight:400; }
+  .salary-grid-input {
+    width:88px; background:var(--bg); border:1px solid var(--gold); border-radius:6px; padding:3px 6px;
+    color:var(--text); font-size:12px; font-weight:600; font-family:'IBM Plex Mono',monospace; text-align:right;
+  }
   .bes-total-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
   .bes-total-value { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:15px; color:var(--teal); }
 
@@ -505,35 +518,22 @@
     </form>
     <button class="add-item-btn" id="showAddBankBtn" style="display:none;">+ Yeni borç ekle</button>
 
-    <div class="section-title"><span>Hareketler</span></div>
-    <div id="activityEmptyState" class="empty-state" style="display:none;">
-      <div class="icon-wrap">📋</div><p>Henüz işlem kaydı yok.</p>
-    </div>
-    <div id="activityList" style="margin-bottom:28px;"></div>
-
     <div class="tear"></div>
 
-    <button class="archive-toggle" id="salaryToggleBtn" style="padding-top:0;">
-      <svg id="salaryChevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-      Maaş Geçmişi
-    </button>
-    <div class="archive-list" id="salaryPanel">
-      <div class="bes-total-box" style="margin-top:10px;">
-        <span class="bes-total-label">Toplam Maaş Geliri</span>
-        <span class="bes-total-value" id="salaryTotalValue">₺0,00</span>
-      </div>
-      <div id="salaryListWrap"></div>
-      <form class="inline-form open" id="salaryAddForm" style="margin-top:8px;">
-        <div class="fields-row">
-          <select class="sel-input" id="salaryMonthSel"></select>
-          <select class="sel-input" id="salaryYearSel"></select>
-        </div>
-        <input id="salaryAmountInput" placeholder="Maaş tutarı (₺)" inputmode="decimal" />
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary" style="background:var(--gold)">Ekle</button>
-        </div>
-      </form>
+    <div class="section-title"><span>Maaş Geçmişi</span>
+      <span style="display:flex; align-items:center; gap:8px;">
+        <button type="button" class="salary-year-nav" id="salaryPrevYear">‹</button>
+        <span id="salaryYearLabel" style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text);"></span>
+        <button type="button" class="salary-year-nav" id="salaryNextYear">›</button>
+      </span>
     </div>
+    <div class="bes-total-box">
+      <span class="bes-total-label">Toplam Maaş Geliri</span>
+      <span class="bes-total-value" id="salaryTotalValue" style="color:var(--gold)">₺0,00</span>
+    </div>
+    <div id="salaryListWrap"></div>
+
+    <div class="tear"></div>
 
     <div class="backup-row">
       <button class="backup-btn" id="exportBtn">⤓ Dışa Aktar (Yedek)</button>
@@ -553,6 +553,11 @@
   <button type="button" class="fab-btn" id="fabBtn" aria-label="Ekle">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </button>
+
+  <div class="undo-toast" id="undoToast">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+    <span>Geri Al</span>
+  </div>
 
 <script>
   const STORAGE_KEY = 'borc-takibi-data';
@@ -906,22 +911,146 @@
     btnWrap.appendChild(editB); btnWrap.appendChild(delB);
     container.appendChild(r);
   }
-  let swipeOpenFor = null;
+  let pendingUndo = null;
+  let undoTimeout = null;
+  function hideUndoToast() {
+    const t = document.getElementById('undoToast');
+    t.classList.remove('open');
+    t.style.transform = '';
+    pendingUndo = null;
+    clearTimeout(undoTimeout);
+  }
+  function showUndoToast(label, restoreFn) {
+    pendingUndo = { restore: restoreFn };
+    const t = document.getElementById('undoToast');
+    t.classList.remove('dragging');
+    t.style.transform = '';
+    t.classList.add('open');
+    clearTimeout(undoTimeout);
+    undoTimeout = setTimeout(hideUndoToast, 5000);
+  }
 
-  function makeSwipeRow(contentEl, actionButtons) {
-    contentEl.classList.add('swipe-content');
+  // Generic single-gesture swipe: drag right = rightAction, drag left = leftAction.
+  // Dragging past the commit threshold and releasing fires the action directly (no separate tap needed).
+  function attachSwipeGesture(wrapEl, contentEl, opts) {
+    const REVEAL = 34;
+    contentEl.classList.add('swipe-content-real');
+
+    function buildBg(action, startSide) {
+      const bg = document.createElement('div');
+      bg.className = 'swipe-bg ' + (startSide ? 'swipe-bg-start' : 'swipe-bg-end');
+      bg.style.background = action.color;
+      const icon = document.createElement('span');
+      icon.className = 'swipe-bg-icon';
+      icon.innerHTML = action.icon + '<span>' + action.label + '</span>';
+      bg.appendChild(icon);
+      return bg;
+    }
+    const bgRight = opts.onSwipeRight ? buildBg(opts.onSwipeRight, true) : null;
+    const bgLeft = opts.onSwipeLeft ? buildBg(opts.onSwipeLeft, false) : null;
+    if (bgRight) wrapEl.appendChild(bgRight);
+    if (bgLeft) wrapEl.appendChild(bgLeft);
+    wrapEl.appendChild(contentEl);
+
+    let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, horizontal = false, dir = 0;
+
+    contentEl.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+      dx = 0; dragging = true; decided = false; horizontal = false; dir = 0;
+      contentEl.style.transition = 'none';
+    }, { passive: true });
+
+    contentEl.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
+      const rawDx = cx - startX, rawDy = cy - startY;
+      if (!decided) {
+        if (Math.abs(rawDx) < 6 && Math.abs(rawDy) < 6) return;
+        horizontal = Math.abs(rawDx) > Math.abs(rawDy);
+        decided = true;
+        if (!horizontal) { dragging = false; return; }
+        dir = rawDx > 0 ? 1 : -1;
+        if ((dir === 1 && !opts.onSwipeRight) || (dir === -1 && !opts.onSwipeLeft)) { dragging = false; return; }
+      }
+      const w = contentEl.offsetWidth || 300;
+      const maxDrag = w * 0.85;
+      let d = dir === 1 ? Math.max(0, rawDx) : Math.min(0, rawDx);
+      d = Math.max(-maxDrag, Math.min(maxDrag, d));
+      dx = d;
+      contentEl.style.transform = 'translateX(' + dx + 'px)';
+      const activeBg = dir === 1 ? bgRight : bgLeft;
+      const otherBg = dir === 1 ? bgLeft : bgRight;
+      if (otherBg) otherBg.style.opacity = '0';
+      if (activeBg) {
+        activeBg.style.opacity = '1';
+        activeBg.querySelector('.swipe-bg-icon').classList.toggle('visible', Math.abs(dx) > REVEAL);
+      }
+    }, { passive: true });
+
+    function finish() {
+      if (!dragging) return;
+      dragging = false;
+      contentEl.style.transition = 'transform .2s ease, opacity .2s ease';
+      if (!horizontal || dir === 0) { contentEl.style.transform = ''; return; }
+      const w = contentEl.offsetWidth || 300;
+      const commitThreshold = Math.min(w * 0.4, 170);
+      const action = dir === 1 ? opts.onSwipeRight : opts.onSwipeLeft;
+      const activeBg = dir === 1 ? bgRight : bgLeft;
+      if (action && Math.abs(dx) > commitThreshold) {
+        if (action.disabled && action.disabled()) {
+          contentEl.style.transform = '';
+          if (activeBg) activeBg.style.opacity = '0';
+          if (action.disabledMsg) alert(action.disabledMsg);
+          return;
+        }
+        if (action.destructive) {
+          contentEl.style.transform = 'translateX(' + (dir === 1 ? '110%' : '-110%') + ')';
+          contentEl.style.opacity = '0';
+          setTimeout(() => { action.commit(); }, 160);
+        } else {
+          action.commit();
+          contentEl.style.transform = '';
+          if (activeBg) activeBg.style.opacity = '0';
+        }
+        return;
+      }
+      contentEl.style.transform = '';
+      if (activeBg) activeBg.style.opacity = '0';
+    }
+    contentEl.addEventListener('touchend', finish, { passive: true });
+    contentEl.addEventListener('touchcancel', finish, { passive: true });
+  }
+
+  const TRASH_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  const LOCK_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+  const UNLOCK_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
+  const EDIT_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
+
+  function attachCardSwipe(card, head, item, onDelete) {
     const wrap = document.createElement('div');
     wrap.className = 'swipe-wrap';
-    const scroll = document.createElement('div');
-    scroll.className = 'swipe-scroll';
-    scroll.appendChild(contentEl);
-    const actions = document.createElement('div');
-    actions.className = 'swipe-actions';
-    actionButtons.forEach(b => actions.appendChild(b));
-    scroll.appendChild(actions);
-    wrap.appendChild(scroll);
-    return wrap;
+    card.appendChild(wrap);
+    attachSwipeGesture(wrap, head, {
+      onSwipeRight: {
+        color: '#E5484D', icon: TRASH_ICON, label: 'Sil', destructive: true,
+        disabled: () => !!item.locked,
+        disabledMsg: item.name + ' kilitli. Silmek için önce sola kaydırıp kilidi aç.',
+        commit: onDelete
+      },
+      onSwipeLeft: {
+        color: item.locked ? 'var(--gold)' : '#8b93a3',
+        icon: item.locked ? UNLOCK_ICON : LOCK_ICON,
+        label: item.locked ? 'Kilidi Aç' : 'Kilitle',
+        destructive: false,
+        commit: () => {
+          item.locked = !item.locked;
+          saveData(); renderAll();
+        }
+      }
+    });
   }
+
   let txnOpen = {};
   let monthCarouselIndex = null;
   let editingCarouselKey = null;
@@ -1001,68 +1130,6 @@
     }
   }
 
-  function attachCardSwipe(card, head, item, onDelete) {
-    const scroll = document.createElement('div');
-    scroll.className = 'swipe-scroll3';
-    scroll.style.position = 'relative';
-
-    const lockZone = document.createElement('div');
-    lockZone.className = 'swipe-zone swipe-zone-lock' + (item.locked ? ' locked' : '');
-    lockZone.innerHTML = (item.locked
-      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
-      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>')
-      + '<span>' + (item.locked ? 'Kilidi Aç' : 'Kilitle') + '</span>';
-
-    head.classList.add('swipe-content3');
-
-    const delZone = document.createElement('div');
-    delZone.className = 'swipe-zone swipe-zone-del1';
-    delZone.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg><span>Kaydır</span>';
-
-    scroll.appendChild(lockZone);
-    scroll.appendChild(head);
-    scroll.appendChild(delZone);
-
-    const wrap = document.createElement('div');
-    wrap.className = 'swipe-wrap3';
-    wrap.appendChild(scroll);
-    card.appendChild(wrap);
-
-    let primed = false;
-
-    requestAnimationFrame(() => {
-      const restLeft = lockZone.offsetWidth;
-      scroll.scrollLeft = restLeft;
-      let settleTimeout;
-      scroll.addEventListener('scroll', () => {
-        clearTimeout(settleTimeout);
-        settleTimeout = setTimeout(() => {
-          const maxScroll = scroll.scrollWidth - scroll.clientWidth;
-          if (scroll.scrollLeft <= 2) {
-            // fully scrolled to the lock zone
-            item.locked = !item.locked;
-            if (item.locked) logActivity(item.name + ' kilitlendi'); else logActivity(item.name + ' kilidi açıldı');
-            saveData(); renderAll();
-          } else if (scroll.scrollLeft >= maxScroll - 2) {
-            if (item.locked) {
-              alert(item.name + ' kilitli. Silmek için önce sola kaydırıp kilidi aç.');
-              scroll.scrollLeft = restLeft;
-              return;
-            }
-            if (primed) {
-              onDelete();
-            } else {
-              primed = true;
-              delZone.classList.add('primed');
-              delZone.querySelector('span').textContent = 'Silmek için tekrar kaydır';
-              scroll.scrollLeft = maxScroll - 22;
-            }
-          }
-        }, 140);
-      }, { passive: true });
-    });
-  }
-
   function renderAssetGroup() {
     const items = state.assets;
     const listEl = document.getElementById('assetList');
@@ -1089,7 +1156,15 @@
         '<span class="item-total">'+currency(total)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
-      attachCardSwipe(card, head, item, () => { state.assets = state.assets.filter(x => x.id !== item.id); saveData(); renderAll(); });
+      attachCardSwipe(card, head, item, () => {
+        const idx = state.assets.indexOf(item);
+        state.assets = state.assets.filter(x => x.id !== item.id);
+        saveData(); renderAll();
+        showUndoToast(item.name, () => {
+          state.assets.splice(Math.min(idx, state.assets.length), 0, item);
+          saveData(); renderAll();
+        });
+      });
 
       const body = document.createElement('div');
       body.className = 'item-body' + (isOpen ? ' open' : '');
@@ -1136,7 +1211,15 @@
         '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+(item.contributions||[]).length+' ödeme</div></span>' +
         '<span class="item-total">'+currency(total)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
-      attachCardSwipe(card, head, item, () => { state.bes = state.bes.filter(x => x.id !== item.id); saveData(); renderAll(); });
+      attachCardSwipe(card, head, item, () => {
+        const idx = state.bes.indexOf(item);
+        state.bes = state.bes.filter(x => x.id !== item.id);
+        saveData(); renderAll();
+        showUndoToast(item.name, () => {
+          state.bes.splice(Math.min(idx, state.bes.length), 0, item);
+          saveData(); renderAll();
+        });
+      });
 
       const body = document.createElement('div');
       body.className = 'item-body' + (isOpen ? ' open' : '');
@@ -1446,20 +1529,6 @@
           const block = document.createElement('div');
           block.className = 'entry-block';
 
-          const editAct = document.createElement('button');
-          editAct.type = 'button'; editAct.className = 'swipe-act edit';
-          editAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
-          editAct.onclick = () => { addingEntryFor = { group:'banks', id: item.id, editId: d.id }; renderAll(); };
-          const delAct = document.createElement('button');
-          delAct.type = 'button'; delAct.className = 'swipe-act del';
-          delAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
-          delAct.onclick = () => {
-            if (!confirm((d.note || d.debtType) + ' silinsin mi?')) return;
-            item.debts = item.debts.filter(x => x.id !== d.id);
-            logActivity((d.note || d.debtType) + ' silindi');
-            saveData(); renderAll();
-          };
-
           const content = document.createElement('div');
           content.id = 'debt-row-' + d.id;
 
@@ -1509,7 +1578,27 @@
             content.appendChild(dots);
           }
 
-          block.appendChild(makeSwipeRow(content, [editAct, delAct]));
+          const wrap = document.createElement('div');
+          wrap.className = 'swipe-wrap';
+          attachSwipeGesture(wrap, content, {
+            onSwipeRight: {
+              color: '#E5484D', icon: TRASH_ICON, label: 'Sil', destructive: true,
+              commit: () => {
+                const idx = item.debts.indexOf(d);
+                item.debts = item.debts.filter(x => x.id !== d.id);
+                saveData(); renderAll();
+                showUndoToast(d.note || d.debtType, () => {
+                  item.debts.splice(Math.min(idx, item.debts.length), 0, d);
+                  saveData(); renderAll();
+                });
+              }
+            },
+            onSwipeLeft: {
+              color: '#5B5BD6', icon: EDIT_ICON, label: 'Düzenle', destructive: false,
+              commit: () => { addingEntryFor = { group:'banks', id: item.id, editId: d.id }; renderAll(); }
+            }
+          });
+          block.appendChild(wrap);
           container.appendChild(block);
   }
 
@@ -1539,12 +1628,19 @@
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
       attachCardSwipe(card, head, item, () => {
+        const idx = state.banks.indexOf(item);
+        const wasFixed = ['Ziraat Bankası','İş Bankası','Akbank'].includes(item.name);
         state.banks = state.banks.filter(x => x.id !== item.id);
-        if (['Ziraat Bankası','İş Bankası','Akbank'].includes(item.name)) {
+        if (wasFixed) {
           state.dismissedFixedBanks = state.dismissedFixedBanks || [];
           if (!state.dismissedFixedBanks.includes(item.name)) state.dismissedFixedBanks.push(item.name);
         }
         saveData(); renderAll();
+        showUndoToast(item.name, () => {
+          state.banks.splice(Math.min(idx, state.banks.length), 0, item);
+          if (wasFixed) state.dismissedFixedBanks = (state.dismissedFixedBanks || []).filter(n => n !== item.name);
+          saveData(); renderAll();
+        });
       });
       const subEl = head.querySelector('#kesimSub-' + item.id);
       if (subEl) subEl.onclick = (e) => { e.stopPropagation(); editingKesimFor = editingKesimFor === item.id ? null : item.id; expanded[expKey] = true; renderAll(); };
@@ -1700,7 +1796,7 @@
   }
   function buildDonutSVG(categories) {
     const total = categories.reduce((s,c) => s + c.value, 0);
-    const r = 62, cx = 85, cy = 85, sw = 26;
+    const r = 50, cx = 68, cy = 68, sw = 22;
     const circumference = 2 * Math.PI * r;
     let offset = 0, circles = '';
     if (total <= 0) {
@@ -1713,7 +1809,7 @@
         offset += segLen;
       });
     }
-    return '<svg width="170" height="170" viewBox="0 0 170 170"><g transform="rotate(-90 85 85)">'+circles+'</g></svg>';
+    return '<svg width="136" height="136" viewBox="0 0 136 136"><g transform="rotate(-90 68 68)">'+circles+'</g></svg>';
   }
   function buildLegendHTML(categories, total) {
     if (categories.length === 0) return '<div class="txn-empty">Henüz veri yok.</div>';
@@ -1798,16 +1894,20 @@
     });
   }
 
+  // Lock the carousel to the tallest page so swiping never changes its height.
   function updateNetCarouselHeight() {
     const carousel = document.getElementById('netCarousel');
-    const active = carousel.children[netCarouselIndex];
-    if (active) carousel.style.height = active.offsetHeight + 'px';
+    carousel.style.height = 'auto';
+    let tallest = 0;
+    Array.from(carousel.children).forEach(p => { tallest = Math.max(tallest, p.offsetHeight); });
+    if (tallest > 0) carousel.style.height = tallest + 'px';
   }
 
+  let monthCarouselPages = [];
   function renderMonthCarousel() {
     const curKey = currentMonthKey();
     const maxKey = effectiveCurrentMonthKey();
-    const allKeys = [curKey, ...state.paymentLog.map(p => p.month), ...state.expenses.map(e => monthOfDayKey(dayKeyOf(e)))];
+    const allKeys = [curKey, ...state.paymentLog.map(p => p.month), ...state.expenses.map(e => monthOfDayKey(dayKeyOf(e))), ...Object.keys(state.incomeByMonth).filter(k => state.incomeByMonth[k] > 0)];
     let minKey = allKeys.reduce((min, k) => (k < min ? k : min), curKey);
     // always show at least 3 months of past history, even without data
     let [fy, fm] = curKey.split('-').map(Number);
@@ -1823,6 +1923,7 @@
       pages.push(y + '-' + String(m).padStart(2,'0'));
       m++; if (m > 12) { m = 1; y++; }
     }
+    monthCarouselPages = pages;
 
     if (monthCarouselIndex === null) {
       const curIdx = pages.indexOf(curKey);
@@ -1837,22 +1938,24 @@
 
     pages.forEach((key, idx) => {
       const isCurrent = key === curKey;
-      const income = state.incomeByMonth[key] || 0;
+      const salaryVal = state.incomeByMonth[key] || 0;
+      const monthGelirTRY = state.expenses.filter(e => e.kind === 'gelir' && (e.currency||'TRY') === 'TRY' && monthOfDayKey(dayKeyOf(e)) === key).reduce((s,e) => s + (e.amount||0), 0);
       const items = state.paymentLog.filter(p => p.month === key && (p.currency||'TRY') === 'TRY');
       const paid = items.reduce((s,p) => s + (p.amount||0), 0);
       const monthExpenses = state.expenses.filter(e => monthOfDayKey(dayKeyOf(e)) === key);
       const due = isCurrent ? state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0) : null;
       const compareBase = isCurrent ? due : paid;
-      const net = income - compareBase;
+      const totalIn = salaryVal + monthGelirTRY;
+      const net = totalIn - compareBase;
 
       const page = document.createElement('div');
       page.className = 'month-page';
       let html = '<div class="month-card-title">'+(isCurrent ? 'Bu Ay · ' : '')+monthLabel(key)+'</div>';
-      html += '<div class="monthly-row"><span class="monthly-label">Gelir</span><span class="monthly-value">'+(income>0?currency(income):'—')+'</span></div>';
+      html += '<div class="monthly-row"><span class="monthly-label">Gelir</span><span class="monthly-value">'+(monthGelirTRY>0?currency(monthGelirTRY):'—')+'</span></div>';
       if (isCurrent) {
         html += '<div class="monthly-row"><span class="monthly-label">Bu ayki toplam taksit (₺)</span><span class="monthly-value due">'+currency(due)+'</span></div>';
       }
-      if (income > 0) {
+      if (totalIn > 0) {
         html += '<div class="monthly-row"><span class="monthly-label">Elde kalan</span><span class="monthly-value left '+(net>=0?'positive':'negative')+'">'+(net<0?'-':'')+currency(Math.abs(net))+'</span></div>';
       }
       const expenseTotal = monthExpenses.filter(e => (e.kind||'gider')==='gider').reduce((s,e) => s + (e.amount||0), 0);
@@ -1860,6 +1963,45 @@
         html += '<div class="monthly-row"><span class="monthly-label">Harcamalar</span><span class="monthly-value due" style="color:var(--danger)">'+currency(expenseTotal)+'</span></div>';
       }
       page.innerHTML = html;
+
+      const salaryRow = document.createElement('div');
+      salaryRow.className = 'monthly-row';
+      salaryRow.style.alignItems = 'center';
+      salaryRow.innerHTML = '<span class="monthly-label">Maaş</span>';
+
+      const salValue = document.createElement('span');
+      salValue.className = 'monthly-value editable';
+      salValue.textContent = currency(salaryVal);
+      salValue.style.color = 'var(--teal)';
+
+      salValue.onclick = () => {
+        const salInput = document.createElement('input');
+        salInput.inputMode = 'decimal';
+        salInput.value = salaryVal > 0 ? salaryVal : '';
+        salInput.placeholder = '0';
+        salInput.style.cssText = 'width:104px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; text-align:right;';
+        let committed = false;
+        function commit() {
+          if (committed) return;
+          committed = true;
+          const val = parseAmount(salInput.value);
+          if (val !== salaryVal) {
+            state.incomeByMonth[key] = val;
+            logActivity('Maaş (' + monthLabel(key) + ')', val, { type:'income' });
+            saveData();
+          }
+          renderAll();
+        }
+        salInput.onblur = commit;
+        salInput.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); salInput.blur(); } };
+        salaryRow.replaceChild(salInput, salValue);
+        salInput.focus();
+        salInput.select();
+      };
+
+      salaryRow.appendChild(salValue);
+      page.appendChild(salaryRow);
+
       carousel.appendChild(page);
 
       const dot = document.createElement('span');
@@ -1877,22 +2019,29 @@
   const EXPENSE_PAGE_SIZE = 7;
   let viewedDayKey = todayKey();
 
+  let harcamalarMode = 'day';
+  let harcamalarMonthKey = null;
+  let expenseMenuOpenId = null;
+
   function renderExpenses() {
     const listEl = document.getElementById('expensesList');
     const dotsEl = document.getElementById('expensesDots');
-    let all = state.expenses.filter(e => dayKeyOf(e) === viewedDayKey);
+    const inMonthMode = harcamalarMode === 'month' && harcamalarMonthKey;
+    let all = inMonthMode
+      ? state.expenses.filter(e => monthOfDayKey(dayKeyOf(e)) === harcamalarMonthKey)
+      : state.expenses.filter(e => dayKeyOf(e) === viewedDayKey);
     const giderTotal = all.filter(e => (e.kind||'gider') === 'gider').reduce((s,e) => s + (e.amount||0), 0);
     const gelirTotalTRY = all.filter(e => e.kind === 'gelir' && (e.currency||'TRY') === 'TRY').reduce((s,e) => s + (e.amount||0), 0);
     document.getElementById('expensesSectionTotal').textContent = (giderTotal - gelirTotalTRY < 0 ? '-' : '') + currency(Math.abs(giderTotal - gelirTotalTRY));
 
-    const isToday = viewedDayKey === todayKey();
+    const isCurrent = inMonthMode ? (harcamalarMonthKey === currentMonthKey()) : (viewedDayKey === todayKey());
     const titleEl = document.getElementById('expensesDayLabel');
     if (titleEl) {
-      titleEl.textContent = isToday ? '' : ('· ' + dayLabel(viewedDayKey));
-      titleEl.style.display = isToday ? 'none' : 'inline';
+      titleEl.textContent = isCurrent ? '' : ('· ' + (inMonthMode ? monthLabel(harcamalarMonthKey) : dayLabel(viewedDayKey)));
+      titleEl.style.display = isCurrent ? 'none' : 'inline';
     }
     const backBtn = document.getElementById('expensesBackToday');
-    if (backBtn) backBtn.style.display = isToday ? 'none' : 'inline-block';
+    if (backBtn) backBtn.style.display = isCurrent ? 'none' : 'inline-block';
 
     let list = all;
     if (expenseFilter === 'gider') list = all.filter(e => (e.kind||'gider') === 'gider');
@@ -1920,27 +2069,15 @@
     listEl.innerHTML = '';
     pageList.forEach((ex, idx) => {
       const isIncome = ex.kind === 'gelir';
+      const isMenuOpen = expenseMenuOpenId === ex.id;
 
-      const editAct = document.createElement('button');
-      editAct.type = 'button'; editAct.className = 'swipe-act edit';
-      editAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
-      editAct.onclick = () => { editingExpenseId = ex.id; openExpenseForm(ex); };
-      const delAct = document.createElement('button');
-      delAct.type = 'button'; delAct.className = 'swipe-act del';
-      delAct.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
-      delAct.onclick = () => {
-        if (!confirm((isIncome ? 'Gelir' : ex.desc) + ' silinsin mi?')) return;
-        state.expenses = state.expenses.filter(x => x.id !== ex.id);
-        logActivity((isIncome ? 'Gelir' : ex.desc) + ' silindi');
-        saveData(); renderAll();
-      };
+      const rowWrap = document.createElement('div');
+      rowWrap.id = 'expense-row-' + ex.id;
 
-      const content = document.createElement('div');
-      content.id = 'expense-row-' + ex.id;
       const row = document.createElement('div');
-      row.className = 'entry-row';
-      row.style.padding = '10px 0';
-      if (idx < pageList.length - 1) row.style.borderBottom = '1px solid var(--border)';
+      row.className = 'entry-row expense-tap-row';
+      row.style.padding = '11px 14px';
+      if (!isMenuOpen && idx < pageList.length - 1) row.style.borderBottom = '1px solid var(--border)';
       if (isIncome) {
         row.innerHTML =
           '<span class="entry-desc-wrap"><span class="entry-desc-text">Gelir</span></span>' +
@@ -1950,8 +2087,36 @@
           '<span class="entry-desc-wrap"><span class="entry-desc-text">'+esc(ex.desc)+'</span><span class="entry-badge">'+esc(ex.bankName)+'</span></span>' +
           '<span class="entry-right"><span class="entry-amount">'+currency(ex.amount)+'</span></span>';
       }
-      content.appendChild(row);
-      listEl.appendChild(makeSwipeRow(content, [editAct, delAct]));
+      row.onclick = () => { expenseMenuOpenId = isMenuOpen ? null : ex.id; renderAll(); };
+      rowWrap.appendChild(row);
+
+      if (isMenuOpen) {
+        const menu = document.createElement('div');
+        menu.className = 'expense-tap-menu';
+        if (idx < pageList.length - 1) menu.style.borderBottom = '1px solid var(--border)';
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button'; editBtn.className = 'expense-tap-menu-btn edit';
+        editBtn.innerHTML = EDIT_ICON + '<span>Düzenle</span>';
+        editBtn.onclick = (e) => { e.stopPropagation(); expenseMenuOpenId = null; editingExpenseId = ex.id; openExpenseForm(ex); };
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button'; delBtn.className = 'expense-tap-menu-btn del';
+        delBtn.innerHTML = TRASH_ICON + '<span>Sil</span>';
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          const arrIdx = state.expenses.indexOf(ex);
+          state.expenses = state.expenses.filter(x => x.id !== ex.id);
+          expenseMenuOpenId = null;
+          saveData(); renderAll();
+          showUndoToast(isIncome ? 'Gelir' : ex.desc, () => {
+            state.expenses.splice(Math.min(arrIdx, state.expenses.length), 0, ex);
+            saveData(); renderAll();
+          });
+        };
+        menu.appendChild(editBtn); menu.appendChild(delBtn);
+        rowWrap.appendChild(menu);
+      }
+
+      listEl.appendChild(rowWrap);
     });
   }
 
@@ -2072,14 +2237,16 @@
     renderAssetGroup();
     renderBesGroup();
     renderBankGroup();
-    renderActivity();
+    updateDateLeaf();
   }
 
-  (function() {
-    const now = new Date();
-    document.getElementById('todayDay').textContent = now.getDate();
-    document.getElementById('todayMonthAbbr').textContent = now.toLocaleDateString('tr-TR', { month:'short' }).replace('.','');
-  })();
+  function updateDateLeaf() {
+    const [y, m, d] = viewedDayKey.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    document.getElementById('todayDay').textContent = dt.getDate();
+    document.getElementById('todayMonthAbbr').textContent = dt.toLocaleDateString('tr-TR', { month:'short' }).replace('.','');
+  }
+  updateDateLeaf();
 
   // Calendar picker
   const TR_DOW = ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'];
@@ -2118,7 +2285,11 @@
       if (!c.other) {
         btn.onclick = () => {
           viewedDayKey = key;
+          harcamalarMode = 'day';
+          harcamalarMonthKey = null;
           expensePageIndex = 0;
+          expenseMenuOpenId = null;
+          updateDateLeaf();
           closeCalendar();
           renderAll();
           setTimeout(() => { const el = document.getElementById('expensesList'); if (el) el.scrollIntoView({ behavior:'smooth', block:'center' }); }, 60);
@@ -2150,7 +2321,6 @@
         const idx = Math.round(carousel.scrollLeft / carousel.clientWidth);
         netCarouselIndex = idx;
         document.querySelectorAll('#netCarouselDots .carousel-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
-        updateNetCarouselHeight();
       }, 100);
     });
   })();
@@ -2165,6 +2335,15 @@
         const idx = Math.round(carousel.scrollLeft / carousel.clientWidth);
         monthCarouselIndex = idx;
         document.querySelectorAll('#carouselDots .carousel-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
+        const key = monthCarouselPages[idx];
+        if (key) {
+          harcamalarMode = (key === currentMonthKey()) ? 'day' : 'month';
+          harcamalarMonthKey = key;
+          if (harcamalarMode === 'day') viewedDayKey = todayKey();
+          expensePageIndex = 0;
+          expenseMenuOpenId = null;
+          renderExpenses();
+        }
       }, 100);
     });
   })();
@@ -2240,58 +2419,76 @@
   })();
 
   // Salary history
+  let salaryViewYear = new Date().getFullYear();
   (function() {
-    const monthSel = document.getElementById('salaryMonthSel');
-    const yearSel = document.getElementById('salaryYearSel');
-    const curYear = new Date().getFullYear();
-    monthSel.innerHTML = TR_MONTHS.map((m,i) => '<option value="'+(i+1)+'">'+m+'</option>').join('');
-    let yearOpts = '';
-    for (let y = curYear + 1; y >= curYear - 10; y--) yearOpts += '<option value="'+y+'"'+(y===curYear?' selected':'')+'>'+y+'</option>';
-    yearSel.innerHTML = yearOpts;
-
-    document.getElementById('salaryToggleBtn').onclick = () => { salaryOpenMain = !salaryOpenMain; renderAll(); };
-    document.getElementById('salaryAddForm').onsubmit = (e) => {
-      e.preventDefault();
-      const month = parseInt(monthSel.value, 10);
-      const year = parseInt(yearSel.value, 10);
-      const amount = parseAmount(document.getElementById('salaryAmountInput').value);
-      if (amount <= 0) return;
-      const key = year + '-' + String(month).padStart(2,'0');
-      if (state.incomeByMonth[key] && !confirm(TR_MONTHS[month-1]+' '+year+' için zaten bir kayıt var (₺'+state.incomeByMonth[key].toLocaleString('tr-TR')+'). Üzerine yazılsın mı?')) return;
-      state.incomeByMonth[key] = amount;
-      logActivity('Maaş (' + TR_MONTHS[month-1] + ' ' + year + ')', amount, { type:'income' });
-      document.getElementById('salaryAmountInput').value = '';
-      saveData(); renderAll();
-    };
+    document.getElementById('salaryPrevYear').onclick = () => { salaryViewYear--; renderSalaryHistory(); };
+    document.getElementById('salaryNextYear').onclick = () => { salaryViewYear++; renderSalaryHistory(); };
   })();
 
   function renderSalaryHistory() {
-    const chevron = document.getElementById('salaryChevron');
-    const panel = document.getElementById('salaryPanel');
-    chevron.classList.toggle('open', salaryOpenMain);
-    panel.classList.toggle('open', salaryOpenMain);
-    if (!salaryOpenMain) return;
-
     const total = Object.values(state.incomeByMonth).reduce((s,v) => s + (v||0), 0);
     document.getElementById('salaryTotalValue').textContent = currency(total);
+    document.getElementById('salaryYearLabel').textContent = salaryViewYear;
 
     const listWrap = document.getElementById('salaryListWrap');
-    const keys = Object.keys(state.incomeByMonth).filter(k => state.incomeByMonth[k] > 0).sort().reverse();
     listWrap.innerHTML = '';
-    if (keys.length === 0) {
-      const e = document.createElement('div'); e.className = 'archive-empty'; e.textContent = 'Henüz maaş kaydı yok.';
-      listWrap.appendChild(e);
-      return;
-    }
-    keys.forEach(key => {
+
+    function buildRow(monthIdx) {
+      const key = salaryViewYear + '-' + String(monthIdx + 1).padStart(2, '0');
+      const val = state.incomeByMonth[key] || 0;
       const row = document.createElement('div');
-      row.className = 'bes-row';
-      row.innerHTML = '<span>'+monthLabel(key)+'</span>' +
-        '<span class="entry-right"><span class="entry-amount">'+currency(state.incomeByMonth[key])+'</span>' +
-        '<button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></span>';
-      row.querySelector('.icon-btn').onclick = () => { delete state.incomeByMonth[key]; saveData(); renderAll(); };
-      listWrap.appendChild(row);
-    });
+      row.className = 'salary-grid-row';
+
+      const monthEl = document.createElement('span');
+      monthEl.className = 'salary-grid-month';
+      monthEl.textContent = TR_MONTHS[monthIdx];
+
+      const amtEl = document.createElement('span');
+      amtEl.className = 'salary-grid-amt' + (val > 0 ? '' : ' empty');
+      amtEl.textContent = currency(val);
+      amtEl.onclick = () => {
+        const input = document.createElement('input');
+        input.className = 'salary-grid-input';
+        input.inputMode = 'decimal';
+        input.value = val > 0 ? val : '';
+        input.placeholder = '0';
+        let committed = false;
+        function commit() {
+          if (committed) return;
+          committed = true;
+          const newVal = parseAmount(input.value);
+          if (newVal !== val) {
+            if (newVal > 0) state.incomeByMonth[key] = newVal;
+            else delete state.incomeByMonth[key];
+            logActivity('Maas (' + TR_MONTHS[monthIdx] + ' ' + salaryViewYear + ')', newVal, { type:'income' });
+            saveData();
+          }
+          renderAll();
+        }
+        input.onblur = commit;
+        input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } };
+        row.replaceChild(input, amtEl);
+        input.focus();
+        input.select();
+      };
+
+      row.appendChild(monthEl);
+      row.appendChild(amtEl);
+      return row;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'salary-grid';
+    const colLeft = document.createElement('div');
+    colLeft.className = 'salary-grid-col';
+    const colRight = document.createElement('div');
+    colRight.className = 'salary-grid-col';
+    for (let i = 0; i < 12; i++) {
+      (i < 6 ? colLeft : colRight).appendChild(buildRow(i));
+    }
+    grid.appendChild(colLeft);
+    grid.appendChild(colRight);
+    listWrap.appendChild(grid);
   }
 
   // Bank/debt add form
@@ -2426,7 +2623,15 @@
     };
   })();
 
-  document.getElementById('expensesBackToday').onclick = () => { viewedDayKey = todayKey(); expensePageIndex = 0; renderAll(); };
+  document.getElementById('expensesBackToday').onclick = () => {
+    viewedDayKey = todayKey();
+    harcamalarMode = 'day';
+    harcamalarMonthKey = null;
+    expensePageIndex = 0;
+    expenseMenuOpenId = null;
+    updateDateLeaf();
+    renderAll();
+  };
 
   // Expense filter tabs
   (function() {
@@ -2467,6 +2672,52 @@
     reader.readAsText(file);
     e.target.value = '';
   };
+
+  // Undo toast: tap to restore, swipe in any direction to dismiss
+  (function() {
+    const toast = document.getElementById('undoToast');
+    let sx = 0, sy = 0, dx = 0, dy = 0, dragging = false, moved = false;
+
+    toast.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+      dx = 0; dy = 0; dragging = true; moved = false;
+      toast.classList.add('dragging');
+    }, { passive: true });
+
+    toast.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      dx = e.touches[0].clientX - sx;
+      dy = e.touches[0].clientY - sy;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+      toast.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      const dist = Math.hypot(dx, dy);
+      toast.style.opacity = String(Math.max(0, 1 - dist / 160));
+    }, { passive: true });
+
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      toast.classList.remove('dragging');
+      const dist = Math.hypot(dx, dy);
+      if (moved && dist > 55) {
+        toast.style.transform = 'translate(' + (dx * 3) + 'px,' + (dy * 3) + 'px)';
+        toast.style.opacity = '0';
+        setTimeout(() => { hideUndoToast(); toast.style.opacity = ''; }, 180);
+      } else {
+        toast.style.transform = '';
+        toast.style.opacity = '';
+        if (!moved && pendingUndo) { pendingUndo.restore(); hideUndoToast(); }
+      }
+    }
+    toast.addEventListener('touchend', endDrag, { passive: true });
+    toast.addEventListener('touchcancel', endDrag, { passive: true });
+
+    toast.addEventListener('click', () => {
+      if (moved) { moved = false; return; }
+      if (pendingUndo) { pendingUndo.restore(); hideUndoToast(); }
+    });
+  })();
 
   // FAB add menu
   (function() {

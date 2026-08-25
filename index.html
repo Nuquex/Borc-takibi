@@ -915,7 +915,7 @@
       form.className = 'inline-form open';
       form.style.margin = '4px 0';
       form.innerHTML =
-        '<div class="fields-row"><input class="txe-price" placeholder="Fiyat" inputmode="decimal" value="'+l.price+'" /><input class="txe-qty" placeholder="Adet" inputmode="decimal" value="'+l.qty+'" /></div>' +
+        '<div class="fields-row"><input class="txe-price" placeholder="Fiyat" inputmode="decimal" value="'+numToInputValue(l.price)+'" /><input class="txe-qty" placeholder="Adet" inputmode="decimal" value="'+numToInputValue(l.qty)+'" /></div>' +
         '<div class="form-actions"><button type="button" class="btn btn-ghost txe-cancel">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+(isBuy?'var(--teal)':'var(--danger)')+'">Kaydet</button></div>';
       attachAmountFormatting(form.querySelector('.txe-price'));
 
@@ -1104,6 +1104,11 @@
     return currencySymbol(code) + numStr;
   }
   function currency(n) { return formatMoney(n, 'TRY'); }
+  // Kayıtlı sayıyı (JS: 135674.99) giriş kutusu formatına çevirir: "135.674,99"
+  function numToInputValue(n) {
+    if (n === null || n === undefined || n === '' || !Number.isFinite(Number(n)) || Number(n) === 0) return '';
+    return Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
   function formatAmountLive(raw) {
     if (!raw) return '';
     // sadece rakam ve tek bir virgül bırak
@@ -1120,7 +1125,6 @@
   }
   function attachAmountFormatting(inputEl) {
     if (!inputEl) return;
-    if (inputEl.value) inputEl.value = formatAmountLive(inputEl.value);
     inputEl.addEventListener('input', () => {
       const before = inputEl.value;
       const atEnd = inputEl.selectionStart === before.length;
@@ -1318,11 +1322,11 @@
       const valEl = document.createElement('span');
       valEl.className = 'monthly-value editable';
       valEl.textContent = currency(d.amount||0);
-      valEl.style.color = item.color;
+      valEl.style.color = 'var(--teal)';
       valEl.onclick = () => {
         const input = document.createElement('input');
         input.inputMode = 'decimal';
-        input.value = d.amount > 0 ? d.amount : '';
+        input.value = numToInputValue(d.amount);
         input.placeholder = '0';
         attachAmountFormatting(input);
         input.style.cssText = 'width:110px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; text-align:right;';
@@ -1361,7 +1365,7 @@
       const totalRow = document.createElement('div');
       totalRow.className = 'monthly-row monthly-row-total';
       totalRow.innerHTML = '<span class="monthly-label" style="color:var(--text); font-weight:600;">Toplam</span>' +
-        '<span class="monthly-value" style="font-weight:700; color:' + item.color + '">' + currency(total) + '</span>';
+        '<span class="monthly-value" style="font-weight:700; color:var(--teal)">' + currency(total) + '</span>';
       body.appendChild(totalRow);
     }
 
@@ -1440,7 +1444,7 @@
         const input = document.createElement('input');
         input.className = 'salary-grid-input';
         input.inputMode = 'decimal';
-        input.value = amount > 0 ? amount : '';
+        input.value = numToInputValue(amount);
         input.placeholder = '0';
         attachAmountFormatting(input);
         let done = false;
@@ -1492,7 +1496,7 @@
         input.className = 'salary-grid-input';
         input.style.width = '100%';
         input.inputMode = 'decimal';
-        input.value = curVal > 0 ? curVal : '';
+        input.value = numToInputValue(curVal);
         input.placeholder = '0';
         attachAmountFormatting(input);
         let done = false;
@@ -1533,9 +1537,20 @@
       const sh = document.createElement('button');
       sh.className = 'sub-head';
       const typeTag = stock.productType === 'fon' ? ' · Fon' : '';
+      const hasPrice = stats.currentPrice > 0 && stats.remainingQty > 0;
+      const gainPct = (hasPrice && stats.costBasis > 0) ? (stats.gain / stats.costBasis * 100) : 0;
+      const up = stats.gain >= 0;
+      const trendColor = !hasPrice ? stock.color : (up ? '#2F9E7A' : '#E5484D');
+      const arrowSvg = up
+        ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9.5 10.5 13.5 14.5 21 7"/><polyline points="15 7 21 7 21 13"/></svg>'
+        : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 7 9.5 13.5 13.5 9.5 21 17"/><polyline points="15 17 21 17 21 11"/></svg>';
+      const dotInner = hasPrice ? arrowSvg : esc(initials(stock.name));
+      const gainLine = hasPrice
+        ? '<div class="item-sub" style="color:'+trendColor+'; font-weight:600;">'+(up?'+':'-')+currency(Math.abs(stats.gain))+'  ('+(up?'+':'-')+Math.abs(gainPct).toFixed(2).replace('.',',')+'%)</div>'
+        : '';
       sh.innerHTML =
-        '<span class="sub-dot" style="background:'+stock.color+'">'+esc(initials(stock.name))+'</span>' +
-        '<span class="sub-name">'+esc(stock.name)+'<div class="item-sub">'+stats.remainingQty+' adet · Ort. '+currency(stats.avgCost)+typeTag+'</div></span>' +
+        '<span class="sub-dot" style="background:'+trendColor+'">'+dotInner+'</span>' +
+        '<span class="sub-name">'+esc(stock.name)+'<div class="item-sub">'+stats.remainingQty+' adet · Ort. '+currency(stats.avgCost)+typeTag+'</div>'+gainLine+'</span>' +
         '<span class="item-total">'+currency(stats.currentValue)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       sh.onclick = () => { expanded[stKey] = !expanded[stKey]; renderAll(); };
@@ -1565,7 +1580,7 @@
       if (editingPriceFor === stock.id) {
         const pf = document.createElement('form');
         pf.className = 'price-form open';
-        pf.innerHTML = '<input class="p-input" placeholder="Güncel fiyat (₺)" inputmode="decimal" value="'+(stats.currentPrice||'')+'" /><button type="submit" class="btn btn-primary" style="background:var(--teal)">Kaydet</button>';
+        pf.innerHTML = '<input class="p-input" placeholder="Güncel fiyat (₺)" inputmode="decimal" value="'+numToInputValue(stats.currentPrice)+'" /><button type="submit" class="btn btn-primary" style="background:var(--teal)">Kaydet</button>';
         attachAmountFormatting(pf.querySelector('.p-input'));
         pf.onsubmit = (e) => { e.preventDefault(); stock.currentPrice = parseAmount(pf.querySelector('.p-input').value); editingPriceFor = null; saveData(); renderAll(); };
         sb.appendChild(pf);
@@ -1641,8 +1656,8 @@
 
       const delStockBtn = document.createElement('button');
       delStockBtn.className = 'del-item-btn';
-      delStockBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Hisseyi sil';
-      delStockBtn.onclick = () => { portfolioItem.stocks = portfolioItem.stocks.filter(x => x.id !== stock.id); saveData(); renderAll(); };
+      delStockBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Ürünü sil / sat';
+      delStockBtn.onclick = () => openSellStockDialog(portfolioItem, stock);
       sb.appendChild(delStockBtn);
 
       sub.appendChild(sb);
@@ -1694,6 +1709,47 @@
 
   function bankDebtTRY(item) {
     return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0);
+  }
+
+  function buildDebtForm(item, editing) {
+    const form = document.createElement('form');
+    form.className = 'inline-form open';
+    const presetT = (addingEntryFor && addingEntryFor.presetType) || null;
+    const typeOptsSel = DEBT_TYPES.map(t => '<option value="'+t+'"'+((editing && editing.debtType === t) || (!editing && presetT === t) ? ' selected' : '')+'>'+t+'</option>').join('');
+    const curOptsSel = CURRENCIES.map(c => '<option value="'+c.code+'"'+(editing && (editing.currency||'TRY') === c.code ? ' selected' : '')+'>'+c.label+'</option>').join('');
+    form.innerHTML =
+      '<select class="sel-input debt-type-sel">'+typeOptsSel+'</select>' +
+      '<input class="entry-note-input" placeholder="Açıklama (opsiyonel, örn. Araba kredisi)" value="'+(editing && editing.note ? esc(editing.note) : '')+'" />' +
+      '<select class="sel-input debt-cur-sel">'+curOptsSel+'</select>' +
+      '<div class="installment-fields open">' +
+        '<div class="installment-fields-row"><input class="inst-monthly-input" placeholder="Aylık taksit" inputmode="decimal" value="'+(editing ? numToInputValue(editing.monthlyAmount) : '')+'" /><input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" value="'+(editing ? editing.totalInstallments : '')+'" /></div>' +
+      '</div>' +
+      '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+item.color+'">'+(editing ? 'Kaydet' : 'Ekle')+'</button></div>';
+
+    attachAmountFormatting(form.querySelector('.inst-monthly-input'));
+
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const debtType = form.querySelector('.debt-type-sel').value;
+      const note = form.querySelector('.entry-note-input').value.trim();
+      const cur = form.querySelector('.debt-cur-sel').value;
+      const monthlyAmount = parseAmount(form.querySelector('.inst-monthly-input').value);
+      const totalInstallments = parseInt2(form.querySelector('.inst-total-input').value);
+      if (monthlyAmount <= 0 || totalInstallments <= 0) { alert('Aylık taksit ve toplam taksit sayısını gir.'); return; }
+      if (editing) {
+        editing.debtType = debtType; editing.note = note; editing.currency = cur;
+        editing.monthlyAmount = monthlyAmount; editing.totalInstallments = totalInstallments;
+        if (editing.paidInstallments > totalInstallments) editing.paidInstallments = totalInstallments;
+        logActivity((note || debtType) + ' düzenlendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: editing.id });
+      } else {
+        const newDebtId = uid();
+        item.debts.push({ id: newDebtId, debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0 });
+        logActivity((note || debtType) + ' eklendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: newDebtId });
+      }
+      addingEntryFor = null; saveData(); renderAll();
+    };
+    form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
+    return form;
   }
 
   function renderDebtRow(container, item, d) {
@@ -1770,6 +1826,10 @@
             }
           });
           block.appendChild(wrap);
+          // Düzenle formu bu kalemin hemen altında açılsın
+          if (addingEntryFor && addingEntryFor.group === 'banks' && addingEntryFor.editId === d.id) {
+            block.appendChild(buildDebtForm(item, d));
+          }
           container.appendChild(block);
   }
 
@@ -1856,49 +1916,9 @@
         }
       }
 
-      if (addingEntryFor && addingEntryFor.group === 'banks' && addingEntryFor.id === item.id) {
-        const form = document.createElement('form');
-        form.className = 'inline-form open';
-        let typeOpts = DEBT_TYPES.map(t => '<option value="'+t+'">'+t+'</option>').join('');
-        let curOpts = CURRENCIES.map(c => '<option value="'+c.code+'">'+c.label+'</option>').join('');
-        const editing = addingEntryFor.editId ? (item.debts || []).find(x => x.id === addingEntryFor.editId) : null;
-        const presetT = addingEntryFor.presetType || null;
-        let typeOptsSel = DEBT_TYPES.map(t => '<option value="'+t+'"'+((editing && editing.debtType === t) || (!editing && presetT === t) ? ' selected' : '')+'>'+t+'</option>').join('');
-        let curOptsSel = CURRENCIES.map(c => '<option value="'+c.code+'"'+(editing && (editing.currency||'TRY') === c.code ? ' selected' : '')+'>'+c.label+'</option>').join('');
-        form.innerHTML =
-          '<select class="sel-input debt-type-sel">'+typeOptsSel+'</select>' +
-          '<input class="entry-note-input" placeholder="Açıklama (opsiyonel, örn. Araba kredisi)" value="'+(editing && editing.note ? esc(editing.note) : '')+'" />' +
-          '<select class="sel-input debt-cur-sel">'+curOptsSel+'</select>' +
-          '<div class="installment-fields open">' +
-            '<div class="installment-fields-row"><input class="inst-monthly-input" placeholder="Aylık taksit" inputmode="decimal" value="'+(editing ? editing.monthlyAmount : '')+'" /><input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" value="'+(editing ? editing.totalInstallments : '')+'" /></div>' +
-          '</div>' +
-          '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+item.color+'">'+(editing ? 'Kaydet' : 'Ekle')+'</button></div>';
-
-        attachAmountFormatting(form.querySelector('.inst-monthly-input'));
-
-        form.onsubmit = (e) => {
-          e.preventDefault();
-          const debtType = form.querySelector('.debt-type-sel').value;
-          const note = form.querySelector('.entry-note-input').value.trim();
-          const cur = form.querySelector('.debt-cur-sel').value;
-          const monthlyAmount = parseAmount(form.querySelector('.inst-monthly-input').value);
-          const totalInstallments = parseInt2(form.querySelector('.inst-total-input').value);
-          if (monthlyAmount <= 0 || totalInstallments <= 0) { alert('Aylık taksit ve toplam taksit sayısını gir.'); return; }
-          if (editing) {
-            editing.debtType = debtType; editing.note = note; editing.currency = cur;
-            editing.monthlyAmount = monthlyAmount; editing.totalInstallments = totalInstallments;
-            if (editing.paidInstallments > totalInstallments) editing.paidInstallments = totalInstallments;
-            logActivity((note || debtType) + ' düzenlendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: editing.id });
-          } else {
-            const newDebtId = uid();
-            item.debts.push({ id: newDebtId, debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0 });
-            logActivity((note || debtType) + ' eklendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: newDebtId });
-          }
-          addingEntryFor = null; saveData(); renderAll();
-        };
-        form.querySelector('.cancel-entry').onclick = () => { addingEntryFor = null; renderAll(); };
-        body.appendChild(form);
-      } else {
+      if (addingEntryFor && addingEntryFor.group === 'banks' && addingEntryFor.id === item.id && !addingEntryFor.editId) {
+        body.appendChild(buildDebtForm(item, null));
+      } else if (!(addingEntryFor && addingEntryFor.group === 'banks' && addingEntryFor.id === item.id)) {
         const addBtn = document.createElement('button');
         addBtn.className = 'add-entry-btn'; addBtn.style.color = item.color;
         addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ekle';
@@ -2172,7 +2192,7 @@
       salValue.onclick = () => {
         const salInput = document.createElement('input');
         salInput.inputMode = 'decimal';
-        salInput.value = salaryVal > 0 ? salaryVal : '';
+        salInput.value = numToInputValue(salaryVal);
         salInput.placeholder = '0';
         attachAmountFormatting(salInput);
         salInput.style.cssText = 'width:104px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; text-align:right;';
@@ -2666,7 +2686,7 @@
         const input = document.createElement('input');
         input.className = 'salary-grid-input';
         input.inputMode = 'decimal';
-        input.value = val > 0 ? val : '';
+        input.value = numToInputValue(val);
         input.placeholder = '0';
         attachAmountFormatting(input);
         let committed = false;
@@ -2757,7 +2777,7 @@
     form.querySelectorAll('.mode-btn[data-ekind]').forEach(b => b.classList.toggle('active', b.dataset.ekind === kind));
     setExpenseKindUI(kind);
     document.getElementById('expenseDescInput').value = (ex && ex.kind !== 'gelir') ? (ex.desc || '') : '';
-    document.getElementById('expenseAmountInput').value = ex ? formatAmountLive(String(ex.amount)) : '';
+    document.getElementById('expenseAmountInput').value = ex ? numToInputValue(ex.amount) : '';
     const metaLabel = document.getElementById('expenseMetaLabel');
     if (kind === 'gelir') {
       document.getElementById('expenseCurrencySelect').value = ex ? (ex.currency || 'TRY') : 'TRY';
@@ -3045,6 +3065,88 @@
     back.textContent = '‹ Kategorilere dön';
     back.onclick = openExpenseCategoryPicker;
     list.appendChild(back);
+  }
+
+  // Ürün satma / silme akışı
+  function openSellStockDialog(portfolioItem, stock) {
+    const stats = stockStats(stock);
+    const proceeds = stats.currentValue;
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = stock.name + ' — Ne yapalım?';
+    list.innerHTML = '';
+
+    const info = document.createElement('div');
+    info.className = 'archive-empty';
+    info.style.cssText = 'font-style:normal; padding:2px 2px 8px;';
+    info.innerHTML = 'Güncel değer: <b>' + currency(proceeds) + '</b>' +
+      (stats.currentPrice > 0 ? '' : '<br><span style="color:var(--text-muted)">Güncel fiyat girilmediği için maliyet baz alındı.</span>');
+    list.appendChild(info);
+
+    const yes = document.createElement('button');
+    yes.type = 'button';
+    yes.className = 'fab-menu-item';
+    yes.style.cssText = 'background:var(--surface-2); justify-content:flex-start;';
+    yes.innerHTML = '✅  Sat — tutarı varlığa aktar';
+    yes.onclick = () => openSellTargetPicker(portfolioItem, stock, proceeds);
+
+    const no = document.createElement('button');
+    no.type = 'button';
+    no.className = 'fab-menu-item';
+    no.style.cssText = 'background:var(--surface-2); justify-content:flex-start;';
+    no.innerHTML = '❌  Sadece sil (aktarma yapma)';
+    no.onclick = () => {
+      const idx = portfolioItem.stocks.indexOf(stock);
+      portfolioItem.stocks = portfolioItem.stocks.filter(x => x.id !== stock.id);
+      closeDebtPicker();
+      saveData(); renderAll();
+      showUndoToast(stock.name, () => {
+        portfolioItem.stocks.splice(Math.min(idx, portfolioItem.stocks.length), 0, stock);
+        saveData(); renderAll();
+      });
+    };
+
+    list.appendChild(yes);
+    list.appendChild(no);
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+  }
+
+  function openSellTargetPicker(portfolioItem, stock, proceeds) {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = 'Nereye aktarılsın?';
+    list.innerHTML = '';
+
+    function transferTo(targetAsset) {
+      targetAsset.debts = targetAsset.debts || [];
+      targetAsset.debts.push({ id: uid(), desc: stock.name + ' satışı', amount: proceeds });
+      const idx = portfolioItem.stocks.indexOf(stock);
+      portfolioItem.stocks = portfolioItem.stocks.filter(x => x.id !== stock.id);
+      logActivity(stock.name + ' satıldı → ' + targetAsset.name, proceeds, { type:'asset', assetId: targetAsset.id });
+      closeDebtPicker();
+      saveData(); renderAll();
+      showUndoToast(stock.name + ' satışı', () => {
+        targetAsset.debts = targetAsset.debts.filter(x => !(x.desc === stock.name + ' satışı' && x.amount === proceeds));
+        portfolioItem.stocks.splice(Math.min(idx, portfolioItem.stocks.length), 0, stock);
+        saveData(); renderAll();
+      });
+    }
+
+    const simpleAssets = state.assets.filter(a => a.type !== 'portfolio');
+    simpleAssets.forEach(a => {
+      list.appendChild(pickerButton(a.name, () => transferTo(a), a.color, initials(a.name)));
+    });
+
+    const mkNew = document.createElement('button');
+    mkNew.type = 'button';
+    mkNew.className = 'fab-menu-item';
+    mkNew.style.cssText = 'background:none; border:1px dashed var(--border); justify-content:center; color:var(--text-muted);';
+    mkNew.textContent = simpleAssets.length ? '+ Yeni "Nakit" kaydı oluştur' : '+ "Nakit" oluştur ve aktar';
+    mkNew.onclick = () => {
+      const id = uid();
+      const newAsset = { id, name:'Nakit', color: PALETTE[state.assets.length % PALETTE.length], type:'simple', debts: [] };
+      state.assets.push(newAsset);
+      transferTo(newAsset);
+    };
+    list.appendChild(mkNew);
   }
 
   function openDebtTypePicker() {

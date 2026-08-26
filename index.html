@@ -6,58 +6,66 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Borç Takibim" />
-<meta name="theme-color" content="#12161d" />
+<meta name="theme-color" content="#0E1420" />
 <title>Borç Takibim</title>
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180-v3.png">
-<link rel="apple-touch-icon" sizes="512x512" href="icon-512-v3.png">
-<link rel="icon" href="favicon-32-v3.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180-v4.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512-v4.png">
+<link rel="icon" href="favicon-32-v4.png">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   :root {
-    --bg: #12161d; --surface: #1b212b; --surface-2: #232b37; --border: #313b49;
-    --text: #edeff3; --text-muted: #8b93a3; --gold: #c9a24b; --teal: #4fa8a0; --danger: #d6746a;
+    --bg: #0E1420; --surface: #172033; --surface-2: #1E2A40; --border: #2A3852;
+    --text: #E9EDF5; --text-muted: #8C9BB5;
+    --gold: #D9B168; --teal: #3FBF9A; --danger: #F0555E;
+    --hero-1: #16233C; --hero-2: #0D1526; --hero-text: #FFFFFF; --hero-muted: #9FB0CC;
+    --hero-line: rgba(255,255,255,0.10); --hero-chip: rgba(255,255,255,0.07);
+    --accent: #6A78F7; --accent-ink: #FFFFFF; --accent-soft: rgba(106,120,247,0.16);
   }
   @media (prefers-color-scheme: light) {
     :root {
-      --bg: #f4f0e6; --surface: #ffffff; --surface-2: #efe8d8; --border: #ddd3ba;
-      --text: #201d17; --text-muted: #7a7263; --gold: #a97a2f; --teal: #2f8f86; --danger: #c0392b;
+      --bg: #F4F6FA; --surface: #FFFFFF; --surface-2: #F0F3F8; --border: #E2E7F0;
+      --text: #0F1729; --text-muted: #69758C;
+      --gold: #B78A33; --teal: #16916E; --danger: #D93B45;
+      --hero-1: #1B2C4D; --hero-2: #0F1B31; --hero-text: #FFFFFF; --hero-muted: #A9B8D2;
+      --hero-line: rgba(255,255,255,0.12); --hero-chip: rgba(255,255,255,0.08);
+      --accent: #4C5FE8; --accent-ink: #FFFFFF; --accent-soft: rgba(76,95,232,0.12);
     }
   }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; letter-spacing:-0.2px; }
   html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
   body { padding:20px 16px 64px; padding-top:max(20px, env(safe-area-inset-top)); padding-bottom:max(64px, env(safe-area-inset-bottom)); }
-  *:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  *:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .container { width:100%; max-width:480px; margin:0 auto; }
 
   .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:12px; }
   .header-title-wrap { display:flex; flex-direction:column; gap:2px; }
   .header h1 {
-    font-family:'Fraunces',serif; font-weight:600; font-size:25px; margin:0; letter-spacing:0.3px;
-    line-height:1.15; background:linear-gradient(100deg, var(--text) 40%, var(--gold) 130%);
-    -webkit-background-clip:text; background-clip:text; color:var(--text);
+    font-family:'Inter',sans-serif; font-weight:800; font-size:21px; margin:0;
+    letter-spacing:-0.5px; line-height:1.15; color:var(--text);
   }
-  .header-rule { width:34px; height:2px; background:var(--gold); border-radius:2px; }
+  .header-rule { display:none; }
   .header .date { font-size:12px; color:var(--text-muted); font-variant:small-caps; }
-  .date-leaf { display:flex; flex-direction:column; width:38px; border-radius:8px; overflow:hidden; border:1px solid var(--border); box-shadow:0 2px 6px rgba(0,0,0,0.18); flex-shrink:0; }
-  .date-leaf-month { background:var(--gold); color:#1b1607; font-size:9px; font-weight:700; text-align:center; padding:2px 0; text-transform:uppercase; letter-spacing:0.4px; }
-  .date-leaf-day { background:var(--surface); color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; text-align:center; padding:2px 0; line-height:1.3; }
+  .date-leaf { display:flex; flex-direction:column; width:40px; border-radius:11px; overflow:hidden; border:1px solid var(--border); background:var(--surface); flex-shrink:0; }
+  .date-leaf-month { background:var(--surface-2); color:var(--text-muted); font-size:9px; font-weight:700; text-align:center; padding:3px 0; text-transform:uppercase; letter-spacing:0.5px; }
+  .date-leaf-day { font-variant-numeric:tabular-nums;  background:var(--surface); color:var(--text); font-family:'Inter',sans-serif; font-size:17px; font-weight:700; text-align:center; padding:2px 0; line-height:1.3; }
 
   .summary { background:linear-gradient(155deg, var(--surface-2), var(--surface)); border:1px solid var(--border); border-radius:18px; padding:20px 20px 18px; margin-bottom:18px; }
-  .summary-label { font-size:12px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-muted); margin-bottom:6px; }
-  .net-total { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:32px; line-height:1.1; margin-bottom:16px; word-break:break-word; }
-  .net-total.positive { color:var(--teal); } .net-total.negative { color:var(--danger); }
+  .summary-label { font-size:11px; text-transform:uppercase; letter-spacing:1.4px; font-weight:600; color:var(--text-muted); margin-bottom:7px; }
+  .net-total { font-variant-numeric:tabular-nums; font-weight:700; font-size:34px; line-height:1.08; margin-bottom:18px; letter-spacing:-1.1px; color:var(--hero-text); }
+  .net-total.positive { color:#5FD3AE; } .net-total.negative { color:#FF7A82; }
   .sub-stats { display:flex; gap:10px; margin-bottom:4px; }
-  .sub-stat { flex:1; background:rgba(127,127,127,0.06); border:1px solid var(--border); border-radius:12px; padding:10px 12px; }
-  .sub-stat-label { font-size:10.5px; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-muted); margin-bottom:4px; }
-  .sub-stat-value { font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; }
-  .sub-stat-value.assets { color:var(--teal); } .sub-stat-value.debts { color:var(--gold); }
+  .sub-stat { flex:1; background:rgba(127,127,127,0.06); border:1px solid var(--border); border-radius:13px; padding:11px 13px; min-width:0; }
+  .sub-stat-label { font-size:10px; text-transform:uppercase; letter-spacing:0.9px; font-weight:600; color:var(--text-muted); margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sub-stat-value { font-variant-numeric:tabular-nums; font-size:16.5px; font-weight:700; letter-spacing:-0.4px; color:var(--hero-text); }
+  .sub-stat-value.assets { color:#5FD3AE; } .sub-stat-value.debts { color:var(--gold); }
   .fx-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-  .fx-chip { font-size:11px; font-family:'IBM Plex Mono',monospace; background:rgba(127,127,127,0.08); border:1px solid var(--border); border-radius:7px; padding:3px 8px; color:var(--text-muted); }
+  .fx-chip { font-variant-numeric:tabular-nums;  font-size:11px; font-family:'Inter',sans-serif; background:rgba(127,127,127,0.08); border:1px solid var(--border); border-radius:7px; padding:3px 8px; color:var(--text-muted); }
 
   .month-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:22px; }
-  .month-card-title { font-family:'Fraunces',serif; font-size:14px; font-weight:600; margin-bottom:10px; }
+  .month-card-title { font-family:'Inter',sans-serif; font-size:13px; font-weight:700; letter-spacing:0.2px; margin-bottom:12px; color:var(--text); }
 
   .month-carousel-wrap { margin-bottom:6px; border-radius:16px; overflow:hidden; }
   .net-carousel-wrap { margin-bottom:4px; border-radius:18px; overflow:hidden; }
@@ -66,25 +74,34 @@
   #netCarouselDots { margin-bottom:22px; }
   .net-page {
     flex:0 0 100%; scroll-snap-align:start; box-sizing:border-box;
-    background:linear-gradient(155deg, var(--surface-2), var(--surface)); border:1px solid var(--border);
-    border-radius:18px; padding:20px 20px 18px;
+    background:linear-gradient(160deg, var(--hero-1) 0%, var(--hero-2) 100%);
+    border:none; border-radius:20px; padding:20px 20px 18px; color:var(--hero-text);
+    box-shadow:0 10px 26px rgba(8,16,32,0.28);
   }
-  .donut-wrap { display:flex; justify-content:center; margin:10px 0 8px; }
-  .donut-legend { display:flex; flex-direction:column; gap:8px; }
-  .donut-legend-row { display:flex; align-items:center; gap:9px; font-size:12.5px; }
+  .net-page .summary-label, .net-page .net-page-title { color:var(--hero-muted); }
+  .net-page .sub-stat { background:var(--hero-chip); border:1px solid var(--hero-line); }
+  .net-page .sub-stat-label { color:var(--hero-muted); }
+  .net-page .donut-legend-label { color:var(--hero-text); }
+  .net-page .donut-legend-pct { color:var(--hero-muted); }
+  .net-page .donut-legend-amt { color:var(--hero-text); }
+  .net-page .fx-chip { background:var(--hero-chip); border:1px solid var(--hero-line); color:var(--hero-muted); }
+  .net-page .txn-empty { color:var(--hero-muted); }
+  .donut-wrap { display:flex; justify-content:center; margin:6px 0 9px; }
+  .donut-legend { display:grid; grid-template-columns:1fr 1fr; gap:7px 12px; }
+  .donut-legend-row { display:flex; align-items:center; gap:7px; font-size:11.5px; min-width:0; }
   .donut-swatch { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
-  .donut-legend-label { flex:1; color:var(--text); }
-  .donut-legend-pct { color:var(--text-muted); font-family:'IBM Plex Mono',monospace; font-size:11.5px; }
-  .donut-legend-amt { font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; }
-  .net-page-title { font-size:12px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-muted); margin-bottom:6px; }
-  .net-page-total { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:24px; margin-bottom:4px; }
+  .donut-legend-label { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); }
+  .donut-legend-pct { display:none; }
+  .donut-legend-amt { font-variant-numeric:tabular-nums; font-size:11.5px; font-weight:600; flex-shrink:0; }
+  .net-page-title { font-size:11px; text-transform:uppercase; letter-spacing:1.4px; font-weight:600; color:var(--text-muted); margin-bottom:7px; }
+  .net-page-total { font-variant-numeric:tabular-nums; font-weight:700; font-size:26px; margin-bottom:2px; letter-spacing:-0.8px; color:var(--hero-text); }
   .date-leaf { cursor:pointer; }
 
   .cal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:70; display:none; align-items:center; justify-content:center; padding:20px; }
   .cal-backdrop.open { display:flex; }
   .cal-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:16px; width:100%; max-width:320px; }
   .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-  .cal-title { font-family:'Fraunces',serif; font-size:15px; font-weight:600; }
+  .cal-title { font-family:'Inter',sans-serif; font-size:15px; font-weight:700; }
   .cal-nav-btn { background:none; border:1px solid var(--border); border-radius:8px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); cursor:pointer; }
   .cal-grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:3px; }
   .cal-dow { text-align:center; font-size:10px; color:var(--text-muted); padding-bottom:4px; }
@@ -106,16 +123,17 @@
   .month-page {
     flex:0 0 100%; scroll-snap-align:start; box-sizing:border-box;
     background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px 18px;
+    box-shadow:0 1px 2px rgba(10,20,40,0.04);
   }
   .carousel-dots { display:flex; justify-content:center; gap:6px; margin-top:10px; }
   .carousel-dot { width:6px; height:6px; border-radius:50%; background:var(--border); transition:all .2s ease; }
-  .carousel-dot.active { background:var(--gold); width:16px; border-radius:3px; }
-  .carousel-hint { text-align:center; font-size:10.5px; color:var(--text-muted); margin-top:6px; margin-bottom:22px; }
+  .carousel-dot.active { background:var(--accent); width:18px; border-radius:3px; }
+  .carousel-hint { text-align:center; font-size:10px; color:var(--text-muted); opacity:.7; margin-top:6px; margin-bottom:6px; }
   .monthly-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; }
-  .monthly-row + .monthly-row { border-top:1px dashed var(--border); }
+  .monthly-row + .monthly-row { border-top:1px solid var(--border); }
   .monthly-row-total { border-top:1px solid var(--border) !important; margin-top:2px; padding-top:9px; }
   .monthly-label { font-size:12px; color:var(--text-muted); }
-  .monthly-value { font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; }
+  .monthly-value { font-variant-numeric:tabular-nums;  font-family:'Inter',sans-serif; font-size:14px; font-weight:600; }
   .monthly-value.due { color:var(--gold); }
   .monthly-value.left.positive { color:var(--teal); } .monthly-value.left.negative { color:var(--danger); }
   .monthly-value.editable { cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; }
@@ -123,38 +141,105 @@
   .income-edit-form.open { display:flex; }
   .income-edit-form input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:7px 9px; color:var(--text); font-size:13px; font-family:inherit; }
 
-  .archive-toggle { font-size:12.5px; color:var(--gold); background:none; border:none; cursor:pointer; padding:10px 0 0; font-family:inherit; display:flex; align-items:center; gap:5px; }
+  .archive-toggle { font-size:12.5px; color:var(--accent); background:none; border:none; cursor:pointer; padding:10px 0 0; font-family:inherit; display:flex; align-items:center; gap:5px; }
   .archive-list { display:none; margin-top:8px; }
   .archive-list.open { display:block; }
-  .archive-month { border-top:1px dashed var(--border); padding:10px 0; }
+  .archive-month { border-top:1px solid var(--border); padding:10px 0; }
   .archive-month-head { display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
   .archive-month-title { font-size:13px; font-weight:500; }
-  .archive-month-net { font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--text-muted); }
+  .archive-month-net { font-family:'Inter',sans-serif; font-size:12.5px; color:var(--text-muted); }
   .archive-detail { display:none; margin-top:8px; font-size:12px; color:var(--text-muted); }
   .archive-detail.open { display:block; }
   .archive-detail-row { display:flex; justify-content:space-between; padding:3px 0; }
-  .archive-items { margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); }
+  .archive-items { margin-top:6px; padding-top:6px; border-top:1px solid var(--border); }
   .archive-item-row { display:flex; justify-content:space-between; padding:2px 0; font-size:11.5px; }
   .archive-empty { font-size:12px; color:var(--text-muted); font-style:italic; padding:8px 0; }
 
-  .tear { height:1px; border-top:1px dashed var(--border); margin:0 0 22px; }
-  .section-title { font-family:'Fraunces',serif; font-size:15px; font-weight:600; color:var(--text-muted); margin:0 0 12px; letter-spacing:0.3px; display:flex; align-items:center; justify-content:space-between; }
-  .section-total { font-family:'IBM Plex Mono',monospace; font-size:13px; }
+  .tear { height:0; border:none; margin:26px 0 0; }
 
-  .item-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:12px; overflow:hidden; }
-  .item-head { display:flex; align-items:center; gap:12px; padding:14px; cursor:pointer; background:none; border:none; width:100%; text-align:left; color:var(--text); font-family:inherit; }
-  .item-dot { width:28px; height:28px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; }
-  .item-name { flex:1; font-size:15px; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cash-strip {
+    display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory;
+    scrollbar-width:none; -ms-overflow-style:none; padding:2px 0 6px; margin-bottom:4px;
+  }
+  .cash-strip::-webkit-scrollbar { display:none; }
+  .cash-card {
+    flex:0 0 74%; scroll-snap-align:start; border-radius:18px; padding:18px 20px 20px;
+    color:#fff; position:relative; overflow:hidden; min-height:118px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    box-shadow:0 8px 20px rgba(10,20,45,0.22);
+  }
+  .cash-card::after {
+    content:''; position:absolute; right:-38px; top:-52px; width:150px; height:150px;
+    border-radius:50%; background:rgba(255,255,255,0.07);
+  }
+  .cash-card-name { font-size:13.5px; font-weight:600; opacity:.92; position:relative; z-index:1; }
+  .cash-card-label { font-size:11px; opacity:.72; margin-bottom:4px; position:relative; z-index:1; }
+  .cash-card-amt {
+    font-variant-numeric:tabular-nums; font-size:26px; font-weight:700; letter-spacing:-0.8px;
+    position:relative; z-index:1; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+  }
+  .cash-card-amt svg { opacity:.65; }
+  .cash-card-input {
+    width:100%; background:rgba(255,255,255,0.16); border:1px solid rgba(255,255,255,0.4);
+    border-radius:9px; padding:5px 9px; color:#fff; font-size:22px; font-weight:700;
+    font-variant-numeric:tabular-nums; font-family:inherit; text-align:left; position:relative; z-index:2;
+  }
+  .cash-card-input::placeholder { color:rgba(255,255,255,0.55); }
+  .debt-summary {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:15px 17px 16px; margin-bottom:12px; box-shadow:0 1px 2px rgba(10,20,40,0.04);
+  }
+  .debt-sum-top { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom:12px; }
+  .debt-sum-label { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.9px; color:var(--text-muted); margin-bottom:4px; }
+  .debt-sum-val { font-variant-numeric:tabular-nums; font-size:22px; font-weight:700; letter-spacing:-0.7px; color:var(--gold); }
+  .debt-sum-side { text-align:right; }
+  .debt-sum-side .debt-sum-val { font-size:15px; color:var(--text); }
+  .debt-bar { height:8px; border-radius:99px; background:var(--surface-2); overflow:hidden; display:flex; }
+  .debt-bar span { height:100%; display:block; }
+  .debt-legend { display:flex; flex-wrap:wrap; gap:10px 14px; margin-top:11px; }
+  .debt-legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); }
+  .debt-legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .debt-legend-item b { color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; }
+
+  .bank-progress { height:5px; border-radius:99px; background:var(--surface-2); overflow:hidden; margin-top:7px; }
+  .bank-progress span { display:block; height:100%; border-radius:99px; }
+  .bank-meta-row { display:flex; align-items:center; gap:7px; margin-top:6px; font-size:10.5px; color:var(--text-muted); flex-wrap:wrap; }
+  .bank-meta-row > span { white-space:nowrap; }
+  .bank-pill { background:var(--surface-2); border-radius:99px; padding:2px 8px; font-weight:600; }
+
+  .title-add-btn {
+    width:22px; height:22px; border-radius:50%; border:none; background:var(--accent-soft);
+    color:var(--accent); display:inline-flex; align-items:center; justify-content:center;
+    cursor:pointer; flex-shrink:0; padding:0;
+  }
+  .title-add-btn:active { transform:scale(.92); }
+  .src-opt {
+    display:flex; align-items:center; gap:11px; padding:13px 14px; border-radius:12px;
+    border:none; cursor:pointer; font-family:inherit; font-size:14px; font-weight:600;
+    color:#fff; width:100%; text-align:left;
+  }
+  .src-opt .src-bal { margin-left:auto; font-size:12px; font-weight:600; opacity:.85; font-variant-numeric:tabular-nums; }
+  .src-opt.neutral { background:var(--surface-2); color:var(--text); }
+  .picker-group-title { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;
+    color:var(--text-muted); margin:8px 2px 2px; }
+  .section-title { font-family:'Inter',sans-serif; font-size:13px; font-weight:700; color:var(--text-muted); margin:22px 0 10px; letter-spacing:0.2px; text-transform:uppercase; display:flex; align-items:center; justify-content:space-between; }
+  .section-total { font-variant-numeric:tabular-nums;  font-family:'Inter',sans-serif; font-size:13px; }
+
+  .item-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; margin-bottom:10px; overflow:hidden; box-shadow:0 1px 2px rgba(10,20,40,0.04); }
+  .item-head { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; cursor:pointer; background:none; border:none; width:100%; text-align:left; color:var(--text); font-family:inherit; }
+  .item-dot { width:34px; height:34px; border-radius:50%; margin-top:1px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; }
+  .item-name { flex:1; font-size:15px; font-weight:600; min-width:0; overflow:hidden; }
+  .item-name > .item-sub, .item-name { text-overflow:ellipsis; }
   .item-sub { font-size:11px; color:var(--text-muted); font-weight:400; }
-  .item-total { font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; }
-  .chevron { color:var(--text-muted); transition:transform .25s ease; flex-shrink:0; }
+  .item-total { font-variant-numeric:tabular-nums; font-size:14.5px; font-weight:700; letter-spacing:-0.3px; padding-top:1px; }
+  .chevron { color:var(--text-muted); transition:transform .25s ease; flex-shrink:0; margin-top:3px; }
   .chevron.open { transform:rotate(180deg); }
   .item-body { border-top:1px solid var(--border); padding:12px 14px 14px; display:none; }
   .item-body.open { display:block; }
 
   .sub-card { background:rgba(127,127,127,0.04); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden; }
   .sub-head { display:flex; align-items:center; gap:10px; padding:11px 12px; cursor:pointer; background:none; border:none; width:100%; text-align:left; color:var(--text); font-family:inherit; }
-  .sub-dot { width:24px; height:24px; border-radius:7px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; }
+  .sub-dot { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; }
   .sub-name { flex:1; font-size:13.5px; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .sub-body { border-top:1px solid var(--border); padding:10px 12px 12px; display:none; }
   .sub-body.open { display:block; }
@@ -162,31 +247,45 @@
   .stock-stats { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .stock-stat { flex:1; min-width:95px; background:rgba(127,127,127,0.06); border:1px solid var(--border); border-radius:10px; padding:7px 9px; }
   .stock-stat-label { font-size:9.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px; }
-  .stock-stat-value { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; }
+  .stock-stat-value { font-family:'Inter',sans-serif; font-size:13px; font-weight:600; }
   .stock-stat-value.gain { color:var(--teal); } .stock-stat-value.loss { color:var(--danger); }
 
-  .price-btn { font-size:11.5px; color:var(--gold); background:none; border:1px dashed var(--border); border-radius:8px; padding:5px 9px; cursor:pointer; font-family:inherit; margin-bottom:8px; }
+  .price-btn { font-size:11.5px; color:var(--accent); background:none; border:1px dashed var(--border); border-radius:8px; padding:5px 9px; cursor:pointer; font-family:inherit; margin-bottom:8px; }
   .price-form { display:none; gap:8px; margin-bottom:8px; }
   .price-form.open { display:flex; }
   .price-form input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:7px 9px; color:var(--text); font-size:12.5px; font-family:inherit; }
 
-  .txn-toggle { font-size:11.5px; color:var(--text-muted); background:none; border:none; cursor:pointer; padding:6px 0 0; font-family:inherit; text-decoration:underline dotted; text-underline-offset:2px; }
+  .txn-toggle { font-size:11.5px; color:var(--accent); background:none; border:none; cursor:pointer; padding:6px 0 0; font-family:inherit; text-decoration:underline dotted; text-underline-offset:2px; }
   .txn-lists { display:none; margin-top:8px; }
   .txn-lists.open { display:block; }
   .txn-group-title { font-size:10.5px; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted); margin:8px 0 4px; }
   .txn-row { display:flex; align-items:center; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border); font-size:12px; gap:8px; }
   .txn-row:last-of-type { border-bottom:none; }
-  .txn-amount { font-family:'IBM Plex Mono',monospace; }
+  .txn-amount { font-variant-numeric:tabular-nums;  font-family:'Inter',sans-serif; }
   .txn-empty { font-size:11.5px; color:var(--text-muted); font-style:italic; }
 
   .stock-add-row { display:flex; gap:8px; margin-top:4px; }
 
   .entry-block { padding:10px 0; border-bottom:1px solid var(--border); }
-  .debt-subgroup-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin:12px 0 4px; }
+  .debt-subgroup-title { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.9px;
+    color:var(--text-muted); margin:14px 0 6px; display:flex; align-items:center; gap:7px; }
+  .debt-subgroup-title::after { content:''; flex:1; height:1px; background:var(--border); }
+  .asset-meta-row { display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  .asset-pill { font-size:10px; font-weight:700; border-radius:99px; padding:3px 9px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .item-dot svg { display:block; }
+  .debt-row-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .debt-row-left { display:flex; align-items:center; gap:7px; min-width:0; flex-wrap:wrap; }
+  .debt-row-title { font-size:14px; font-weight:600; color:var(--text); }
+  .debt-type-chip { font-size:10px; font-weight:700; border-radius:99px; padding:3px 9px; white-space:nowrap; }
+  .debt-row-right { display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0; }
+  .debt-row-sub { font-size:10.5px; color:var(--text-muted); }
+  .debt-row-meta { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:10.5px; color:var(--text-muted); flex-wrap:wrap; }
+  .debt-mini-pill { border-radius:99px; padding:3px 9px; font-weight:700; }
+  .debt-pct { margin-left:auto; font-weight:800; font-variant-numeric:tabular-nums; }
   .debt-subgroup-title:first-child { margin-top:0; }
   .entry-desc-wrap { display:flex; align-items:center; gap:6px; min-width:0; flex:1; }
   .entry-desc-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; font-size:13.5px; }
-  #expensesList { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:4px; }
+  #expensesList { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:4px; box-shadow:0 1px 2px rgba(10,20,40,0.04); }
   .expense-tap-row { cursor:pointer; }
   .expense-tap-row:active { background:rgba(127,127,127,0.06); }
   .expense-tap-menu { display:flex; gap:8px; padding:4px 14px 11px; }
@@ -207,7 +306,7 @@
 
   .undo-toast {
     position:fixed; left:16px; bottom:calc(24px + env(safe-area-inset-bottom));
-    background:var(--surface-2); border:1px solid var(--border); color:var(--gold); border-radius:11px;
+    background:var(--surface-2); border:1px solid var(--border); color:var(--accent); border-radius:11px;
     padding:10px 16px; display:flex; align-items:center; gap:8px;
     box-shadow:0 6px 18px rgba(0,0,0,0.4); z-index:80;
     transform:translateY(180%); opacity:0; transition:transform .25s ease, opacity .25s ease;
@@ -221,14 +320,14 @@
   .entry-desc { font-size:13.5px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .entry-badge { display:inline-block; font-size:10px; font-weight:600; color:var(--gold); background:rgba(201,162,75,0.12); border-radius:5px; padding:1px 6px; margin-left:6px; vertical-align:middle; }
   .entry-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
-  .entry-amount { font-family:'IBM Plex Mono',monospace; font-size:13.5px; }
+  .entry-amount { font-variant-numeric:tabular-nums;  font-family:'Inter',sans-serif; font-size:13.5px; }
   .entry-meta { font-size:11px; color:var(--text-muted); margin-top:4px; }
 
   .dots { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
   .dot-inst {
     min-width:26px; height:26px; border-radius:7px; border:1px solid var(--border); background:var(--bg);
     cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 4px;
-    font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; color:var(--text-muted);
+    font-family:'Inter',sans-serif; font-size:10.5px; font-weight:600; color:var(--text-muted);
     transition:background .12s ease, color .12s ease, border-color .12s ease;
   }
   .dot-inst.paid { background:var(--gold); border-color:var(--gold); color:#1b1607; }
@@ -276,24 +375,24 @@
   .salary-grid-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; gap:6px; }
   .salary-grid-row:last-child { border-bottom:none; }
   .salary-grid-month { color:var(--text-muted); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .salary-grid-amt {
-    font-family:'IBM Plex Mono',monospace; font-weight:600; flex-shrink:0; cursor:pointer;
+  .salary-grid-amt { font-variant-numeric:tabular-nums; 
+    font-family:'Inter',sans-serif; font-weight:600; flex-shrink:0; cursor:pointer;
     text-decoration:underline dotted; text-underline-offset:3px;
   }
   .salary-grid-amt.empty { color:var(--text-muted); font-weight:400; }
-  .salary-grid-input {
+  .salary-grid-input { font-variant-numeric:tabular-nums; 
     width:88px; background:var(--bg); border:1px solid var(--gold); border-radius:6px; padding:3px 6px;
-    color:var(--text); font-size:12px; font-weight:600; font-family:'IBM Plex Mono',monospace; text-align:right;
+    color:var(--text); font-size:12px; font-weight:600; font-family:'Inter',sans-serif; text-align:right;
   }
   .bes-total-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
-  .bes-total-value { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:15px; color:var(--teal); }
+  .bes-total-value { font-variant-numeric:tabular-nums;  font-family:'Inter',sans-serif; font-weight:600; font-size:15px; color:var(--teal); }
 
   .activity-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
   .activity-row.clickable { cursor:pointer; }
   .activity-row.clickable:active { background:rgba(127,127,127,0.08); }
   .activity-row:last-of-type { border-bottom:none; }
   .activity-desc { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .activity-amt { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-muted); flex-shrink:0; }
+  .activity-amt { font-variant-numeric:tabular-nums;  font-family:'Inter',sans-serif; font-size:12px; color:var(--text-muted); flex-shrink:0; }
   #activityList { max-height:115px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .kesim-btn { font-size:11.5px; color:var(--text-muted); background:none; border:1px dashed var(--border); border-radius:8px; padding:5px 9px; cursor:pointer; font-family:inherit; margin-bottom:8px; }
   .kesim-form { display:none; gap:8px; margin-bottom:8px; }
@@ -305,9 +404,9 @@
   .inline-form input { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit; width:100%; }
   .inline-form input::placeholder { color:var(--text-muted); }
 
-  .mode-toggle { display:flex; gap:6px; margin-bottom:2px; }
-  .mode-btn { flex:1; font-family:inherit; font-size:12.5px; padding:7px 8px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text-muted); cursor:pointer; }
-  .mode-btn.active { background:var(--gold); color:#1b1607; border-color:var(--gold); font-weight:600; }
+  .mode-toggle { display:flex; gap:4px; margin-bottom:2px; background:var(--surface-2); padding:4px; border-radius:999px; }
+  .mode-btn { flex:1; font-family:inherit; font-size:12.5px; font-weight:600; padding:8px 8px; border-radius:999px; border:none; background:none; color:var(--text-muted); cursor:pointer; transition:background .15s, color .15s; }
+  .mode-btn.active { background:var(--accent); color:var(--accent-ink); box-shadow:0 2px 8px rgba(76,95,232,0.30); }
 
   .installment-fields { display:none; flex-direction:column; gap:8px; }
   .installment-fields.open { display:flex; }
@@ -316,7 +415,7 @@
   .simple-fields.hidden { display:none; }
 
   .form-actions { display:flex; gap:8px; justify-content:flex-end; }
-  .btn { font-family:inherit; font-size:13px; font-weight:500; padding:8px 14px; border-radius:8px; border:none; cursor:pointer; }
+  .btn { font-family:inherit; font-size:13px; font-weight:600; padding:9px 18px; border-radius:999px; border:none; cursor:pointer; }
   .btn-primary { color:#1b1607; }
   .btn-ghost { background:none; color:var(--text-muted); }
   .btn-ghost:hover { color:var(--text); }
@@ -332,19 +431,21 @@
   .new-sub-form.open { display:flex; }
   .new-sub-form input { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 9px; color:var(--text); font-size:13px; font-family:inherit; width:100%; }
 
-  .empty-state { text-align:center; padding:24px 10px 16px; color:var(--text-muted); }
-  .empty-state .icon-wrap { width:40px; height:40px; border-radius:50%; background:var(--surface-2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; margin:0 auto 10px; font-size:18px; }
-  .empty-state p { font-size:13px; margin:0; line-height:1.5; }
+  .empty-state { text-align:center; padding:14px 10px 12px; color:var(--text-muted); }
+  .empty-state .icon-wrap { width:32px; height:32px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; margin:0 auto 8px; font-size:15px; }
+  .empty-state p { font-size:12.5px; margin:0; line-height:1.5; }
 
   .backup-row { display:flex; gap:10px; margin-top:8px; }
-  .backup-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12.5px; color:var(--text-muted); background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px; cursor:pointer; font-family:inherit; }
+  .backup-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--text-muted); background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:11px; cursor:pointer; font-family:inherit; }
   .backup-note { font-size:11px; color:var(--text-muted); text-align:center; margin-top:8px; line-height:1.5; }
 
   .fab-btn {
-    position:fixed; right:20px; bottom:calc(88px + env(safe-area-inset-bottom)); width:54px; height:54px;
-    border-radius:50%; background:var(--gold); color:#1b1607; border:none; display:flex; align-items:center;
-    justify-content:center; box-shadow:0 6px 18px rgba(0,0,0,0.4); z-index:60; cursor:pointer;
+    position:fixed; right:20px; bottom:calc(88px + env(safe-area-inset-bottom)); width:56px; height:56px;
+    border-radius:50%; background:var(--accent); color:var(--accent-ink); border:none; display:flex;
+    align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(76,95,232,0.42);
+    z-index:60; cursor:pointer; transition:transform .12s ease;
   }
+  .fab-btn:active { transform:scale(.94); }
   .fab-menu {
     position:fixed; right:20px; bottom:calc(150px + env(safe-area-inset-bottom)); background:var(--surface);
     border:1px solid var(--border); border-radius:14px; padding:6px; display:none; flex-direction:column;
@@ -352,7 +453,7 @@
   }
   .fab-menu.open { display:flex; }
   .fab-menu-item {
-    display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:9px; background:none;
+    display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px; background:none;
     border:none; color:var(--text); font-family:inherit; font-size:13.5px; cursor:pointer; text-align:left;
   }
   .fab-menu-item:active, .fab-menu-item:hover { background:var(--surface-2); }
@@ -399,13 +500,13 @@
     <div class="carousel-hint">← kaydırarak diğer ayları gör →</div>
 
     <div class="section-title"><span>Para Akışı <span id="expensesDayLabel" style="font-weight:400; color:var(--text-muted); font-size:12px;"></span></span><span class="section-total" id="expensesSectionTotal"></span></div>
-    <button id="expensesBackToday" style="display:none; font-size:11.5px; color:var(--gold); background:none; border:none; cursor:pointer; padding:0 0 8px; font-family:inherit;">← Bugüne dön</button>
+    <button id="expensesBackToday" style="display:none; font-size:11.5px; color:var(--accent); background:none; border:none; cursor:pointer; padding:0 0 8px; font-family:inherit;">← Bugüne dön</button>
     <div class="mode-toggle" id="expenseFilterToggle" style="margin-bottom:8px;">
       <button type="button" class="mode-btn active" data-filter="all">Tümü</button>
       <button type="button" class="mode-btn" data-filter="gider">Gider</button>
       <button type="button" class="mode-btn" data-filter="gelir">Gelir</button>
     </div>
-    <button type="button" id="catFilterBtn" style="font-size:11.5px; color:var(--text-muted); background:none; border:1px dashed var(--border); border-radius:8px; padding:6px 11px; cursor:pointer; font-family:inherit; margin-bottom:10px;">⌕ Kategoriye göre filtrele</button>
+    <button type="button" id="catFilterBtn" style="font-size:11.5px; font-weight:600; color:var(--accent); background:var(--accent-soft); border:none; border-radius:999px; padding:7px 14px; cursor:pointer; font-family:inherit; margin-bottom:10px;">Kategoriye göre filtrele</button>
     <div id="catFilterPanel" style="display:none; flex-wrap:wrap; gap:6px; margin-bottom:10px;"></div>
     <div id="expensesEmptyState" class="empty-state" style="display:none;">
       <div class="icon-wrap">🧾</div><p>Bu gün için henüz harcama/gelir eklemedin.</p>
@@ -428,6 +529,28 @@
       </div>
     </form>
     <button class="add-item-btn" id="showAddExpenseBtn" style="display:none;">+ Harcama ekle</button>
+
+    <div class="tear"></div>
+
+    <div class="section-title">
+      <span style="display:flex; align-items:center; gap:8px;">Nakit
+        <button type="button" class="title-add-btn" id="showAddCashBtn" aria-label="Hesap ekle">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </span>
+      <span class="section-total" id="cashSectionTotal" style="color:var(--teal)"></span>
+    </div>
+    <div class="cash-strip" id="cashStrip"></div>
+    <form class="new-item-form" id="newCashForm">
+      <div class="combo-wrap">
+        <input id="newCashInput" placeholder="Banka / hesap adı" autocomplete="off" />
+        <div class="combo-dropdown" id="newCashDropdown"></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" id="cancelCashBtn">Vazgeç</button>
+        <button type="submit" class="btn btn-primary" style="background:var(--teal)">Ekle</button>
+      </div>
+    </form>
 
     <div class="tear"></div>
 
@@ -474,6 +597,7 @@
     <div class="tear"></div>
 
     <div class="section-title"><span>Borçlarım</span><span class="section-total" id="banksSectionTotal" style="color:var(--gold)"></span></div>
+    <div class="debt-summary" id="debtSummary"></div>
     <div id="bankEmptyState" class="empty-state" style="display:none;">
       <div class="icon-wrap">🏦</div><p>Henüz borç eklemedin.<br>Başlamak için aşağıdan ekle.</p>
     </div>
@@ -528,7 +652,7 @@
     <div class="section-title"><span>Maaş Geçmişi</span>
       <span style="display:flex; align-items:center; gap:8px;">
         <button type="button" class="salary-year-nav" id="salaryPrevYear">‹</button>
-        <span id="salaryYearLabel" style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text);"></span>
+        <span id="salaryYearLabel" style="font-family:'Inter',sans-serif; font-size:13px; color:var(--text);"></span>
         <button type="button" class="salary-year-nav" id="salaryNextYear">›</button>
       </span>
     </div>
@@ -872,15 +996,49 @@
           paymentLog: p.paymentLog || [],
           expenses: p.expenses || [],
           activityLog: p.activityLog || [],
-          dismissedFixedBanks: p.dismissedFixedBanks || []
+          dismissedFixedBanks: p.dismissedFixedBanks || [],
+          cash: p.cash || []
         };
       }
     } catch (e) {}
-    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [], expenses: [], activityLog: [], dismissedFixedBanks: [] };
+    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [], expenses: [], activityLog: [], dismissedFixedBanks: [], cash: [] };
   }
   function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }
 
   let state = loadData();
+
+  // Nakit hesapları (banka bakiyeleri) — ilk açılışta İş Bankası ve Ziraat
+  const CASH_BRANDS = {
+    'İş Bankası':  { g1:'#254195', g2:'#4863BE' },
+    'Ziraat Bankası': { g1:'#C4000C', g2:'#E8232C' },
+    'Akbank':      { g1:'#B00224', g2:'#E4032E' },
+    'Garanti BBVA':{ g1:'#00795C', g2:'#00B37E' },
+    'Yapı Kredi':  { g1:'#00305E', g2:'#0A5C9E' },
+    'Halkbank':    { g1:'#003A73', g2:'#0A63B0' },
+    'VakıfBank':   { g1:'#C08A00', g2:'#FFB81C' },
+    'QNB':         { g1:'#4A1A5E', g2:'#7B3A96' },
+    'DenizBank':   { g1:'#00237A', g2:'#0A46C4' },
+    'Enpara':      { g1:'#3B1A6B', g2:'#6B3FB5' },
+    'Diğer':       { g1:'#2A3852', g2:'#44557A' }
+  };
+  function cashBrand(name) {
+    if (CASH_BRANDS[name]) return CASH_BRANDS[name];
+    const base = getEntityColor(name, 0);
+    return { g1: base, g2: base };
+  }
+  (function seedCashAccounts() {
+    if (!state.cash) state.cash = [];
+    if (state.cashSeeded) return;
+    if (state.cash.length === 0) {
+      ['İş Bankası','Ziraat Bankası'].forEach(n => {
+        state.cash.push({ id: uid(), name: n, amount: 0 });
+      });
+      state.cashSeeded = true;
+      saveData();
+    } else {
+      state.cashSeeded = true;
+    }
+  })();
 
   // Seed the three fixed banks for this version, if not already present and not previously deleted by the user
   (function seedFixedBanks() {
@@ -1200,6 +1358,111 @@
     }
   }
 
+  function cashTotal() { return (state.cash||[]).reduce((s,a)=>s+(a.amount||0),0); }
+
+  function renderCashStrip() {
+    const strip = document.getElementById('cashStrip');
+    document.getElementById('cashSectionTotal').textContent = currency(cashTotal());
+    strip.innerHTML = '';
+    (state.cash||[]).forEach(acc => {
+      const br = cashBrand(acc.name);
+      const card = document.createElement('div');
+      card.className = 'cash-card';
+      card.style.background = 'linear-gradient(135deg, '+br.g1+' 0%, '+br.g2+' 100%)';
+
+      const top = document.createElement('div');
+      top.className = 'cash-card-name';
+      top.textContent = acc.name;
+
+      const bottom = document.createElement('div');
+      bottom.style.position = 'relative';
+      bottom.style.zIndex = '1';
+      const lbl = document.createElement('div');
+      lbl.className = 'cash-card-label';
+      lbl.textContent = 'Bakiyeniz';
+      const amt = document.createElement('div');
+      amt.className = 'cash-card-amt';
+      amt.innerHTML = '<span>'+currency(acc.amount||0)+'</span>' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg>';
+      amt.onclick = () => {
+        const input = document.createElement('input');
+        input.className = 'cash-card-input';
+        input.inputMode = 'decimal';
+        input.value = numToInputValue(acc.amount);
+        input.placeholder = '0';
+        attachAmountFormatting(input);
+        let done = false;
+        function commit() {
+          if (done) return; done = true;
+          const nv = parseAmount(input.value);
+          if (nv !== (acc.amount||0)) {
+            acc.amount = nv;
+            logActivity(acc.name + ' bakiyesi güncellendi', nv, { type:'cash', cashId: acc.id });
+            saveData();
+          }
+          renderAll();
+        }
+        input.onblur = commit;
+        input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } };
+        bottom.replaceChild(input, amt);
+        input.focus(); input.select();
+      };
+      bottom.appendChild(lbl); bottom.appendChild(amt);
+
+      card.appendChild(top); card.appendChild(bottom);
+
+      // uzun basınca sil
+      let pressTimer = null;
+      card.addEventListener('touchstart', () => {
+        pressTimer = setTimeout(() => {
+          if (!confirm(acc.name + ' hesabı silinsin mi?')) return;
+          const idx = state.cash.indexOf(acc);
+          state.cash = state.cash.filter(x => x.id !== acc.id);
+          saveData(); renderAll();
+          showUndoToast(acc.name, () => {
+            state.cash.splice(Math.min(idx, state.cash.length), 0, acc);
+            saveData(); renderAll();
+          });
+        }, 650);
+      }, { passive:true });
+      ['touchend','touchcancel','touchmove'].forEach(ev =>
+        card.addEventListener(ev, () => clearTimeout(pressTimer), { passive:true }));
+
+      strip.appendChild(card);
+    });
+
+    if ((state.cash||[]).length === 0) {
+      const e = document.createElement('div');
+      e.className = 'archive-empty';
+      e.textContent = 'Henüz nakit hesabı yok.';
+      strip.appendChild(e);
+    }
+  }
+
+  // Harcama / varlık girişinde "hangi hesaptan?" sorusu
+  function openCashSourcePicker(amountHint, onPick) {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = 'Hangi hesaptan?';
+    list.innerHTML = '';
+    (state.cash||[]).forEach(acc => {
+      const br = cashBrand(acc.name);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'src-opt';
+      b.style.background = 'linear-gradient(135deg, '+br.g1+' 0%, '+br.g2+' 100%)';
+      b.innerHTML = '<span>'+esc(acc.name)+'</span><span class="src-bal">'+currency(acc.amount||0)+'</span>';
+      b.onclick = () => { closeDebtPicker(); onPick(acc); };
+      list.appendChild(b);
+    });
+    const other = document.createElement('button');
+    other.type = 'button';
+    other.className = 'src-opt neutral';
+    other.innerHTML = '<span>Diğer</span><span class="src-bal" style="opacity:.6">bakiye düşülmez</span>';
+    other.onclick = () => { closeDebtPicker(); onPick(null); };
+    list.appendChild(other);
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+  }
+
   function renderAssetGroup() {
     const items = state.assets;
     const listEl = document.getElementById('assetList');
@@ -1220,9 +1483,35 @@
       head.setAttribute('role', 'button');
       head.setAttribute('tabindex', '0');
       const subText = isPortfolio ? ((item.stocks||[]).length + ' ürün') : ((item.debts||[]).length + ' kayıt');
+      let gainBits = '';
+      if (isPortfolio) {
+        let cost = 0, val = 0;
+        (item.stocks||[]).forEach(st => { const s = stockStats(st); cost += s.costBasis; val += s.currentValue; });
+        const diff = val - cost;
+        if (cost > 0 && Math.abs(diff) > 0.005) {
+          const up = diff >= 0;
+          const col = up ? 'var(--teal)' : 'var(--danger)';
+          const pc = Math.abs(diff / cost * 100).toFixed(2).replace('.', ',');
+          gainBits = '<div class="asset-meta-row">' +
+            '<span class="asset-pill" style="color:'+col+'; background:'+(up?'rgba(22,145,110,0.12)':'rgba(217,59,69,0.12)')+'">' +
+            (up ? '▲ ' : '▼ ') + (up?'+':'-') + currency(Math.abs(diff)) + ' · %' + pc + '</span></div>';
+        }
+      } else {
+        const banks = (item.debts||[]).map(x => x.bankName).filter(Boolean);
+        const uniq = [...new Set(banks)];
+        if (uniq.length) {
+          gainBits = '<div class="asset-meta-row">' + uniq.slice(0,3).map(n => {
+            const br = cashBrand(n);
+            return '<span class="asset-pill" style="color:'+br.g1+'; background:'+br.g1+'18">'+esc(n)+'</span>';
+          }).join('') + '</div>';
+        }
+      }
+      const dotInner = isPortfolio
+        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>'
+        : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="3"/><path d="M2 10h20"/></svg>';
       head.innerHTML =
-        '<span class="item-dot" style="background:'+item.color+'"></span>' +
-        '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+subText+'</div></span>' +
+        '<span class="item-dot" style="background:'+item.color+'">'+dotInner+'</span>' +
+        '<span class="item-name">'+esc(item.name)+'<div class="item-sub">'+subText+'</div>'+gainBits+'</span>' +
         '<span class="item-total">'+currency(total)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
@@ -1329,7 +1618,7 @@
         input.value = numToInputValue(d.amount);
         input.placeholder = '0';
         attachAmountFormatting(input);
-        input.style.cssText = 'width:110px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; text-align:right;';
+        input.style.cssText = 'width:110px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:\"Inter\",sans-serif; text-align:right;';
         let done = false;
         function commit() {
           if (done) return; done = true;
@@ -1389,6 +1678,7 @@
         item.debts.push({ id: uid(), desc: item.name, amount, bankId: bank ? bank.id : null, bankName: bank ? bank.name : null });
         logActivity(item.name + (bank ? ' — ' + bank.name : ''), amount, { type:'assetEntry', assetId: item.id });
         addingEntryFor = null; saveData(); renderAll();
+        if ((state.cash||[]).length) setTimeout(() => askCashSource(amount, item.name, -1), 120);
       };
       form.querySelector('.sa-cancel').onclick = () => { addingEntryFor = null; renderAll(); };
       body.appendChild(form);
@@ -1421,7 +1711,7 @@
     prevB.type='button'; prevB.className='salary-year-nav'; prevB.textContent='\u2039';
     prevB.onclick = () => { besViewYear[item.id] = vy - 1; renderAll(); };
     const yLabel = document.createElement('span');
-    yLabel.style.cssText = "font-family:'IBM Plex Mono',monospace; font-size:13px;";
+    yLabel.style.cssText = "font-family:'Inter',sans-serif; font-size:13px;";
     yLabel.textContent = vy;
     const nextB = document.createElement('button');
     nextB.type='button'; nextB.className='salary-year-nav'; nextB.textContent='\u203a';
@@ -1759,26 +2049,38 @@
           const content = document.createElement('div');
           content.id = 'debt-row-' + d.id;
 
+          const pctD = d.isInstallment && d.totalInstallments > 0
+            ? Math.round(d.paidInstallments / d.totalInstallments * 100) : 0;
+          const isDone = d.isInstallment && d.paidInstallments >= d.totalInstallments;
+
           const row = document.createElement('div');
-          row.className = 'entry-row';
-          const typeBadge = d.note ? '<span class="entry-badge" style="color:var(--text-muted);background:rgba(127,127,127,0.14)">'+esc(d.debtType)+'</span>' : '';
+          row.className = 'debt-row-head';
           row.innerHTML =
-            '<span class="entry-desc-wrap"><span class="entry-desc-text">'+esc(d.note || d.debtType)+'</span>'+typeBadge+'</span>' +
-            '<span class="entry-right"><span class="entry-amount">'+formatMoney(entryRemaining(d), d.currency)+'</span></span>';
+            '<span class="debt-row-left">' +
+              '<span class="debt-row-title">'+esc(d.note || d.debtType)+'</span>' +
+              '<span class="debt-type-chip" style="color:'+item.color+'; background:'+item.color+'1A">'+esc(d.debtType)+'</span>' +
+            '</span>' +
+            '<span class="debt-row-right">' +
+              '<span class="entry-amount">'+formatMoney(entryRemaining(d), d.currency)+'</span>' +
+              (d.isInstallment ? '<span class="debt-row-sub">'+(isDone ? 'Tamamlandı' : 'kalan '+Math.max(0, d.totalInstallments-d.paidInstallments)+' taksit')+'</span>' : '') +
+            '</span>';
           content.appendChild(row);
 
           if (d.isInstallment) {
-            const remaining = Math.max(0, d.totalInstallments - d.paidInstallments);
             const meta = document.createElement('div');
-            meta.className = 'entry-meta';
-            meta.textContent = 'Aylık '+formatMoney(d.monthlyAmount, d.currency)+' · '+d.paidInstallments+'/'+d.totalInstallments+' ödendi · kalan '+remaining;
+            meta.className = 'debt-row-meta';
+            meta.innerHTML =
+              '<span class="debt-mini-pill" style="color:'+item.color+'; background:'+item.color+'14">Aylık '+formatMoney(d.monthlyAmount, d.currency)+'</span>' +
+              '<span>'+d.paidInstallments+'/'+d.totalInstallments+' ödendi</span>' +
+              '<span class="debt-pct" style="color:'+item.color+'">%'+pctD+'</span>';
             content.appendChild(meta);
 
             const bar = document.createElement('div');
             bar.className = 'progress-bar';
             const fill = document.createElement('div');
             fill.className = 'progress-fill';
-            fill.style.width = (d.totalInstallments > 0 ? (d.paidInstallments / d.totalInstallments * 100) : 0) + '%';
+            fill.style.width = pctD + '%';
+            fill.style.background = item.color;
             bar.appendChild(fill);
             content.appendChild(bar);
 
@@ -1790,6 +2092,8 @@
               const isPaid = i < d.paidInstallments;
               const isNext = i === d.paidInstallments;
               dot.className = 'dot-inst' + (isPaid ? ' paid' : (isNext ? ' next' : ''));
+              if (isPaid) { dot.style.background = item.color; dot.style.borderColor = item.color; dot.style.color = '#fff'; }
+              else if (isNext) { dot.style.borderColor = item.color; dot.style.color = item.color; }
               dot.textContent = (i + 1);
               dot.onclick = (() => { const idx = i; return () => {
                 const oldPaid = d.paidInstallments;
@@ -1833,6 +2137,34 @@
           container.appendChild(block);
   }
 
+  function renderDebtSummary() {
+    const box = document.getElementById('debtSummary');
+    const totalDebt = state.banks.reduce((s,b) => s + bankDebtTRY(b), 0);
+    const monthlyDue = state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0);
+    if (totalDebt <= 0) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+
+    const map = {};
+    state.banks.forEach(b => (b.debts||[]).forEach(d => {
+      if ((d.currency||'TRY') !== 'TRY') return;
+      const k = d.debtType || 'Diğer';
+      map[k] = (map[k]||0) + entryRemaining(d);
+    }));
+    const cats = Object.keys(map).map((k,i) => ({ label:k, value:map[k], color: colorForLabel(k,i) }))
+                                 .filter(x=>x.value>0).sort((a,b)=>b.value-a.value);
+
+    let html = '<div class="debt-sum-top">' +
+      '<div><div class="debt-sum-label">Toplam Borç</div><div class="debt-sum-val">'+currency(totalDebt)+'</div></div>' +
+      '<div class="debt-sum-side"><div class="debt-sum-label">Bu Ay Ödenecek</div><div class="debt-sum-val">'+currency(monthlyDue)+'</div></div>' +
+      '</div>';
+    html += '<div class="debt-bar">' + cats.map(cat =>
+      '<span style="width:'+(cat.value/totalDebt*100)+'%; background:'+cat.color+'"></span>').join('') + '</div>';
+    html += '<div class="debt-legend">' + cats.slice(0,4).map(cat =>
+      '<span class="debt-legend-item"><span class="debt-legend-dot" style="background:'+cat.color+'"></span>'+
+      esc(cat.label)+' <b>'+currency(cat.value)+'</b></span>').join('') + '</div>';
+    box.innerHTML = html;
+  }
+
   function renderBankGroup() {
     const items = state.banks.slice().sort((a,b) => bankDebtTRY(b) - bankDebtTRY(a));
     const listEl = document.getElementById('bankList');
@@ -1852,9 +2184,31 @@
       head.setAttribute('role', 'button');
       head.setAttribute('tabindex', '0');
       const subText = item.kesimTarihi ? ("Her ayın " + item.kesimTarihi + "'i") : 'Hesap Kesim Tarihi Ekle';
+      const dueM = itemMonthlyDueTRY(item);
+      // İlerleme: taksit adedi değil, ödenen TUTAR oranı (6+3=9 gibi yanıltıcı toplama yapmaz)
+      let paidAmt = 0, totalAmt = 0, itemCount = 0;
+      (item.debts||[]).forEach(d => {
+        if ((d.currency||'TRY') !== 'TRY') return;
+        itemCount++;
+        if (d.isInstallment) {
+          totalAmt += (d.monthlyAmount||0) * (d.totalInstallments||0);
+          paidAmt  += (d.monthlyAmount||0) * (d.paidInstallments||0);
+        } else {
+          totalAmt += (d.amount||0);
+        }
+      });
+      const pct = totalAmt > 0 ? Math.round(paidAmt / totalAmt * 100) : 0;
+      const metaBits = '<div class="bank-meta-row">' +
+        (dueM > 0 ? '<span class="bank-pill" style="color:'+item.color+'; background:'+item.color+'1F">Aylık '+currency(dueM)+'</span>' : '') +
+        (itemCount > 0 ? '<span>'+itemCount+' borç · %'+pct+' ödendi</span>' : '<span>Borç yok</span>') +
+        '</div>' +
+        (totalAmt > 0 ? '<div class="bank-progress"><span style="width:'+pct+'%; background:'+item.color+'"></span></div>' : '');
       head.innerHTML =
         '<span class="item-dot" style="background:'+item.color+'">'+esc(initials(item.name))+'</span>' +
-        '<span class="item-name">'+esc(item.name)+'<div class="item-sub" id="kesimSub-'+item.id+'" style="text-decoration:underline dotted;text-underline-offset:2px;">'+subText+'</div></span>' +
+        '<span class="item-name">'+esc(item.name)+
+          '<div class="item-sub" id="kesimSub-'+item.id+'" style="text-decoration:underline dotted;text-underline-offset:2px;">'+subText+'</div>' +
+          metaBits +
+        '</span>' +
         '<span class="item-total">'+currency(total)+'</span>' +
         '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
@@ -1988,6 +2342,8 @@
     });
     const besTotal = state.bes.reduce((s,b) => s + itemValue(b), 0);
     if (besTotal > 0) map['BES'] = (map['BES']||0) + besTotal;
+    const cashT = cashTotal();
+    if (cashT > 0) map['Nakit'] = (map['Nakit']||0) + cashT;
     const curMonthSalary = curMonthCashLeft().left;
     if (curMonthSalary > 0) map['Maaş (kalan)'] = (map['Maaş (kalan)']||0) + curMonthSalary;
     return map;
@@ -2003,7 +2359,7 @@
   }
   function buildDonutSVG(categories) {
     const total = categories.reduce((s,c) => s + c.value, 0);
-    const r = 50, cx = 68, cy = 68, sw = 22;
+    const r = 36, cx = 48, cy = 48, sw = 17;
     const circumference = 2 * Math.PI * r;
     let offset = 0, circles = '';
     if (total <= 0) {
@@ -2016,10 +2372,15 @@
         offset += segLen;
       });
     }
-    return '<svg width="136" height="136" viewBox="0 0 136 136"><g transform="rotate(-90 68 68)">'+circles+'</g></svg>';
+    return '<svg width="96" height="96" viewBox="0 0 96 96"><g transform="rotate(-90 48 48)">'+circles+'</g></svg>';
   }
   function buildLegendHTML(categories, total) {
     if (categories.length === 0) return '<div class="txn-empty">Henüz veri yok.</div>';
+    if (categories.length > 6) {
+      const head = categories.slice(0, 5);
+      const restVal = categories.slice(5).reduce((s,x) => s + x.value, 0);
+      categories = head.concat([{ label:'Diğer', value: restVal, color:'#8b93a3' }]);
+    }
     return '<div class="donut-legend">' + categories.map(c => {
       const pct = total > 0 ? Math.round(c.value/total*100) : 0;
       return '<div class="donut-legend-row"><span class="donut-swatch" style="background:'+c.color+'"></span><span class="donut-legend-label">'+esc(c.label)+'</span><span class="donut-legend-pct">%'+pct+'</span><span class="donut-legend-amt">'+currency(c.value)+'</span></div>';
@@ -2032,7 +2393,7 @@
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
     const cash = curMonthCashLeft();
-    const totalAssets = totalAssetsOnly + totalBes + cash.left;
+    const totalAssets = totalAssetsOnly + totalBes + cash.left + cashTotal();
     const net = totalAssets - totalDebtsTRY;
     const curMonthIncome = cash.salary + cash.extraIncome;
 
@@ -2121,11 +2482,19 @@
   // Lock the carousel to the tallest page so swiping never changes its height.
   function updateNetCarouselHeight() {
     const carousel = document.getElementById('netCarousel');
+    const prevAlign = carousel.style.alignItems;
     carousel.style.height = 'auto';
+    carousel.style.alignItems = 'flex-start';   // ölçüm için gerilmeyi kapat
     let tallest = 0;
     Array.from(carousel.children).forEach(p => { tallest = Math.max(tallest, p.offsetHeight); });
+    carousel.style.alignItems = prevAlign || 'stretch';
     if (tallest > 0) carousel.style.height = tallest + 'px';
   }
+  // yazı tipleri yüklendikten sonra yükseklik yeniden hesaplansın
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { try { updateNetCarouselHeight(); } catch(e){} });
+  }
+  window.addEventListener('load', () => { try { updateNetCarouselHeight(); } catch(e){} });
 
   let monthCarouselPages = [];
   function renderMonthCarousel() {
@@ -2195,7 +2564,7 @@
         salInput.value = numToInputValue(salaryVal);
         salInput.placeholder = '0';
         attachAmountFormatting(salInput);
-        salInput.style.cssText = 'width:104px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; text-align:right;';
+        salInput.style.cssText = 'width:104px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:4px 8px; color:var(--text); font-size:14px; font-weight:600; font-family:\"Inter\",sans-serif; text-align:right;';
         let committed = false;
         function commit() {
           if (committed) return;
@@ -2469,9 +2838,11 @@
     renderNetDurumCarousel();
     renderMonthCarousel();
     renderExpenses();
+    renderCashStrip();
     renderSalaryHistory();
     renderAssetGroup();
     renderBesGroup();
+    renderDebtSummary();
     renderBankGroup();
     updateDateLeaf();
   }
@@ -2631,6 +3002,38 @@
     };
   })();
 
+  let pendingCashDeduction = null;
+  // sign: -1 harcama (düş), +1 gelir (ekle)
+  function askCashSource(amount, label, sign) {
+    openCashSourcePicker(amount, (acc) => {
+      if (!acc) return;
+      acc.amount = Math.max(0, (acc.amount||0) + sign * amount);
+      logActivity(acc.name + ' → ' + label, amount, { type:'cash', cashId: acc.id });
+      saveData(); renderAll();
+    });
+  }
+
+  // Nakit hesabı ekleme formu
+  (function() {
+    const showBtn = document.getElementById('showAddCashBtn');
+    const form = document.getElementById('newCashForm');
+    const input = document.getElementById('newCashInput');
+    const dd = document.getElementById('newCashDropdown');
+    setupCombo(input, dd, () => Object.keys(CASH_BRANDS).filter(n => n !== 'Diğer'));
+    showBtn.onclick = () => { form.classList.add('open'); showBtn.style.display = 'none'; };
+    document.getElementById('cancelCashBtn').onclick = () => { form.classList.remove('open'); showBtn.style.display = 'inline-flex'; input.value=''; };
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const name = input.value.trim();
+      if (!name) return;
+      state.cash = state.cash || [];
+      state.cash.push({ id: uid(), name, amount: 0 });
+      logActivity(name + ' hesabı eklendi', null, { type:'cash' });
+      input.value=''; form.classList.remove('open'); showBtn.style.display='inline-flex';
+      saveData(); renderAll();
+    };
+  })();
+
   // BES add form
   (function() {
     const showBtn = document.getElementById('showAddBesBtn');
@@ -2773,7 +3176,7 @@
     const form = document.getElementById('newExpenseForm');
     const showBtn = document.getElementById('showAddExpenseBtn');
     const kind = forceKind || (ex ? (ex.kind || 'gider') : 'gider');
-    stagedExpenseMeta = meta || (ex ? { bankId: ex.bankId, bankName: ex.bankName, category: ex.category, sub: ex.sub } : null);
+    stagedExpenseMeta = meta || (ex ? { bankId: ex.bankId, bankName: ex.bankName, sourceType: ex.sourceType, cashId: ex.cashId, category: ex.category, sub: ex.sub } : null);
     form.querySelectorAll('.mode-btn[data-ekind]').forEach(b => b.classList.toggle('active', b.dataset.ekind === kind));
     setExpenseKindUI(kind);
     document.getElementById('expenseDescInput').value = (ex && ex.kind !== 'gelir') ? (ex.desc || '') : '';
@@ -2848,24 +3251,38 @@
         }
       } else {
         const bankId = document.getElementById('expenseBankSelect').value;
-        let bank = state.banks.find(b => b.id === bankId) || state.banks[0];
-        if (!bank) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
-        const note = document.getElementById('expenseDescInput').value.trim();
         const meta = stagedExpenseMeta || {};
+        const note = document.getElementById('expenseDescInput').value.trim();
         const desc = note || meta.sub || meta.category || 'Harcama';
+        const srcType = meta.sourceType || 'bank';
+        let bank = null;
+        if (srcType === 'bank') {
+          bank = state.banks.find(b => b.id === (meta.bankId || bankId)) || state.banks[0];
+          if (!bank) { alert('Önce Borçlarım kısmından bir banka/kart ekle.'); return; }
+        }
+        const srcName = srcType === 'bank' ? bank.name : (meta.bankName || 'Diğer');
+
         if (editingExpenseId) {
           const ex = state.expenses.find(x => x.id === editingExpenseId);
           if (ex) {
-            ex.kind = 'gider'; ex.bankId = bank.id; ex.bankName = bank.name; ex.desc = desc; ex.amount = amount; delete ex.currency;
+            ex.kind = 'gider'; ex.desc = desc; ex.amount = amount; delete ex.currency;
+            ex.bankId = bank ? bank.id : null; ex.bankName = srcName;
+            if (meta.sourceType) { ex.sourceType = srcType; ex.cashId = meta.cashId || null; }
             if (meta.category) { ex.category = meta.category; ex.sub = meta.sub; }
             logActivity(desc + ' düzenlendi', amount, { type:'expense', expenseId: ex.id });
           }
           editingExpenseId = null;
         } else {
           const newExId = uid();
-          state.expenses.push({ id: newExId, kind:'gider', bankId: bank.id, bankName: bank.name, desc, amount,
+          state.expenses.push({ id: newExId, kind:'gider', bankId: bank ? bank.id : null, bankName: srcName,
+            sourceType: srcType, cashId: meta.cashId || null, desc, amount,
             category: meta.category || null, sub: meta.sub || null, day: viewedDayKey, ts: Date.now() });
           logActivity(desc, amount, { type:'expense', expenseId: newExId });
+          // Nakit hesabından yapıldıysa bakiyeyi hemen düş — ikinci soru sorulmaz
+          if (srcType === 'cash' && meta.cashId) {
+            const acc = (state.cash||[]).find(a => a.id === meta.cashId);
+            if (acc) acc.amount = Math.max(0, (acc.amount||0) - amount);
+          }
         }
       }
       stagedExpenseMeta = null;
@@ -2944,7 +3361,7 @@
         const parsed = JSON.parse(reader.result);
         if (!parsed || !Array.isArray(parsed.banks) || !Array.isArray(parsed.assets)) { alert('Bu dosya geçerli bir yedek dosyası değil.'); return; }
         if (confirm('Mevcut verilerin üzerine yedekteki veriler yüklenecek. Devam edilsin mi?')) {
-          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [], dismissedFixedBanks: parsed.dismissedFixedBanks || [] };
+          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [], dismissedFixedBanks: parsed.dismissedFixedBanks || [], cash: parsed.cash || [] };
           expanded = {}; saveData(); renderAll();
         }
       } catch (err) { alert('Dosya okunamadı, lütfen doğru yedek dosyasını seç.'); }
@@ -3018,20 +3435,53 @@
   }
   function openExpenseBankPicker() {
     const list = document.getElementById('debtPickerList');
-    document.getElementById('debtPickerTitle').textContent = 'Hangi Karttan / Hesaptan?';
+    document.getElementById('debtPickerTitle').textContent = 'Hangi hesaptan / karttan?';
     list.innerHTML = '';
-    if (state.banks.length === 0) {
-      const p = document.createElement('div');
-      p.className = 'archive-empty';
-      p.textContent = 'Önce Borçlarım kısmından bir banka/kart ekle.';
-      list.appendChild(p);
+
+    if ((state.cash||[]).length) {
+      const h1 = document.createElement('div');
+      h1.className = 'picker-group-title';
+      h1.textContent = 'Nakit hesapları';
+      list.appendChild(h1);
+      state.cash.forEach(acc => {
+        const br = cashBrand(acc.name);
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'src-opt';
+        b.style.background = 'linear-gradient(135deg, '+br.g1+' 0%, '+br.g2+' 100%)';
+        b.innerHTML = '<span>'+esc(acc.name)+'</span><span class="src-bal">'+currency(acc.amount||0)+'</span>';
+        b.onclick = () => {
+          pendingExpense = { sourceType:'cash', cashId: acc.id, bankId:null, bankName: acc.name, category:null, sub:null };
+          openExpenseCategoryPicker();
+        };
+        list.appendChild(b);
+      });
     }
-    state.banks.forEach(bank => {
-      list.appendChild(pickerButton(bank.name, () => {
-        pendingExpense = { bankId: bank.id, bankName: bank.name, category:null, sub:null };
-        openExpenseCategoryPicker();
-      }, bank.color, initials(bank.name)));
-    });
+
+    if (state.banks.length) {
+      const h2 = document.createElement('div');
+      h2.className = 'picker-group-title';
+      h2.textContent = 'Kredi kartları';
+      list.appendChild(h2);
+      state.banks.forEach(bank => {
+        list.appendChild(pickerButton(bank.name, () => {
+          pendingExpense = { sourceType:'bank', cashId:null, bankId: bank.id, bankName: bank.name, category:null, sub:null };
+          openExpenseCategoryPicker();
+        }, bank.color, initials(bank.name)));
+      });
+    }
+
+    const other = document.createElement('button');
+    other.type = 'button';
+    other.className = 'src-opt neutral';
+    other.style.marginTop = '6px';
+    other.innerHTML = '<span>Diğer</span><span class="src-bal" style="opacity:.6">bakiye düşülmez</span>';
+    other.onclick = () => {
+      pendingExpense = { sourceType:'other', cashId:null, bankId:null, bankName:'Diğer', category:null, sub:null };
+      openExpenseCategoryPicker();
+    };
+    list.appendChild(other);
+
     document.getElementById('debtPickerBackdrop').classList.add('open');
   }
   function openExpenseCategoryPicker() {

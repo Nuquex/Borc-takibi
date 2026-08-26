@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Borç Takibim" />
+<meta name="apple-mobile-web-app-title" content="Kese" />
 <meta name="theme-color" content="#0E1420" />
-<title>Borç Takibim</title>
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180-v4.png">
-<link rel="apple-touch-icon" sizes="512x512" href="icon-512-v4.png">
-<link rel="icon" href="favicon-32-v4.png">
+<title>Kese</title>
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180-v7.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512-v7.png">
+<link rel="icon" href="favicon-32-v7.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -270,6 +270,27 @@
   .debt-subgroup-title { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.9px;
     color:var(--text-muted); margin:14px 0 6px; display:flex; align-items:center; gap:7px; }
   .debt-subgroup-title::after { content:''; flex:1; height:1px; background:var(--border); }
+  /* --- Borç kartı: marka renkli gradyan başlık --- */
+  .bank-card { border-radius:18px; overflow:hidden; margin-bottom:12px; background:var(--surface);
+    border:1px solid var(--border); box-shadow:0 2px 8px rgba(10,20,40,0.06); }
+  .bhead { padding:16px 18px 17px; color:#fff; position:relative; overflow:hidden; cursor:pointer; }
+  .bhead::after { content:''; position:absolute; right:-40px; top:-56px; width:160px; height:160px;
+    border-radius:50%; background:rgba(255,255,255,0.09); }
+  .brow1 { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; position:relative; z-index:1; }
+  .bname { font-size:16px; font-weight:700; letter-spacing:-0.2px; }
+  .bkesim { font-size:11px; opacity:.78; margin-top:2px; text-decoration:underline dotted; text-underline-offset:2px; }
+  .btot { font-size:19px; font-weight:800; letter-spacing:-0.6px; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+  .btot small { display:block; font-size:10px; font-weight:600; opacity:.75; letter-spacing:0; }
+  .brow2 { display:flex; align-items:center; gap:9px; margin-top:13px; position:relative; z-index:1; flex-wrap:wrap; }
+  .bpill { background:rgba(255,255,255,0.20); border-radius:99px; padding:4px 11px; font-size:11px;
+    font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .bmeta { font-size:11px; opacity:.85; }
+  .bprog { height:6px; border-radius:99px; background:rgba(255,255,255,0.24); overflow:hidden;
+    margin-top:10px; position:relative; z-index:1; }
+  .bprog span { display:block; height:100%; background:#fff; border-radius:99px; }
+  .bhead .chevron { color:rgba(255,255,255,0.8); }
+  .bbody { padding:2px 16px 14px; }
+
   .asset-meta-row { display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap; }
   .asset-pill { font-size:10px; font-weight:700; border-radius:99px; padding:3px 9px; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .item-dot svg { display:block; }
@@ -467,7 +488,7 @@
   <div class="container">
     <div class="header">
       <div class="header-title-wrap">
-        <h1>Borç Takibim</h1>
+        <h1>Kese</h1>
         <div class="header-rule"></div>
       </div>
       <div class="date-leaf" id="todayLeaf">
@@ -1358,6 +1379,25 @@
     }
   }
 
+  function shade(hex, amt) {
+    const h = hex.replace('#','');
+    const n = parseInt(h.length === 3 ? h.split('').map(x=>x+x).join('') : h, 16);
+    let r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+    r = Math.max(0, Math.min(255, Math.round(r + amt)));
+    g = Math.max(0, Math.min(255, Math.round(g + amt)));
+    b = Math.max(0, Math.min(255, Math.round(b + amt)));
+    return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
+  function bankAccent(item) {
+    if (typeof CASH_BRANDS !== 'undefined' && CASH_BRANDS[item.name]) return CASH_BRANDS[item.name].g1;
+    return item.color || '#2A3852';
+  }
+  function bankGradient(item) {
+    if (typeof CASH_BRANDS !== 'undefined' && CASH_BRANDS[item.name]) return CASH_BRANDS[item.name];
+    const base = item.color || '#2A3852';
+    return { g1: shade(base, -38), g2: shade(base, 26) };
+  }
+
   function cashTotal() { return (state.cash||[]).reduce((s,a)=>s+(a.amount||0),0); }
 
   function renderCashStrip() {
@@ -2014,7 +2054,7 @@
       '<div class="installment-fields open">' +
         '<div class="installment-fields-row"><input class="inst-monthly-input" placeholder="Aylık taksit" inputmode="decimal" value="'+(editing ? numToInputValue(editing.monthlyAmount) : '')+'" /><input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" value="'+(editing ? editing.totalInstallments : '')+'" /></div>' +
       '</div>' +
-      '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+item.color+'">'+(editing ? 'Kaydet' : 'Ekle')+'</button></div>';
+      '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+bankAccent(item)+'; color:#fff">'+(editing ? 'Kaydet' : 'Ekle')+'</button></div>';
 
     attachAmountFormatting(form.querySelector('.inst-monthly-input'));
 
@@ -2043,6 +2083,7 @@
   }
 
   function renderDebtRow(container, item, d) {
+          const acc = bankAccent(item);
           const block = document.createElement('div');
           block.className = 'entry-block';
 
@@ -2058,7 +2099,7 @@
           row.innerHTML =
             '<span class="debt-row-left">' +
               '<span class="debt-row-title">'+esc(d.note || d.debtType)+'</span>' +
-              '<span class="debt-type-chip" style="color:'+item.color+'; background:'+item.color+'1A">'+esc(d.debtType)+'</span>' +
+              '<span class="debt-type-chip" style="color:'+acc+'; background:'+acc+'1A">'+esc(d.debtType)+'</span>' +
             '</span>' +
             '<span class="debt-row-right">' +
               '<span class="entry-amount">'+formatMoney(entryRemaining(d), d.currency)+'</span>' +
@@ -2070,9 +2111,9 @@
             const meta = document.createElement('div');
             meta.className = 'debt-row-meta';
             meta.innerHTML =
-              '<span class="debt-mini-pill" style="color:'+item.color+'; background:'+item.color+'14">Aylık '+formatMoney(d.monthlyAmount, d.currency)+'</span>' +
+              '<span class="debt-mini-pill" style="color:'+acc+'; background:'+acc+'14">Aylık '+formatMoney(d.monthlyAmount, d.currency)+'</span>' +
               '<span>'+d.paidInstallments+'/'+d.totalInstallments+' ödendi</span>' +
-              '<span class="debt-pct" style="color:'+item.color+'">%'+pctD+'</span>';
+              '<span class="debt-pct" style="color:'+acc+'">%'+pctD+'</span>';
             content.appendChild(meta);
 
             const bar = document.createElement('div');
@@ -2080,7 +2121,7 @@
             const fill = document.createElement('div');
             fill.className = 'progress-fill';
             fill.style.width = pctD + '%';
-            fill.style.background = item.color;
+            fill.style.background = acc;
             bar.appendChild(fill);
             content.appendChild(bar);
 
@@ -2092,8 +2133,8 @@
               const isPaid = i < d.paidInstallments;
               const isNext = i === d.paidInstallments;
               dot.className = 'dot-inst' + (isPaid ? ' paid' : (isNext ? ' next' : ''));
-              if (isPaid) { dot.style.background = item.color; dot.style.borderColor = item.color; dot.style.color = '#fff'; }
-              else if (isNext) { dot.style.borderColor = item.color; dot.style.color = item.color; }
+              if (isPaid) { dot.style.background = acc; dot.style.borderColor = acc; dot.style.color = '#fff'; }
+              else if (isNext) { dot.style.borderColor = acc; dot.style.color = acc; }
               dot.textContent = (i + 1);
               dot.onclick = (() => { const idx = i; return () => {
                 const oldPaid = d.paidInstallments;
@@ -2177,15 +2218,18 @@
       const total = bankDebtTRY(item);
 
       const card = document.createElement('div');
-      card.className = 'item-card';
+      card.className = 'bank-card';
       card.id = 'bank-card-' + item.id;
       const head = document.createElement('div');
-      head.className = 'item-head';
+      head.className = 'bhead';
       head.setAttribute('role', 'button');
       head.setAttribute('tabindex', '0');
+      const br = bankGradient(item);
+      head.style.background = 'linear-gradient(135deg, '+br.g1+' 0%, '+br.g2+' 100%)';
+
       const subText = item.kesimTarihi ? ("Her ayın " + item.kesimTarihi + "'i") : 'Hesap Kesim Tarihi Ekle';
       const dueM = itemMonthlyDueTRY(item);
-      // İlerleme: taksit adedi değil, ödenen TUTAR oranı (6+3=9 gibi yanıltıcı toplama yapmaz)
+      // İlerleme: taksit adedi değil, ödenen TUTAR oranı
       let paidAmt = 0, totalAmt = 0, itemCount = 0;
       (item.debts||[]).forEach(d => {
         if ((d.currency||'TRY') !== 'TRY') return;
@@ -2198,19 +2242,25 @@
         }
       });
       const pct = totalAmt > 0 ? Math.round(paidAmt / totalAmt * 100) : 0;
-      const metaBits = '<div class="bank-meta-row">' +
-        (dueM > 0 ? '<span class="bank-pill" style="color:'+item.color+'; background:'+item.color+'1F">Aylık '+currency(dueM)+'</span>' : '') +
-        (itemCount > 0 ? '<span>'+itemCount+' borç · %'+pct+' ödendi</span>' : '<span>Borç yok</span>') +
-        '</div>' +
-        (totalAmt > 0 ? '<div class="bank-progress"><span style="width:'+pct+'%; background:'+item.color+'"></span></div>' : '');
+
       head.innerHTML =
-        '<span class="item-dot" style="background:'+item.color+'">'+esc(initials(item.name))+'</span>' +
-        '<span class="item-name">'+esc(item.name)+
-          '<div class="item-sub" id="kesimSub-'+item.id+'" style="text-decoration:underline dotted;text-underline-offset:2px;">'+subText+'</div>' +
-          metaBits +
-        '</span>' +
-        '<span class="item-total">'+currency(total)+'</span>' +
-        '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+        '<div class="brow1">' +
+          '<div style="min-width:0">' +
+            '<div class="bname">'+esc(item.name)+'</div>' +
+            '<div class="bkesim" id="kesimSub-'+item.id+'">'+subText+'</div>' +
+          '</div>' +
+          '<div style="display:flex; align-items:flex-start; gap:9px;">' +
+            '<div class="btot">'+currency(total)+'<small>'+(total>0?'toplam borç':'borç yok')+'</small></div>' +
+            '<svg class="chevron'+(isOpen?' open':'')+'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-top:4px"><polyline points="6 9 12 15 18 9"/></svg>' +
+          '</div>' +
+        '</div>' +
+        (itemCount > 0
+          ? '<div class="brow2">' +
+              (dueM > 0 ? '<span class="bpill">Aylık '+currency(dueM)+'</span>' : '') +
+              '<span class="bmeta">'+itemCount+' borç · %'+pct+' ödendi</span>' +
+            '</div>' +
+            (totalAmt > 0 ? '<div class="bprog"><span style="width:'+pct+'%"></span></div>' : '')
+          : '');
       head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
       attachCardSwipe(card, head, item, () => {
         const idx = state.banks.indexOf(item);
@@ -2231,7 +2281,7 @@
       if (subEl) subEl.onclick = (e) => { e.stopPropagation(); editingKesimFor = editingKesimFor === item.id ? null : item.id; expanded[expKey] = true; renderAll(); };
 
       const body = document.createElement('div');
-      body.className = 'item-body' + (isOpen ? ' open' : '');
+      body.className = 'bbody item-body' + (isOpen ? ' open' : '');
 
       if (editingKesimFor === item.id) {
         const kf = document.createElement('form');
@@ -2274,7 +2324,7 @@
         body.appendChild(buildDebtForm(item, null));
       } else if (!(addingEntryFor && addingEntryFor.group === 'banks' && addingEntryFor.id === item.id)) {
         const addBtn = document.createElement('button');
-        addBtn.className = 'add-entry-btn'; addBtn.style.color = item.color;
+        addBtn.className = 'add-entry-btn'; addBtn.style.color = bankAccent(item);
         addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ekle';
         addBtn.onclick = () => { addingEntryFor = { group:'banks', id: item.id }; renderAll(); };
         body.appendChild(addBtn);

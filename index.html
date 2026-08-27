@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Kese" />
+<meta name="apple-mobile-web-app-title" content="Borç Takibim" />
 <meta name="theme-color" content="#0E1420" />
-<title>Kese</title>
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180-v7.png">
-<link rel="apple-touch-icon" sizes="512x512" href="icon-512-v7.png">
-<link rel="icon" href="favicon-32-v7.png">
+<title>Borç Takibim</title>
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180-v4.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512-v4.png">
+<link rel="icon" href="favicon-32-v4.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -250,6 +250,22 @@
   .stock-stat-value { font-family:'Inter',sans-serif; font-size:13px; font-weight:600; }
   .stock-stat-value.gain { color:var(--teal); } .stock-stat-value.loss { color:var(--danger); }
 
+  .pct-box { background:var(--surface-2); border:1px solid var(--border); border-radius:13px; padding:11px 12px; margin-bottom:10px; }
+  .pct-head { display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:9px; }
+  .pct-price { font-variant-numeric:tabular-nums; color:var(--text); font-weight:700; }
+  .pct-row { display:flex; align-items:center; gap:6px; }
+  .pct-sign { width:34px; height:34px; border-radius:10px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text-muted); font-size:19px; font-weight:700; line-height:1; cursor:pointer; font-family:inherit; flex-shrink:0; }
+  .pct-sign.plus.active { background:var(--teal); border-color:var(--teal); color:#fff; }
+  .pct-sign.minus.active { background:var(--danger); border-color:var(--danger); color:#fff; }
+  .pct-input { flex:1; min-width:0; background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:8px 10px; font-family:inherit; font-size:16px; font-weight:700; text-align:right;
+    font-variant-numeric:tabular-nums; color:var(--text); }
+  .pct-unit { font-size:14px; font-weight:700; color:var(--text-muted); }
+  .pct-apply { background:var(--accent); color:#fff; border:none; border-radius:10px; padding:9px 14px;
+    font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0; }
+  .pct-manual { display:block; width:100%; margin-top:9px; background:none; border:none; color:var(--text-muted);
+    font-family:inherit; font-size:11.5px; cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; }
   .price-btn { font-size:11.5px; color:var(--accent); background:none; border:1px dashed var(--border); border-radius:8px; padding:5px 9px; cursor:pointer; font-family:inherit; margin-bottom:8px; }
   .price-form { display:none; gap:8px; margin-bottom:8px; }
   .price-form.open { display:flex; }
@@ -290,6 +306,13 @@
   .bprog span { display:block; height:100%; background:#fff; border-radius:99px; }
   .bhead .chevron { color:rgba(255,255,255,0.8); }
   .bbody { padding:2px 16px 14px; }
+  .pay-btn {
+    position:relative; z-index:2; margin-top:12px; width:100%;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    background:rgba(255,255,255,0.92); color:#12203A; border:none; border-radius:99px;
+    padding:10px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .pay-btn:active { transform:scale(.985); background:#fff; }
 
   .asset-meta-row { display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap; }
   .asset-pill { font-size:10px; font-weight:700; border-radius:99px; padding:3px 9px; white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -488,7 +511,7 @@
   <div class="container">
     <div class="header">
       <div class="header-title-wrap">
-        <h1>Kese</h1>
+        <h1>Borç Takibim</h1>
         <div class="header-rule"></div>
       </div>
       <div class="date-leaf" id="todayLeaf">
@@ -1902,19 +1925,77 @@
       statsWrap.innerHTML = statsHtml;
       sb.appendChild(statsWrap);
 
-      const priceBtn = document.createElement('button');
-      priceBtn.className = 'price-btn';
-      priceBtn.textContent = stats.currentPrice > 0 ? 'Güncel fiyatı güncelle (₺'+stats.currentPrice.toLocaleString('tr-TR')+')' : '+ Güncel fiyat gir';
-      priceBtn.onclick = () => { editingPriceFor = editingPriceFor === stock.id ? null : stock.id; renderAll(); };
-      sb.appendChild(priceBtn);
+      // --- Günlük değişim (%) ile hızlı fiyat güncelleme ---
+      const pctBox = document.createElement('div');
+      pctBox.className = 'pct-box';
+      const basePrice = stats.currentPrice > 0 ? stats.currentPrice : stats.avgCost;
+
+      const pctHead = document.createElement('div');
+      pctHead.className = 'pct-head';
+      pctHead.innerHTML = '<span>Bugünkü değişim</span>' +
+        '<span class="pct-price">' + (basePrice > 0 ? '₺' + basePrice.toLocaleString('tr-TR', {maximumFractionDigits:2}) : 'fiyat yok') + '</span>';
+      pctBox.appendChild(pctHead);
+
+      const pctRow = document.createElement('div');
+      pctRow.className = 'pct-row';
+
+      const minus = document.createElement('button');
+      minus.type = 'button'; minus.className = 'pct-sign minus'; minus.textContent = '−';
+      const plus = document.createElement('button');
+      plus.type = 'button'; plus.className = 'pct-sign plus'; plus.textContent = '+';
+
+      const inp = document.createElement('input');
+      inp.className = 'pct-input';
+      inp.inputMode = 'decimal';
+      inp.placeholder = '0,00';
+
+      const unit = document.createElement('span');
+      unit.className = 'pct-unit'; unit.textContent = '%';
+
+      let sign = 1;
+      function paintSign() {
+        plus.classList.toggle('active', sign === 1);
+        minus.classList.toggle('active', sign === -1);
+        inp.style.color = sign === 1 ? 'var(--teal)' : 'var(--danger)';
+      }
+      plus.onclick = () => { sign = 1; paintSign(); inp.focus(); };
+      minus.onclick = () => { sign = -1; paintSign(); inp.focus(); };
+      paintSign();
+
+      const applyBtn = document.createElement('button');
+      applyBtn.type = 'button'; applyBtn.className = 'pct-apply'; applyBtn.textContent = 'Uygula';
+      applyBtn.onclick = () => {
+        const raw = parseAmount(inp.value);
+        if (raw <= 0) { alert('Yüzde değeri gir (örn. 2,45).'); return; }
+        if (basePrice <= 0) { alert('Önce bir alım ekle ya da fiyatı elle gir.'); return; }
+        const nv = basePrice * (1 + sign * raw / 100);
+        stock.currentPrice = Math.max(0, nv);
+        logActivity(stock.name + (sign > 0 ? ' +%' : ' -%') + raw.toString().replace('.', ','), null,
+                    { type:'stock', assetId: portfolioItem.id, stockId: stock.id });
+        saveData(); renderAll();
+      };
+
+      pctRow.appendChild(minus); pctRow.appendChild(plus);
+      pctRow.appendChild(inp); pctRow.appendChild(unit); pctRow.appendChild(applyBtn);
+      pctBox.appendChild(pctRow);
+
+      const manual = document.createElement('button');
+      manual.type = 'button'; manual.className = 'pct-manual';
+      manual.textContent = stats.currentPrice > 0 ? 'Fiyatı elle gir / düzelt' : 'Fiyatı elle gir';
+      manual.onclick = () => { editingPriceFor = editingPriceFor === stock.id ? null : stock.id; renderAll(); };
+      pctBox.appendChild(manual);
+
       if (editingPriceFor === stock.id) {
         const pf = document.createElement('form');
         pf.className = 'price-form open';
-        pf.innerHTML = '<input class="p-input" placeholder="Güncel fiyat (₺)" inputmode="decimal" value="'+numToInputValue(stats.currentPrice)+'" /><button type="submit" class="btn btn-primary" style="background:var(--teal)">Kaydet</button>';
+        pf.style.marginTop = '8px';
+        pf.innerHTML = '<input class="p-input" placeholder="Güncel fiyat (₺)" inputmode="decimal" value="'+numToInputValue(stats.currentPrice)+'" /><button type="submit" class="btn btn-primary" style="background:var(--teal); color:#fff">Kaydet</button>';
         attachAmountFormatting(pf.querySelector('.p-input'));
         pf.onsubmit = (e) => { e.preventDefault(); stock.currentPrice = parseAmount(pf.querySelector('.p-input').value); editingPriceFor = null; saveData(); renderAll(); };
-        sb.appendChild(pf);
+        pctBox.appendChild(pf);
       }
+
+      sb.appendChild(pctBox);
 
       const addRow = document.createElement('div');
       addRow.className = 'stock-add-row';
@@ -2261,6 +2342,17 @@
             '</div>' +
             (totalAmt > 0 ? '<div class="bprog"><span style="width:'+pct+'%"></span></div>' : '')
           : '');
+
+      if (dueM > 0) {
+        const payBtn = document.createElement('button');
+        payBtn.type = 'button';
+        payBtn.className = 'pay-btn';
+        payBtn.id = 'payBtn-' + item.id;
+        payBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Öde';
+        payBtn.onclick = (e) => { e.stopPropagation(); openPayPicker(item); };
+        head.appendChild(payBtn);
+      }
+
       head.onclick = () => { expanded[expKey] = !expanded[expKey]; renderAll(); };
       attachCardSwipe(card, head, item, () => {
         const idx = state.banks.indexOf(item);
@@ -2670,11 +2762,12 @@
   const EXPENSE_PAGE_SIZE = 7;
   let viewedDayKey = todayKey();
 
-  let harcamalarMode = 'day';
+  let harcamalarMode = 'month';
   let harcamalarMonthKey = null;
   let expenseMenuOpenId = null;
 
   function renderExpenses() {
+    if (harcamalarMode === 'month' && !harcamalarMonthKey) harcamalarMonthKey = currentMonthKey();
     const listEl = document.getElementById('expensesList');
     const dotsEl = document.getElementById('expensesDots');
     const inMonthMode = harcamalarMode === 'month' && harcamalarMonthKey;
@@ -2688,14 +2781,17 @@
     sectionTotalEl.textContent = (sectionNet >= 0 ? '+' : '-') + currency(Math.abs(sectionNet));
     sectionTotalEl.style.color = sectionNet >= 0 ? 'var(--teal)' : 'var(--danger)';
 
-    const isCurrent = inMonthMode ? (harcamalarMonthKey === currentMonthKey()) : (viewedDayKey === todayKey());
+    const isDefaultView = inMonthMode && harcamalarMonthKey === currentMonthKey();
     const titleEl = document.getElementById('expensesDayLabel');
     if (titleEl) {
-      titleEl.textContent = isCurrent ? '' : ('· ' + (inMonthMode ? monthLabel(harcamalarMonthKey) : dayLabel(viewedDayKey)));
-      titleEl.style.display = isCurrent ? 'none' : 'inline';
+      titleEl.textContent = '· ' + (inMonthMode ? monthLabel(harcamalarMonthKey) : dayLabel(viewedDayKey));
+      titleEl.style.display = 'inline';
     }
     const backBtn = document.getElementById('expensesBackToday');
-    if (backBtn) backBtn.style.display = isCurrent ? 'none' : 'inline-block';
+    if (backBtn) {
+      backBtn.textContent = '← Bu aya dön';
+      backBtn.style.display = isDefaultView ? 'none' : 'inline-block';
+    }
 
     let list = all;
     if (expenseFilter === 'gider') list = all.filter(e => (e.kind||'gider') === 'gider');
@@ -2994,9 +3090,9 @@
         document.querySelectorAll('#carouselDots .carousel-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
         const key = monthCarouselPages[idx];
         if (key) {
-          harcamalarMode = (key === currentMonthKey()) ? 'day' : 'month';
+          // Ay kartını kaydırmak Para Akışı'nı her zaman AYLIK gösterir
+          harcamalarMode = 'month';
           harcamalarMonthKey = key;
-          if (harcamalarMode === 'day') viewedDayKey = todayKey();
           expensePageIndex = 0;
           expenseMenuOpenId = null;
           renderExpenses();
@@ -3348,8 +3444,8 @@
 
   document.getElementById('expensesBackToday').onclick = () => {
     viewedDayKey = todayKey();
-    harcamalarMode = 'day';
-    harcamalarMonthKey = null;
+    harcamalarMode = 'month';
+    harcamalarMonthKey = currentMonthKey();
     expensePageIndex = 0;
     expenseMenuOpenId = null;
     const curIdx = monthCarouselPages.indexOf(currentMonthKey());
@@ -3647,6 +3743,59 @@
       transferTo(newAsset);
     };
     list.appendChild(mkNew);
+  }
+
+  // --- Bir bankada seçilen türdeki tüm taksitlere bir ay işaretle ---
+  function payGroup(item, kind) {
+    const list = (item.debts||[]).filter(d => d.isInstallment &&
+      (kind === 'kart' ? d.debtType === 'Kredi Kartı' : d.debtType !== 'Kredi Kartı') &&
+      d.paidInstallments < d.totalInstallments);
+    if (!list.length) { alert('Bu grupta ödenecek taksit kalmadı.'); return; }
+
+    const toplam = list.reduce((s,d) => s + (d.monthlyAmount||0), 0);
+    const label = kind === 'kart' ? 'Kredi kartı' : 'Kredi';
+    if (!confirm(item.name + ' — ' + label + ' taksitleri\n' +
+                 list.length + ' borç için birer ay ödenmiş sayılacak.\nToplam: ' + currency(toplam))) return;
+
+    const snapshot = list.map(d => ({ d, prev: d.paidInstallments }));
+    list.forEach(d => {
+      const oldP = d.paidInstallments;
+      d.paidInstallments = oldP + 1;
+      logPaymentRange(item, d, oldP, d.paidInstallments);
+    });
+    logActivity(item.name + ' — ' + label + ' ödemesi (' + list.length + ' taksit)', toplam,
+                { type:'bank', bankId: item.id });
+    saveData(); renderAll();
+    showUndoToast(label + ' ödemesi', () => {
+      snapshot.forEach(s => { logPaymentRange(item, s.d, s.d.paidInstallments, s.prev); s.d.paidInstallments = s.prev; });
+      saveData(); renderAll();
+    });
+  }
+
+  function openPayPicker(item) {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = item.name + ' — Ödeme';
+    list.innerHTML = '';
+
+    const acc = bankAccent(item);
+    const kartlar = (item.debts||[]).filter(d => d.isInstallment && d.debtType === 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
+    const krediler = (item.debts||[]).filter(d => d.isInstallment && d.debtType !== 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
+
+    function opt(label, arr, kind, icon) {
+      const tot = arr.reduce((s,d) => s + (d.monthlyAmount||0), 0);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'src-opt';
+      b.style.background = arr.length ? acc : 'var(--surface-2)';
+      if (!arr.length) b.style.color = 'var(--text-muted)';
+      b.innerHTML = '<span>'+icon+'  '+label+'</span><span class="src-bal">' +
+                    (arr.length ? currency(tot) + ' · ' + arr.length + ' borç' : 'yok') + '</span>';
+      b.onclick = () => { if (!arr.length) return; closeDebtPicker(); payGroup(item, kind); };
+      return b;
+    }
+    list.appendChild(opt('Kredi Kartı Borçları', kartlar, 'kart', '💳'));
+    list.appendChild(opt('Krediler', krediler, 'kredi', '🏦'));
+    document.getElementById('debtPickerBackdrop').classList.add('open');
   }
 
   function openDebtTypePicker() {

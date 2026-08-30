@@ -154,6 +154,13 @@
   .net-page .fx-chip { background:var(--hero-chip); border:1px solid var(--hero-line); color:var(--hero-muted); }
   .net-page .txn-empty { color:var(--hero-muted); }
   .net-page-fill { display:flex; flex-direction:column; justify-content:center; }
+  .net-page-highlight {
+    display:flex; align-items:center; gap:9px; margin-top:20px; padding-top:16px;
+    border-top:1px solid var(--hero-line); font-size:12.5px; color:var(--hero-muted);
+  }
+  .nph-dot { width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+  .nph-highlight b, .net-page-highlight b { font-weight:700; }
+  .nph-pct { margin-left:auto; font-weight:800; color:#fff; font-variant-numeric:tabular-nums; }
   .donut-wrap { display:flex; justify-content:center; margin:6px 0 9px; }
   .donut-legend { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
   .donut-legend-row { display:flex; align-items:center; gap:8px; font-size:12px; min-width:0; }
@@ -2636,6 +2643,17 @@
     }
     return '<svg width="140" height="140" viewBox="0 0 140 140"><g transform="rotate(-90 70 70)">'+circles+'</g></svg>';
   }
+  function buildTopCategoryHighlight(categories, total) {
+    if (!categories.length || total <= 0) return '';
+    const top = categories[0];
+    const pct = Math.round(top.value / total * 100);
+    return '<div class="net-page-highlight">' +
+      '<span class="nph-dot" style="background:'+top.color+'"></span>' +
+      '<span>En büyük pay: <b style="color:'+top.color+'">'+esc(top.label)+'</b></span>' +
+      '<span class="nph-pct">%'+pct+'</span>' +
+    '</div>';
+  }
+
   function buildLegendHTML(categories, total) {
     if (categories.length === 0) return '<div class="txn-empty">Henüz veri yok.</div>';
     if (categories.length > 6) {
@@ -2728,6 +2746,7 @@
     html0 += '<div class="net-page-total" style="color:' + (cash.left > 0 ? 'var(--teal)' : 'var(--text-muted)') + '">' + currency(cash.left) + '</div>';
     html0 += '<div class="donut-wrap">' + buildDonutSVG(flowCats) + '</div>';
     html0 += buildLegendHTML(flowCats, flowTotal);
+    html0 += buildTopCategoryHighlight(flowCats, flowTotal);
     p0.innerHTML = html0;
     carousel.appendChild(p0);
 
@@ -2797,6 +2816,7 @@
     html2 += '<div class="net-page-total" style="color:var(--teal)">' + currency(assetCatsTotal) + '</div>';
     html2 += '<div class="donut-wrap">' + buildDonutSVG(assetCats) + '</div>';
     html2 += buildLegendHTML(assetCats, assetCatsTotal);
+    html2 += buildTopCategoryHighlight(assetCats, assetCatsTotal);
     p2.innerHTML = html2;
     carousel.appendChild(p2);
 
@@ -2806,6 +2826,7 @@
     html3 += '<div class="net-page-total" style="color:var(--gold)">' + currency(debtCatsTotal) + '</div>';
     html3 += '<div class="donut-wrap">' + buildDonutSVG(debtCats) + '</div>';
     html3 += buildLegendHTML(debtCats, debtCatsTotal);
+    html3 += buildTopCategoryHighlight(debtCats, debtCatsTotal);
     p3.innerHTML = html3;
     carousel.appendChild(p3);
 
@@ -2861,22 +2882,27 @@
       const pct = g.target > 0 ? Math.min(100, Math.round(g.saved / g.target * 100)) : 0;
       const remaining = Math.max(0, g.target - g.saved);
 
-      // Net durum negatifse, hedefe olan gerçek mesafe daha kötü gösterilir.
-      const netAdjustedSaved = netWorth < 0 ? Math.max(0, (g.saved||0) + netWorth) : (g.saved||0);
+      // Hedef ilerlemesi her zaman genel net duruma göre ayarlanır: net durum düşerse hedeften uzaklaşırsın,
+      // net durum güçlüyse hedefe daha yakın görünürsün. "Kaydedilen" (g.saved) senin elle girdiğin ek katkı.
+      const netAdjustedSaved = Math.max(0, (g.saved||0) + netWorth);
       const netPct = g.target > 0 ? Math.max(0, Math.min(100, Math.round(netAdjustedSaved / g.target * 100))) : 0;
-      const showNetLine = netWorth < 0 && netPct < pct;
+      const diffsMeaningfully = Math.abs(netPct - pct) >= 1;
+      const isBehind = netPct < pct;
+      const noteColor = isBehind ? 'var(--danger)' : 'var(--teal)';
+      const noteBg = isBehind ? 'rgba(240,85,94,.10)' : 'rgba(63,191,154,.10)';
 
       const content = document.createElement('div');
       content.className = 'goal-card';
       content.innerHTML =
         '<div class="goal-top">' +
           '<span class="goal-name"><span class="goal-icon" style="background:'+cat.color+'22; color:'+cat.color+'">'+goalIconHtml(cat, g.vehicleType)+'</span>'+esc(g.name)+'</span>' +
-          '<span class="goal-pct" style="color:'+cat.color+'">%'+pct+'</span>' +
+          '<span class="goal-pct" style="color:'+(diffsMeaningfully ? noteColor : cat.color)+'">%'+netPct+'</span>' +
         '</div>' +
-        '<div class="goal-bar"><span style="width:'+pct+'%; background:linear-gradient(90deg, '+cat.color+', '+cat.color+'AA);"></span></div>' +
-        (showNetLine ? '<div class="goal-bar goal-bar-net"><span style="width:'+netPct+'%;"></span></div>' : '') +
-        '<div class="goal-nums"><span class="goal-saved-wrap"><b class="goal-saved-val">'+currency(g.saved||0)+'</b> / '+currency(g.target||0)+'</span><span>kalan <b>'+currency(remaining)+'</b></span></div>' +
-        (showNetLine ? '<div class="goal-net-note">⚠ Net durumun -'+currency(Math.abs(netWorth))+' — bu hedefe olan gerçek mesafen %'+netPct+'</div>' : '');
+        '<div class="goal-bar"><span style="width:'+netPct+'%; background:linear-gradient(90deg, '+(diffsMeaningfully ? noteColor : cat.color)+', '+(diffsMeaningfully ? noteColor : cat.color)+'AA);"></span></div>' +
+        '<div class="goal-nums"><span class="goal-saved-wrap"><b class="goal-saved-val">'+currency(g.saved||0)+'</b> / '+currency(g.target||0)+' (ek katkın)</span><span>kalan <b>'+currency(remaining)+'</b></span></div>' +
+        (diffsMeaningfully ? '<div class="goal-net-note" style="color:'+noteColor+'; background:'+noteBg+'">' +
+          (isBehind ? '↓ Net durumun ' : '↑ Net durumun ') + (netWorth<0?'-':'+') + currency(Math.abs(netWorth)) +
+          ' — genel durumuna göre hedefe olan gerçek ilerlemen %'+netPct+' (kendi katkın %'+pct+')</div>' : '');
 
       const savedEl = content.querySelector('.goal-saved-val');
       savedEl.style.cursor = 'pointer';

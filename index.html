@@ -2871,67 +2871,30 @@
     const listEl = document.getElementById('goalsList');
     const goals = state.goals || [];
     document.getElementById('goalsEmptyState').style.display = goals.length === 0 ? 'block' : 'none';
-    const totalSaved = goals.reduce((s,g) => s + (g.saved||0), 0);
-    document.getElementById('goalsSectionTotal').textContent = goals.length ? currency(totalSaved) : '';
-    listEl.innerHTML = '';
-
     const netWorth = currentNetWorth();
+    document.getElementById('goalsSectionTotal').textContent = goals.length ? (netWorth<0?'-':'') + currency(Math.abs(netWorth)) : '';
+    listEl.innerHTML = '';
 
     goals.forEach(g => {
       const cat = goalCat(g.category);
-      const pct = g.target > 0 ? Math.min(100, Math.round(g.saved / g.target * 100)) : 0;
-      const remaining = Math.max(0, g.target - g.saved);
-
-      // Hedef ilerlemesi her zaman genel net duruma göre ayarlanır: net durum düşerse hedeften uzaklaşırsın,
-      // net durum güçlüyse hedefe daha yakın görünürsün. "Kaydedilen" (g.saved) senin elle girdiğin ek katkı.
-      const netAdjustedSaved = Math.max(0, (g.saved||0) + netWorth);
-      const netPct = g.target > 0 ? Math.max(0, Math.min(100, Math.round(netAdjustedSaved / g.target * 100))) : 0;
-      const diffsMeaningfully = Math.abs(netPct - pct) >= 1;
-      const isBehind = netPct < pct;
-      const noteColor = isBehind ? 'var(--danger)' : 'var(--teal)';
-      const noteBg = isBehind ? 'rgba(240,85,94,.10)' : 'rgba(63,191,154,.10)';
+      const rawPct = g.target > 0 ? (netWorth / g.target * 100) : 0;
+      const barPct = Math.max(0, Math.min(100, rawPct));
+      const displayPct = Math.round(rawPct);
+      const remaining = g.target - netWorth; // negatifse hedefi geçmişsindir
+      const isBehind = netWorth < g.target;
+      const barColor = netWorth < 0 ? 'var(--danger)' : cat.color;
 
       const content = document.createElement('div');
       content.className = 'goal-card';
       content.innerHTML =
         '<div class="goal-top">' +
           '<span class="goal-name"><span class="goal-icon" style="background:'+cat.color+'22; color:'+cat.color+'">'+goalIconHtml(cat, g.vehicleType)+'</span>'+esc(g.name)+'</span>' +
-          '<span class="goal-pct" style="color:'+(diffsMeaningfully ? noteColor : cat.color)+'">%'+netPct+'</span>' +
+          '<span class="goal-pct" style="color:'+barColor+'">%'+displayPct+'</span>' +
         '</div>' +
-        '<div class="goal-bar"><span style="width:'+netPct+'%; background:linear-gradient(90deg, '+(diffsMeaningfully ? noteColor : cat.color)+', '+(diffsMeaningfully ? noteColor : cat.color)+'AA);"></span></div>' +
-        '<div class="goal-nums"><span class="goal-saved-wrap"><b class="goal-saved-val">'+currency(g.saved||0)+'</b> / '+currency(g.target||0)+' (ek katkın)</span><span>kalan <b>'+currency(remaining)+'</b></span></div>' +
-        (diffsMeaningfully ? '<div class="goal-net-note" style="color:'+noteColor+'; background:'+noteBg+'">' +
-          (isBehind ? '↓ Net durumun ' : '↑ Net durumun ') + (netWorth<0?'-':'+') + currency(Math.abs(netWorth)) +
-          ' — genel durumuna göre hedefe olan gerçek ilerlemen %'+netPct+' (kendi katkın %'+pct+')</div>' : '');
-
-      const savedEl = content.querySelector('.goal-saved-val');
-      savedEl.style.cursor = 'pointer';
-      savedEl.style.textDecoration = 'underline dotted';
-      savedEl.style.textUnderlineOffset = '3px';
-      savedEl.onclick = (e) => {
-        e.stopPropagation();
-        const input = document.createElement('input');
-        input.value = numToInputValue(g.saved || 0);
-        input.inputMode = 'decimal';
-        input.placeholder = '0';
-        input.style.cssText = 'width:100px; background:var(--bg); border:1px solid '+cat.color+'; border-radius:7px; padding:3px 7px; color:var(--text); font-size:13px; font-weight:700; font-family:inherit;';
-        attachAmountFormatting(input);
-        let done = false;
-        function commit() {
-          if (done) return; done = true;
-          const nv = parseAmount(input.value);
-          if (nv !== g.saved) {
-            g.saved = nv;
-            logActivity(g.name + ' güncellendi', nv, { type:'goal', goalId: g.id });
-            saveData();
-          }
-          renderAll();
-        }
-        input.onblur = commit;
-        input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } };
-        savedEl.replaceWith(input);
-        input.focus(); input.select();
-      };
+        '<div class="goal-bar"><span style="width:'+barPct+'%; background:linear-gradient(90deg, '+barColor+', '+barColor+'AA);"></span></div>' +
+        '<div class="goal-nums"><span>'+(netWorth<0?'-':'')+currency(Math.abs(netWorth))+' / '+currency(g.target||0)+'</span>' +
+        (isBehind ? '<span>kalan <b>'+currency(remaining)+'</b></span>' : '<span style="color:var(--teal)">hedefi geçtin ✓</span>') + '</div>' +
+        '<div class="goal-net-note" style="color:var(--text-muted); background:var(--surface-2);">Otomatik — güncel net durumundan hesaplanır, elle giriş gerekmez.</div>';
 
       const wrap = document.createElement('div');
       wrap.className = 'swipe-wrap';

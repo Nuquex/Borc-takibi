@@ -4152,41 +4152,42 @@
 
   function openSellTargetPicker(portfolioItem, stock, proceeds) {
     const list = document.getElementById('debtPickerList');
-    document.getElementById('debtPickerTitle').textContent = 'Nereye aktarılsın?';
+    document.getElementById('debtPickerTitle').textContent = 'Hangi hesaba aktarılsın?';
     list.innerHTML = '';
 
-    function transferTo(targetAsset) {
-      targetAsset.debts = targetAsset.debts || [];
-      targetAsset.debts.push({ id: uid(), desc: stock.name + ' satışı', amount: proceeds });
+    function transferToCash(acc) {
+      acc.amount = (acc.amount || 0) + proceeds;
       const idx = portfolioItem.stocks.indexOf(stock);
       portfolioItem.stocks = portfolioItem.stocks.filter(x => x.id !== stock.id);
-      logActivity(stock.name + ' satıldı → ' + targetAsset.name, proceeds, { type:'asset', assetId: targetAsset.id });
+      logActivity(stock.name + ' satıldı → ' + acc.name, proceeds, { type:'cash', cashId: acc.id });
       closeDebtPicker();
       saveData(); renderAll();
       showUndoToast(stock.name + ' satışı', () => {
-        targetAsset.debts = targetAsset.debts.filter(x => !(x.desc === stock.name + ' satışı' && x.amount === proceeds));
+        acc.amount = Math.max(0, (acc.amount || 0) - proceeds);
         portfolioItem.stocks.splice(Math.min(idx, portfolioItem.stocks.length), 0, stock);
         saveData(); renderAll();
       });
     }
 
-    const simpleAssets = state.assets.filter(a => a.type !== 'portfolio');
-    simpleAssets.forEach(a => {
-      list.appendChild(pickerButton(a.name, () => transferTo(a), a.color, initials(a.name)));
+    state.cash = state.cash || [];
+    if (state.cash.length === 0) {
+      const info = document.createElement('div');
+      info.className = 'archive-empty';
+      info.textContent = 'Önce Nakit kısmından bir hesap ekle.';
+      list.appendChild(info);
+    }
+    state.cash.forEach(acc => {
+      const br = cashBrand(acc.name);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'src-opt';
+      b.style.background = 'linear-gradient(135deg, '+br.g1+' 0%, '+br.g2+' 100%)';
+      b.innerHTML = '<span>'+esc(acc.name)+'</span><span class="src-bal">'+currency(acc.amount||0)+'</span>';
+      b.onclick = () => transferToCash(acc);
+      list.appendChild(b);
     });
 
-    const mkNew = document.createElement('button');
-    mkNew.type = 'button';
-    mkNew.className = 'fab-menu-item';
-    mkNew.style.cssText = 'background:none; border:1px dashed var(--border); justify-content:center; color:var(--text-muted);';
-    mkNew.textContent = simpleAssets.length ? '+ Yeni "Nakit" kaydı oluştur' : '+ "Nakit" oluştur ve aktar';
-    mkNew.onclick = () => {
-      const id = uid();
-      const newAsset = { id, name:'Nakit', color: PALETTE[state.assets.length % PALETTE.length], type:'simple', debts: [] };
-      state.assets.push(newAsset);
-      transferTo(newAsset);
-    };
-    list.appendChild(mkNew);
+    document.getElementById('debtPickerBackdrop').classList.add('open');
   }
 
   // --- Bir bankada seçilen türdeki tüm taksitlere bir ay işaretle ---

@@ -70,6 +70,10 @@
   .period-tabs span.active { background:#fff; color:#16233C; }
 
   .ratio-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:15px 17px; margin-bottom:10px; box-shadow:0 1px 2px rgba(10,20,40,0.04); }
+  .dupe-warning { background:rgba(240,85,94,.08); border:1px solid rgba(240,85,94,.35); border-radius:16px; padding:15px 17px; margin-bottom:10px; }
+  .dupe-warning-title { font-size:13px; font-weight:800; color:var(--danger); margin-bottom:6px; }
+  .dupe-warning-text { font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:11px; }
+  .dupe-warning-btn { width:100%; background:var(--danger); color:#fff; border:none; border-radius:11px; padding:10px; font-family:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
   .ratio-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
   .ratio-title { font-size:13.5px; font-weight:700; }
   .ratio-val { font-size:18px; font-weight:800; color:var(--teal); font-variant-numeric:tabular-nums; }
@@ -616,6 +620,7 @@
     <div class="carousel-dots" id="netCarouselDots"></div>
 
     <div id="ratioCard"></div>
+    <div id="doubleCountWarning"></div>
     <div id="flowStrip"></div>
 
     <div class="month-carousel-wrap">
@@ -877,7 +882,7 @@
   const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
   const SIMPLE_ASSET_OPTIONS = [
-    'Nakit','Gram Altın','Çeyrek Altın','Yarım Altın','Tam Altın','Cumhuriyet Altını','Gümüş',
+    'Gram Altın','Çeyrek Altın','Yarım Altın','Tam Altın','Cumhuriyet Altını','Gümüş',
     'Dolar (Nakit)','Euro (Nakit)','Sterlin (Nakit)'
   ];
   const FUND_OPTIONS = [
@@ -1609,9 +1614,9 @@
   }
 
   // Harcama / varlık girişinde "hangi hesaptan?" sorusu
-  function openCashSourcePicker(amountHint, onPick) {
+  function openCashSourcePicker(amountHint, onPick, sign) {
     const list = document.getElementById('debtPickerList');
-    document.getElementById('debtPickerTitle').textContent = 'Hangi hesaptan?';
+    document.getElementById('debtPickerTitle').textContent = sign === 1 ? 'Hangi hesaba eklensin?' : 'Hangi hesaptan?';
     list.innerHTML = '';
     (state.cash||[]).forEach(acc => {
       const br = cashBrand(acc.name);
@@ -1626,7 +1631,7 @@
     const other = document.createElement('button');
     other.type = 'button';
     other.className = 'src-opt neutral';
-    other.innerHTML = '<span>Diğer</span><span class="src-bal" style="opacity:.6">bakiye düşülmez</span>';
+    other.innerHTML = '<span>Diğer</span><span class="src-bal" style="opacity:.6">'+(sign === 1 ? 'hiçbir hesaba eklenmez' : 'bakiye düşülmez')+'</span>';
     other.onclick = () => { closeDebtPicker(); onPick(null); };
     list.appendChild(other);
     document.getElementById('debtPickerBackdrop').classList.add('open');
@@ -2569,7 +2574,7 @@
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
     const cash = curMonthCashLeft();
-    const totalAssets = totalAssetsOnly + totalBes + cash.left + cashTotal();
+    const totalAssets = totalAssetsOnly + totalBes + ((state.cash||[]).length ? 0 : cash.left) + cashTotal();
     return totalAssets - totalDebtsTRY;
   }
 
@@ -2613,8 +2618,11 @@
     if (besTotal > 0) map['BES'] = (map['BES']||0) + besTotal;
     const cashT = cashTotal();
     if (cashT > 0) map['Nakit'] = (map['Nakit']||0) + cashT;
-    const curMonthSalary = curMonthCashLeft().left;
-    if (curMonthSalary > 0) map['Maaş (kalan)'] = (map['Maaş (kalan)']||0) + curMonthSalary;
+    // Gerçek Nakit hesapların varsa, "kalan maaş" ayrıca varlık sayılmaz (bankandaki bakiyeyle çakışır).
+    if ((state.cash||[]).length === 0) {
+      const curMonthSalary = curMonthCashLeft().left;
+      if (curMonthSalary > 0) map['Maaş (kalan)'] = (map['Maaş (kalan)']||0) + curMonthSalary;
+    }
     return map;
   }
   function computeDebtBreakdown() {
@@ -2709,7 +2717,7 @@
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
     const cash = curMonthCashLeft();
-    const totalAssets = totalAssetsOnly + totalBes + cash.left + cashTotal();
+    const totalAssets = totalAssetsOnly + totalBes + ((state.cash||[]).length ? 0 : cash.left) + cashTotal();
     const net = totalAssets - totalDebtsTRY;
     const curMonthIncome = cash.salary + cash.extraIncome;
 
@@ -2937,13 +2945,90 @@
       '</div>';
   }
 
+  // "Nakit" adlı bir Varlıklarım kaydı, Nakit bölümündeki hesaplarla çift sayıma yol açabilir. Tespit edip uyar.
+  function renderDoubleCountWarning() {
+    const box = document.getElementById('doubleCountWarning');
+    const dupes = state.assets.filter(a => a.type !== 'portfolio' && (a.name||'').trim().toLocaleLowerCase('tr-TR') === 'nakit');
+    if (dupes.length === 0 || (state.cash||[]).length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.style.display = 'block';
+    const totalDupe = dupes.reduce((s,a) => s + itemValue(a), 0);
+    box.innerHTML =
+      '<div class="dupe-warning">' +
+        '<div class="dupe-warning-title">⚠ Muhtemel çift sayım</div>' +
+        '<div class="dupe-warning-text">Varlıklarım altında ayrıca "Nakit" adlı bir kayıt var ('+currency(totalDupe)+'). ' +
+        'Bu, aşağıdaki Nakit bölümündeki hesaplarınla aynı parayı iki kez sayıyor olabilir.</div>' +
+        '<button type="button" class="dupe-warning-btn" id="fixDupeBtn">Bir Nakit hesabına taşı ve bu kaydı sil</button>' +
+      '</div>';
+    document.getElementById('fixDupeBtn').onclick = () => openDupeFixPicker(dupes, totalDupe);
+  }
+
+  function openDupeFixPicker(dupes, totalDupe) {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = 'Bu kayıt neyi temsil ediyor?';
+    list.innerHTML = '';
+
+    const info = document.createElement('div');
+    info.className = 'archive-empty';
+    info.style.cssText = 'font-style:normal; padding:2px 2px 10px; line-height:1.5;';
+    info.textContent = '"Nakit" kaydındaki ' + currency(totalDupe) + ' tutarı, Nakit bölümündeki hesaplarından birinde zaten kayıtlı olan PARA İLE AYNI mı, yoksa bunlardan bağımsız FARKLI bir para mı?';
+    list.appendChild(info);
+
+    const sameBtn = document.createElement('button');
+    sameBtn.type = 'button';
+    sameBtn.className = 'fab-menu-item';
+    sameBtn.style.cssText = 'background:var(--surface-2); justify-content:flex-start;';
+    sameBtn.innerHTML = '✅  Aynı para — sadece bu kaydı sil (hiçbir yere ekleme)';
+    sameBtn.onclick = () => {
+      const removedIds = dupes.map(d => d.id);
+      const removed = state.assets.filter(a => removedIds.includes(a.id));
+      state.assets = state.assets.filter(a => !removedIds.includes(a.id));
+      logActivity('"Nakit" tekrar kaydı silindi (çift sayım düzeltildi)', totalDupe, null);
+      closeDebtPicker();
+      saveData(); renderAll();
+      showUndoToast('Nakit kaydı', () => {
+        removed.forEach(d => state.assets.push(d));
+        saveData(); renderAll();
+      });
+    };
+    list.appendChild(sameBtn);
+
+    const diffTitle = document.createElement('div');
+    diffTitle.className = 'picker-group-title';
+    diffTitle.textContent = 'Farklı para — bir hesaba ekle';
+    list.appendChild(diffTitle);
+
+    (state.cash||[]).forEach(acc => {
+      const br = cashBrand(acc.name);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'src-opt';
+      b.style.background = 'linear-gradient(135deg, '+br.g1+' 0%, '+br.g2+' 100%)';
+      b.innerHTML = '<span>'+esc(acc.name)+'</span><span class="src-bal">'+currency(acc.amount||0)+'</span>';
+      b.onclick = () => {
+        acc.amount = (acc.amount||0) + totalDupe;
+        const removedIds = dupes.map(d => d.id);
+        state.assets = state.assets.filter(a => !removedIds.includes(a.id));
+        logActivity('"Nakit" varlığı → ' + acc.name + ' hesabına taşındı', totalDupe, { type:'cash', cashId: acc.id });
+        closeDebtPicker();
+        saveData(); renderAll();
+        showUndoToast('Nakit birleştirme', () => {
+          acc.amount = Math.max(0, (acc.amount||0) - totalDupe);
+          dupes.forEach(d => state.assets.push(d));
+          saveData(); renderAll();
+        });
+      };
+      list.appendChild(b);
+    });
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+  }
+
   function renderRatioCard() {
     const box = document.getElementById('ratioCard');
     const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
     const cash = curMonthCashLeft();
-    const totalAssets = totalAssetsOnly + totalBes + cash.left + cashTotal();
+    const totalAssets = totalAssetsOnly + totalBes + ((state.cash||[]).length ? 0 : cash.left) + cashTotal();
     const grand = totalAssets + totalDebtsTRY;
     if (grand <= 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
     box.style.display = 'block';
@@ -3348,6 +3433,7 @@
     refreshExpenseBankOptions();
     renderNetDurumCarousel();
     renderRatioCard();
+    renderDoubleCountWarning();
     renderFlowStrip();
     renderGainBadge();
     renderGoals();
@@ -3533,6 +3619,7 @@
   })();
 
   let pendingCashDeduction = null;
+  let pendingCashAddition = null;
   // sign: -1 harcama (düş), +1 gelir (ekle)
   function askCashSource(amount, label, sign) {
     openCashSourcePicker(amount, (acc) => {
@@ -3540,7 +3627,7 @@
       acc.amount = Math.max(0, (acc.amount||0) + sign * amount);
       logActivity(acc.name + ' → ' + label, amount, { type:'cash', cashId: acc.id });
       saveData(); renderAll();
-    });
+    }, sign);
   }
 
   // Nakit hesabı ekleme formu
@@ -3838,6 +3925,7 @@
           const newId = uid();
           state.expenses.push({ id: newId, kind:'gelir', currency: cur, amount, desc:'Gelir', day: viewedDayKey, ts: Date.now() });
           logActivity('Gelir eklendi', amount, { type:'expense', expenseId: newId });
+          if (cur === 'TRY') pendingCashAddition = { amount, label: 'Gelir' };
         }
       } else {
         const bankId = document.getElementById('expenseBankSelect').value;
@@ -3881,6 +3969,14 @@
       document.getElementById('expenseAmountInput').value = '';
       form.classList.remove('open'); showBtn.style.display = 'none';
       saveData(); renderAll();
+
+      if (pendingCashAddition && (state.cash||[]).length) {
+        const pend = pendingCashAddition;
+        pendingCashAddition = null;
+        setTimeout(() => askCashSource(pend.amount, pend.label, 1), 120);
+      } else {
+        pendingCashAddition = null;
+      }
     };
   })();
 

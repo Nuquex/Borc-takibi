@@ -292,6 +292,13 @@
     cursor:pointer; flex-shrink:0; padding:0;
   }
   .title-add-btn:active { transform:scale(.92); }
+  .pd-note { font-size:11px; color:var(--text-muted); line-height:1.5; margin:-4px 0 12px; }
+  .pd-gold-row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .pd-gold-qty { font-size:13px; font-weight:700; color:var(--text); }
+  .pd-gold-equiv-val { font-size:13px; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; }
+  .pd-gold-price-row { margin-top:6px; }
+  .pd-gold-price-val { font-size:12px; font-weight:600; color:var(--gold); cursor:pointer;
+    text-decoration:underline dotted; text-underline-offset:3px; }
   .src-opt {
     display:flex; align-items:center; gap:11px; padding:13px 14px; border-radius:12px;
     border:none; cursor:pointer; font-family:inherit; font-size:14px; font-weight:600;
@@ -405,6 +412,9 @@
   .debt-row-meta { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:10.5px; color:var(--text-muted); flex-wrap:wrap; }
   .debt-mini-pill { border-radius:99px; padding:3px 9px; font-weight:700; }
   .debt-pct { margin-left:auto; font-weight:800; font-variant-numeric:tabular-nums; }
+  .debt-partial-note { font-size:11px; color:var(--gold); background:rgba(217,177,104,.10); border-radius:8px;
+    padding:6px 9px; margin-top:7px; line-height:1.5; }
+  .debt-partial-note b { font-weight:800; font-variant-numeric:tabular-nums; }
   .debt-subgroup-title:first-child { margin-top:0; }
   .entry-desc-wrap { display:flex; align-items:center; gap:6px; min-width:0; flex:1; }
   .entry-desc-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; font-size:13.5px; }
@@ -799,6 +809,37 @@
 
     <div class="tear"></div>
 
+    <div class="section-title">
+      <span style="display:flex; align-items:center; gap:8px;">Kişisel Borçlar
+        <button type="button" class="title-add-btn" id="showAddPersonalDebtBtn" aria-label="Kişisel borç ekle">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </span>
+      <span class="section-total" id="personalDebtsSectionTotal" style="color:var(--text-muted)"></span>
+    </div>
+    <div class="pd-note">Genel Toplam Borç ve Net Durum'a dahil edilmez — süresi belirsiz, kişiler arası borçlar için.</div>
+    <div id="personalDebtsEmptyState" class="empty-state" style="display:none;">
+      <div class="icon-wrap">🤝</div><p>Henüz kişisel borç eklemedin.<br>Aileye, arkadaşa borcun varsa buraya ekleyebilirsin.</p>
+    </div>
+    <div id="personalDebtsList"></div>
+    <form class="new-item-form" id="newPersonalDebtForm">
+      <input id="pdNameInput" placeholder="Kime / ne için (örn. Anneme)" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit; margin-bottom:8px; width:100%;" />
+      <div class="mode-toggle" id="pdKindToggle" style="margin-bottom:8px;">
+        <button type="button" class="mode-btn active" data-kind="try">Nakit (₺)</button>
+        <button type="button" class="mode-btn" data-kind="altin">Altın</button>
+      </div>
+      <input id="pdAmountInput" placeholder="Tutar (₺)" inputmode="decimal" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
+      <select id="pdGoldTypeSelect" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit; margin-bottom:8px; width:100%;"></select>
+      <input id="pdGoldQtyInput" placeholder="Adet / gram" inputmode="decimal" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit; margin-bottom:8px;" />
+      <input id="pdGoldPriceInput" placeholder="Birim güncel fiyat (₺, opsiyonel)" inputmode="decimal" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:13.5px; font-family:inherit;" />
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" id="cancelPersonalDebtBtn">Vazgeç</button>
+        <button type="submit" class="btn btn-primary" style="background:var(--text-muted); color:#fff">Ekle</button>
+      </div>
+    </form>
+
+    <div class="tear"></div>
+
     <div class="section-title"><span>Maaş Geçmişi</span>
       <span style="display:flex; align-items:center; gap:8px;">
         <button type="button" class="salary-year-nav" id="salaryPrevYear">‹</button>
@@ -881,6 +922,11 @@
 
   const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
+  const GOLD_DEBT_TYPES = [
+    'Gram Altın (24 Ayar)', 'Gram Altın (22 Ayar)', 'Çeyrek Altın', 'Yarım Altın',
+    'Tam Altın', 'Cumhuriyet Altını', 'Ata Altın', 'Reşat Altın', 'Gümüş (gram)'
+  ];
+  const GOLD_GRAM_TYPES = ['Gram Altın (24 Ayar)', 'Gram Altın (22 Ayar)', 'Gümüş (gram)'];
   const SIMPLE_ASSET_OPTIONS = [
     'Gram Altın','Çeyrek Altın','Yarım Altın','Tam Altın','Cumhuriyet Altını','Gümüş',
     'Dolar (Nakit)','Euro (Nakit)','Sterlin (Nakit)'
@@ -1150,11 +1196,12 @@
           cash: p.cash || [],
           netWorthHistory: p.netWorthHistory || [],
           privacyMode: !!p.privacyMode,
-          goals: p.goals || []
+          goals: p.goals || [],
+          personalDebts: p.personalDebts || []
         };
       }
     } catch (e) {}
-    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [], expenses: [], activityLog: [], dismissedFixedBanks: [], cash: [], netWorthHistory: [], privacyMode: false, goals: [] };
+    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [], expenses: [], activityLog: [], dismissedFixedBanks: [], cash: [], netWorthHistory: [], privacyMode: false, goals: [], personalDebts: [] };
   }
   function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }
 
@@ -1461,7 +1508,7 @@
   function entryRemaining(entry) {
     if (entry.isInstallment) {
       const rc = Math.max(0, (entry.totalInstallments||0) - (entry.paidInstallments||0));
-      return rc * (entry.monthlyAmount||0);
+      return Math.max(0, rc * (entry.monthlyAmount||0) - (entry.extraPaid||0));
     }
     return entry.amount || 0;
   }
@@ -1490,8 +1537,14 @@
     if (item.type === 'bes') return (item.contributions||[]).reduce((s,c) => s + (c.amount||0), 0) + (item.govContribution || 0) - (item.deductions || 0);
     return (item.debts||[]).reduce((s,d) => s + entryRemaining(d), 0);
   }
+  function bankCardExpenseTotal(bank) {
+    const key = currentMonthKey();
+    return state.expenses
+      .filter(e => (e.kind||'gider') === 'gider' && e.sourceType === 'bank' && e.bankId === bank.id && monthOfDayKey(dayKeyOf(e)) === key)
+      .reduce((s,e) => s + (e.amount||0), 0);
+  }
   function itemMonthlyDueTRY(item) {
-    return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryMonthlyDue(d) : 0), 0);
+    return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryMonthlyDue(d) : 0), 0) + bankCardExpenseTotal(item);
   }
   function expenseBucketForBank(bank) {
     const real = currentMonthKey();
@@ -2230,7 +2283,7 @@
   }
 
   function bankDebtTRY(item) {
-    return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0);
+    return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0) + bankCardExpenseTotal(item);
   }
 
   function buildDebtForm(item, editing) {
@@ -2282,8 +2335,8 @@
           const content = document.createElement('div');
           content.id = 'debt-row-' + d.id;
 
-          const pctD = d.isInstallment && d.totalInstallments > 0
-            ? Math.round(d.paidInstallments / d.totalInstallments * 100) : 0;
+          const pctD = d.isInstallment && d.totalInstallments > 0 && d.monthlyAmount > 0
+            ? Math.round(((d.paidInstallments||0) + (d.extraPaid||0)/d.monthlyAmount) / d.totalInstallments * 100) : 0;
           const isDone = d.isInstallment && d.paidInstallments >= d.totalInstallments;
 
           const row = document.createElement('div');
@@ -2307,6 +2360,14 @@
               '<span>'+d.paidInstallments+'/'+d.totalInstallments+' ödendi</span>' +
               '<span class="debt-pct" style="color:'+acc+'">%'+pctD+'</span>';
             content.appendChild(meta);
+
+            if ((d.extraPaid||0) > 0 && !isDone) {
+              const thisCycleLeft = Math.max(0, (d.monthlyAmount||0) - (d.extraPaid||0));
+              const partial = document.createElement('div');
+              partial.className = 'debt-partial-note';
+              partial.innerHTML = 'Bu taksitten <b>'+formatMoney(d.extraPaid, d.currency)+'</b> ödendi — kalan <b>'+formatMoney(thisCycleLeft, d.currency)+'</b>';
+              content.appendChild(partial);
+            }
 
             const bar = document.createElement('div');
             bar.className = 'progress-bar';
@@ -2421,6 +2482,7 @@
 
       const subText = item.kesimTarihi ? ("Her ayın " + item.kesimTarihi + "'i") : 'Hesap Kesim Tarihi Ekle';
       const dueM = itemMonthlyDueTRY(item);
+      const cardExp = bankCardExpenseTotal(item);
       // İlerleme: taksit adedi değil, ödenen TUTAR oranı
       let paidAmt = 0, totalAmt = 0, itemCount = 0;
       (item.debts||[]).forEach(d => {
@@ -2433,7 +2495,9 @@
           totalAmt += (d.amount||0);
         }
       });
+      totalAmt += cardExp;
       const pct = totalAmt > 0 ? Math.round(paidAmt / totalAmt * 100) : 0;
+      const hasCardOnly = itemCount === 0 && cardExp > 0;
 
       head.innerHTML =
         '<div class="brow1">' +
@@ -2452,7 +2516,9 @@
               '<span class="bmeta">'+itemCount+' borç · %'+pct+' ödendi</span>' +
             '</div>' +
             (totalAmt > 0 ? '<div class="bprog"><span style="width:'+pct+'%"></span></div>' : '')
-          : '');
+          : (hasCardOnly
+              ? '<div class="brow2"><span class="bpill">Aylık '+currency(dueM)+'</span><span class="bmeta">kart harcaması</span></div>'
+              : ''));
 
       if (dueM > 0) {
         const payBtn = document.createElement('button');
@@ -2570,7 +2636,7 @@
   function colorForLabel(label, i) { return CATEGORY_COLORS[label] || PALETTE[i % PALETTE.length]; }
 
   function currentNetWorth() {
-    const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
+    const totalDebtsTRY = state.banks.reduce((s,b) => s + bankDebtTRY(b), 0);
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
     const cash = curMonthCashLeft();
@@ -2596,9 +2662,12 @@
     const list = state.expenses.filter(e => monthOfDayKey(dayKeyOf(e)) === key);
     const extraIncome = list.filter(e => e.kind === 'gelir' && (e.currency||'TRY') === 'TRY').reduce((s,e) => s + (e.amount||0), 0);
     const spent = list.filter(e => (e.kind||'gider') === 'gider').reduce((s,e) => s + (e.amount||0), 0);
+    // Kredi kartından yapılan harcamalar nakdini azaltmaz — o tutar zaten bankanın "aylık ödeme"sine
+    // (dolayısıyla "due" ve Toplam Borç'a) eklendiği için burada ayrıca düşülürse çift sayım olur.
+    const cashSpent = list.filter(e => (e.kind||'gider') === 'gider' && e.sourceType !== 'bank').reduce((s,e) => s + (e.amount||0), 0);
     const due = state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0);
     // Taksitler zaten "Toplam Borç" içinde sayıldığı için buradan tekrar düşülmez (çift sayım olurdu).
-    return { salary, extraIncome, spent, due, left: Math.max(0, salary + extraIncome - spent - due) };
+    return { salary, extraIncome, spent, due, left: Math.max(0, salary + extraIncome - cashSpent - due) };
   }
 
   function computeAssetBreakdown() {
@@ -2713,7 +2782,7 @@
   }
 
   function renderNetDurumCarousel() {
-    const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
+    const totalDebtsTRY = state.banks.reduce((s,b) => s + bankDebtTRY(b), 0);
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
     const cash = curMonthCashLeft();
@@ -2875,6 +2944,228 @@
     return VEHICLE_ICONS[vehicleType] || VEHICLE_ICONS.sedan;
   }
 
+  function formatGoldQty(n) {
+    const s = Number(n).toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+    return s;
+  }
+  function renderPersonalDebts() {
+    const listEl = document.getElementById('personalDebtsList');
+    const items = state.personalDebts || [];
+    document.getElementById('personalDebtsEmptyState').style.display = items.length === 0 ? 'block' : 'none';
+
+    const cashTotal = items.filter(p => (p.kind||'try')==='try').reduce((s,p) => s + (p.amount||0), 0);
+    const goldItems = items.filter(p => p.kind === 'altin');
+    const goldTRYTotal = goldItems.reduce((s,p) => s + (p.price > 0 ? p.qty * p.price : 0), 0);
+    const goldNoPrice = goldItems.filter(p => !(p.price > 0));
+
+    let headerTxt = '';
+    if (items.length) {
+      const knownTotal = cashTotal + goldTRYTotal;
+      headerTxt = knownTotal > 0 ? '≈ ' + currency(knownTotal) : '';
+      if (goldNoPrice.length) {
+        const goldGroups = {};
+        goldNoPrice.forEach(p => { goldGroups[p.goldType] = (goldGroups[p.goldType]||0) + p.qty; });
+        const goldTxt = Object.keys(goldGroups).map(t => formatGoldQty(goldGroups[t]) + ' ' + t).join(', ');
+        headerTxt = headerTxt ? headerTxt + ' + ' + goldTxt : goldTxt;
+      }
+    }
+    document.getElementById('personalDebtsSectionTotal').textContent = headerTxt;
+    listEl.innerHTML = '';
+
+    items.forEach(p => {
+      const isGold = p.kind === 'altin';
+      const qtyLabel = isGold ? formatGoldQty(p.qty) + ' ' + p.goldType : null;
+      const tryEquiv = isGold && p.price > 0 ? p.qty * p.price : null;
+
+      const content = document.createElement('div');
+      content.className = 'goal-card';
+
+      const top = document.createElement('div');
+      top.className = 'goal-top';
+      top.style.marginBottom = isGold ? '10px' : '0';
+      top.innerHTML =
+        '<span class="goal-name"><span class="goal-icon" style="background:'+(isGold?'rgba(217,177,104,.18); color:var(--gold)':'rgba(140,147,169,.18); color:var(--text-muted)')+'">'+(isGold?'🪙':'🤝')+'</span>'+esc(p.name)+'</span>' +
+        (isGold ? '' : '<span class="pd-amt-val" style="font-size:14px; font-weight:800; color:var(--text); cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; text-align:right;">'+currency(p.amount||0)+'</span>');
+      content.appendChild(top);
+
+      if (!isGold) {
+        const amtEl = top.querySelector('.pd-amt-val');
+        amtEl.onclick = (e) => {
+          e.stopPropagation();
+          const input = document.createElement('input');
+          input.value = numToInputValue(p.amount || 0);
+          input.inputMode = 'decimal';
+          input.placeholder = '0';
+          input.style.cssText = 'width:110px; background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:3px 7px; color:var(--text); font-size:14px; font-weight:700; font-family:inherit; text-align:right;';
+          attachAmountFormatting(input);
+          let done = false;
+          function commit() {
+            if (done) return; done = true;
+            const nv = parseAmount(input.value);
+            if (nv !== p.amount) {
+              p.amount = nv;
+              logActivity(p.name + ' (kişisel borç) güncellendi', nv, { type:'personalDebt', personalDebtId: p.id });
+              saveData();
+            }
+            renderAll();
+          }
+          input.onblur = commit;
+          input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } };
+          amtEl.replaceWith(input);
+          input.focus(); input.select();
+        };
+      }
+
+      if (isGold) {
+        const row = document.createElement('div');
+        row.className = 'pd-gold-row';
+
+        const qtyEl = document.createElement('span');
+        qtyEl.className = 'pd-gold-qty';
+        qtyEl.textContent = qtyLabel;
+        row.appendChild(qtyEl);
+
+        const equivEl = document.createElement('span');
+        equivEl.className = 'pd-gold-equiv-val';
+        equivEl.innerHTML = tryEquiv !== null ? '≈ ' + currency(tryEquiv) : '';
+        row.appendChild(equivEl);
+        content.appendChild(row);
+
+        const priceRow = document.createElement('div');
+        priceRow.className = 'pd-gold-price-row';
+        const priceVal = document.createElement('span');
+        priceVal.className = 'pd-gold-price-val';
+        priceVal.textContent = p.price > 0 ? 'birim ' + currency(p.price) : '+ birim fiyat gir';
+        priceRow.appendChild(priceVal);
+        priceVal.onclick = (e) => {
+          e.stopPropagation();
+          const input = document.createElement('input');
+          input.value = p.price > 0 ? numToInputValue(p.price) : '';
+          input.inputMode = 'decimal';
+          input.placeholder = '₺ birim fiyat';
+          input.style.cssText = 'width:100px; background:var(--bg); border:1px solid var(--gold); border-radius:7px; padding:3px 7px; color:var(--text); font-size:12px; font-weight:700; font-family:inherit; text-align:right;';
+          attachAmountFormatting(input);
+          let done = false;
+          function commit() {
+            if (done) return; done = true;
+            const nv = parseAmount(input.value);
+            if (nv !== p.price) {
+              p.price = nv;
+              logActivity(p.name + ' (kişisel borç) fiyatı güncellendi', nv > 0 ? p.qty * nv : null, { type:'personalDebt', personalDebtId: p.id });
+              saveData();
+            }
+            renderAll();
+          }
+          input.onblur = commit;
+          input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } };
+          priceVal.replaceWith(input);
+          input.focus(); input.select();
+        };
+        content.appendChild(priceRow);
+      }
+
+      const wrap = document.createElement('div');
+      wrap.className = 'swipe-wrap';
+      attachSwipeGesture(wrap, content, {
+        onSwipeRight: {
+          color: '#E5484D', icon: TRASH_ICON, label: 'Sil', destructive: true,
+          commit: () => {
+            const idx = state.personalDebts.indexOf(p);
+            state.personalDebts = state.personalDebts.filter(x => x.id !== p.id);
+            saveData(); renderAll();
+            showUndoToast(p.name, () => {
+              state.personalDebts.splice(Math.min(idx, state.personalDebts.length), 0, p);
+              saveData(); renderAll();
+            });
+          }
+        }
+      });
+      listEl.appendChild(wrap);
+    });
+  }
+
+  // Kişisel borç ekleme formu
+  (function() {
+    const showBtn = document.getElementById('showAddPersonalDebtBtn');
+    const form = document.getElementById('newPersonalDebtForm');
+    const amountInput = document.getElementById('pdAmountInput');
+    const goldSelect = document.getElementById('pdGoldTypeSelect');
+    const goldQtyInput = document.getElementById('pdGoldQtyInput');
+    const goldPriceInput = document.getElementById('pdGoldPriceInput');
+    let pdKind = 'try';
+
+    attachAmountFormatting(amountInput);
+    attachAmountFormatting(goldQtyInput);
+    attachAmountFormatting(goldPriceInput);
+    goldSelect.innerHTML = GOLD_DEBT_TYPES.map(t => '<option value="'+t+'">'+t+'</option>').join('');
+
+    function updateGoldQtyPlaceholder() {
+      const t = goldSelect.value;
+      const unit = GOLD_GRAM_TYPES.includes(t) ? 'Gram' : 'Adet';
+      goldQtyInput.placeholder = unit;
+      goldPriceInput.placeholder = unit + ' başı güncel fiyat (₺, opsiyonel)';
+    }
+    goldSelect.onchange = updateGoldQtyPlaceholder;
+    updateGoldQtyPlaceholder();
+
+    document.querySelectorAll('#pdKindToggle .mode-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('#pdKindToggle .mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        pdKind = btn.dataset.kind;
+        const isGold = pdKind === 'altin';
+        amountInput.style.display = isGold ? 'none' : 'block';
+        goldSelect.style.display = isGold ? 'block' : 'none';
+        goldQtyInput.style.display = isGold ? 'block' : 'none';
+        goldPriceInput.style.display = isGold ? 'block' : 'none';
+      };
+    });
+
+    function resetForm() {
+      document.getElementById('pdNameInput').value = '';
+      amountInput.value = '';
+      goldQtyInput.value = '';
+      goldPriceInput.value = '';
+      pdKind = 'try';
+      document.querySelectorAll('#pdKindToggle .mode-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+      amountInput.style.display = 'block';
+      goldSelect.style.display = 'none';
+      goldQtyInput.style.display = 'none';
+      goldPriceInput.style.display = 'none';
+    }
+
+    showBtn.onclick = () => { form.classList.add('open'); showBtn.style.display = 'none'; };
+    document.getElementById('cancelPersonalDebtBtn').onclick = () => {
+      form.classList.remove('open'); showBtn.style.display = 'inline-flex';
+      resetForm();
+    };
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const name = document.getElementById('pdNameInput').value.trim();
+      if (!name) { alert('Kime / ne için olduğunu yaz.'); return; }
+      state.personalDebts = state.personalDebts || [];
+      const id = uid();
+
+      if (pdKind === 'altin') {
+        const qty = parseAmount(goldQtyInput.value);
+        if (qty <= 0) { alert('Geçerli bir miktar gir.'); return; }
+        const goldType = goldSelect.value;
+        const price = parseAmount(goldPriceInput.value);
+        state.personalDebts.push({ id, name, kind:'altin', goldType, qty, price });
+        logActivity(name + ' (kişisel borç) eklendi', price > 0 ? qty * price : null, { type:'personalDebt', personalDebtId: id });
+      } else {
+        const amount = parseAmount(amountInput.value);
+        if (amount <= 0) { alert('Geçerli bir tutar gir.'); return; }
+        state.personalDebts.push({ id, name, kind:'try', amount });
+        logActivity(name + ' (kişisel borç) eklendi', amount, { type:'personalDebt', personalDebtId: id });
+      }
+
+      resetForm();
+      form.classList.remove('open'); showBtn.style.display = 'inline-flex';
+      saveData(); renderAll();
+    };
+  })();
+
   function renderGoals() {
     const listEl = document.getElementById('goalsList');
     const goals = state.goals || [];
@@ -3024,7 +3315,7 @@
 
   function renderRatioCard() {
     const box = document.getElementById('ratioCard');
-    const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
+    const totalDebtsTRY = state.banks.reduce((s,b) => s + bankDebtTRY(b), 0);
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
     const cash = curMonthCashLeft();
@@ -3116,7 +3407,9 @@
       const compareBase = isCurrent ? due : paid;
       const totalIn = salaryVal + monthGelirTRY;
       const expenseTotal = monthExpenses.filter(e => (e.kind||'gider')==='gider').reduce((s,e) => s + (e.amount||0), 0);
-      const net = totalIn - compareBase - expenseTotal;
+      // Kredi kartından yapılan harcamalar zaten "due" (taksit) içinde sayıldığı için Elde Kalan'dan tekrar düşülmez.
+      const cashExpenseTotal = monthExpenses.filter(e => (e.kind||'gider')==='gider' && e.sourceType !== 'bank').reduce((s,e) => s + (e.amount||0), 0);
+      const net = totalIn - compareBase - cashExpenseTotal;
 
       const page = document.createElement('div');
       page.className = 'month-page';
@@ -3419,7 +3712,7 @@
 
   function renderAll() {
     captureNetWorthSnapshot();
-    const totalDebtsTRY = state.banks.reduce((s,b) => s + (b.debts||[]).reduce((s2,d) => s2 + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0), 0);
+    const totalDebtsTRY = state.banks.reduce((s,b) => s + bankDebtTRY(b), 0);
     const totalAssetsOnly = state.assets.reduce((s,a) => s + itemValue(a), 0);
     const totalBes = state.bes.reduce((s,b) => s + itemValue(b), 0);
     const monthlyDue = state.banks.reduce((s,b) => s + itemMonthlyDueTRY(b), 0);
@@ -3437,6 +3730,7 @@
     renderFlowStrip();
     renderGainBadge();
     renderGoals();
+    renderPersonalDebts();
     renderMonthCarousel();
     renderExpenses();
     renderCashStrip();
@@ -4047,7 +4341,7 @@
         const parsed = JSON.parse(reader.result);
         if (!parsed || !Array.isArray(parsed.banks) || !Array.isArray(parsed.assets)) { alert('Bu dosya geçerli bir yedek dosyası değil.'); return; }
         if (confirm('Mevcut verilerin üzerine yedekteki veriler yüklenecek. Devam edilsin mi?')) {
-          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [], dismissedFixedBanks: parsed.dismissedFixedBanks || [], cash: parsed.cash || [], netWorthHistory: parsed.netWorthHistory || [], privacyMode: !!parsed.privacyMode, goals: parsed.goals || [] };
+          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [], dismissedFixedBanks: parsed.dismissedFixedBanks || [], cash: parsed.cash || [], netWorthHistory: parsed.netWorthHistory || [], privacyMode: !!parsed.privacyMode, goals: parsed.goals || [], personalDebts: parsed.personalDebts || [] };
           expanded = {}; saveData(); renderAll();
         }
       } catch (err) { alert('Dosya okunamadı, lütfen doğru yedek dosyasını seç.'); }
@@ -4286,56 +4580,109 @@
     document.getElementById('debtPickerBackdrop').classList.add('open');
   }
 
-  // --- Bir bankada seçilen türdeki tüm taksitlere bir ay işaretle ---
-  function payGroup(item, kind) {
-    const list = (item.debts||[]).filter(d => d.isInstallment &&
-      (kind === 'kart' ? d.debtType === 'Kredi Kartı' : d.debtType !== 'Kredi Kartı') &&
-      d.paidInstallments < d.totalInstallments);
-    if (!list.length) { alert('Bu grupta ödenecek taksit kalmadı.'); return; }
-
-    const toplam = list.reduce((s,d) => s + (d.monthlyAmount||0), 0);
-    const label = kind === 'kart' ? 'Kredi kartı' : 'Kredi';
-    if (!confirm(item.name + ' — ' + label + ' taksitleri\n' +
-                 list.length + ' borç için birer ay ödenmiş sayılacak.\nToplam: ' + currency(toplam))) return;
-
-    const snapshot = list.map(d => ({ d, prev: d.paidInstallments }));
-    list.forEach(d => {
-      const oldP = d.paidInstallments;
-      d.paidInstallments = oldP + 1;
-      logPaymentRange(item, d, oldP, d.paidInstallments);
-    });
-    logActivity(item.name + ' — ' + label + ' ödemesi (' + list.length + ' taksit)', toplam,
-                { type:'bank', bankId: item.id });
+  // --- Bir borca istediğin tutarı öde: tam, kısmi ya da ara ödeme — hepsi aynı mekanizma. ---
+  // extraPaid, tam bir taksidi kapatmayan tutarları biriktirir; monthlyAmount'a ulaşınca otomatik
+  // bir taksit "ödendi" sayılır (dots ilerler), fazlası bir sonraki takside devreder.
+  function payEntryAmount(item, entry, amount) {
+    if (amount <= 0) return;
+    const prevExtra = entry.extraPaid || 0;
+    const prevPaid = entry.paidInstallments || 0;
+    entry.extraPaid = prevExtra + amount;
+    while (entry.extraPaid >= (entry.monthlyAmount||0) && entry.monthlyAmount > 0 && entry.paidInstallments < entry.totalInstallments) {
+      entry.extraPaid -= entry.monthlyAmount;
+      entry.paidInstallments += 1;
+    }
+    if (entry.paidInstallments >= entry.totalInstallments) entry.extraPaid = 0; // borç bitti, fazlası tutulmaz
+    logPaymentRange(item, entry, prevPaid, entry.paidInstallments);
+    logActivity((entry.note || entry.debtType) + ' ödemesi', amount, { type:'debt', bankId: item.id, debtId: entry.id });
     saveData(); renderAll();
-    showUndoToast(label + ' ödemesi', () => {
-      snapshot.forEach(s => { logPaymentRange(item, s.d, s.d.paidInstallments, s.prev); s.d.paidInstallments = s.prev; });
+    showUndoToast((entry.note || entry.debtType) + ' ödemesi', () => {
+      logPaymentRange(item, entry, entry.paidInstallments, prevPaid);
+      entry.paidInstallments = prevPaid;
+      entry.extraPaid = prevExtra;
       saveData(); renderAll();
     });
   }
 
+  function openPayAmountForm(item, entry) {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = (entry.note || entry.debtType) + ' — Ödeme';
+    list.innerHTML = '';
+
+    const remaining = entryRemaining(entry);
+    const suggested = Math.min(entry.monthlyAmount || 0, remaining) || remaining;
+
+    const info = document.createElement('div');
+    info.className = 'archive-empty';
+    info.style.cssText = 'font-style:normal; padding:2px 2px 12px; line-height:1.5;';
+    info.innerHTML = 'Kalan borç: <b>' + currency(remaining) + '</b>' +
+      (entry.monthlyAmount ? '<br>Bu ayki taksit: <b>' + currency(entry.monthlyAmount) + '</b>' : '');
+    list.appendChild(info);
+
+    const form = document.createElement('form');
+    form.style.cssText = 'display:flex; flex-direction:column; gap:10px;';
+    form.innerHTML =
+      '<input class="pay-amount-input" inputmode="decimal" placeholder="Ödeme tutarı (₺)" value="'+numToInputValue(suggested)+'" ' +
+      'style="background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:11px 12px; font-family:inherit; font-size:16px; font-weight:700; color:var(--text); text-align:right; font-variant-numeric:tabular-nums;" />' +
+      '<div style="display:flex; gap:8px;">' +
+        '<button type="button" class="btn btn-ghost" id="payCancelBtn" style="flex:1;">Vazgeç</button>' +
+        '<button type="submit" class="btn btn-primary" style="flex:2; background:'+bankAccent(item)+'; color:#fff;">Öde</button>' +
+      '</div>';
+    const input = form.querySelector('.pay-amount-input');
+    attachAmountFormatting(input);
+    form.querySelector('#payCancelBtn').onclick = () => openPayPicker(item);
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const amt = parseAmount(input.value);
+      if (amt <= 0) { alert('Geçerli bir tutar gir.'); return; }
+      closeDebtPicker();
+      payEntryAmount(item, entry, amt);
+    };
+    list.appendChild(form);
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+    setTimeout(() => { input.focus(); input.select(); }, 80);
+  }
+
   function openPayPicker(item) {
     const list = document.getElementById('debtPickerList');
-    document.getElementById('debtPickerTitle').textContent = item.name + ' — Ödeme';
+    document.getElementById('debtPickerTitle').textContent = item.name + ' — Hangi borç?';
     list.innerHTML = '';
 
     const acc = bankAccent(item);
     const kartlar = (item.debts||[]).filter(d => d.isInstallment && d.debtType === 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
     const krediler = (item.debts||[]).filter(d => d.isInstallment && d.debtType !== 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
 
-    function opt(label, arr, kind, icon) {
-      const tot = arr.reduce((s,d) => s + (d.monthlyAmount||0), 0);
+    function debtRow(d) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'src-opt';
-      b.style.background = arr.length ? acc : 'var(--surface-2)';
-      if (!arr.length) b.style.color = 'var(--text-muted)';
-      b.innerHTML = '<span>'+icon+'  '+label+'</span><span class="src-bal">' +
-                    (arr.length ? currency(tot) + ' · ' + arr.length + ' borç' : 'yok') + '</span>';
-      b.onclick = () => { if (!arr.length) return; closeDebtPicker(); payGroup(item, kind); };
+      b.style.background = acc;
+      const remaining = entryRemaining(d);
+      b.innerHTML = '<span>'+esc(d.note || d.debtType)+'</span><span class="src-bal">'+currency(remaining)+' kaldı</span>';
+      b.onclick = () => openPayAmountForm(item, d);
       return b;
     }
-    list.appendChild(opt('Kredi Kartı Borçları', kartlar, 'kart', '💳'));
-    list.appendChild(opt('Krediler', krediler, 'kredi', '🏦'));
+
+    if (kartlar.length) {
+      const h = document.createElement('div');
+      h.className = 'picker-group-title';
+      h.textContent = 'Kredi Kartı Borçları';
+      list.appendChild(h);
+      kartlar.forEach(d => list.appendChild(debtRow(d)));
+    }
+    if (krediler.length) {
+      const h = document.createElement('div');
+      h.className = 'picker-group-title';
+      h.textContent = 'Krediler';
+      list.appendChild(h);
+      krediler.forEach(d => list.appendChild(debtRow(d)));
+    }
+    if (!kartlar.length && !krediler.length) {
+      const info = document.createElement('div');
+      info.className = 'archive-empty';
+      info.textContent = 'Ödenecek borç yok.';
+      list.appendChild(info);
+    }
     document.getElementById('debtPickerBackdrop').classList.add('open');
   }
 

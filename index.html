@@ -412,9 +412,6 @@
   .debt-row-meta { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:10.5px; color:var(--text-muted); flex-wrap:wrap; }
   .debt-mini-pill { border-radius:99px; padding:3px 9px; font-weight:700; }
   .debt-pct { margin-left:auto; font-weight:800; font-variant-numeric:tabular-nums; }
-  .debt-partial-note { font-size:11px; color:var(--gold); background:rgba(217,177,104,.10); border-radius:8px;
-    padding:6px 9px; margin-top:7px; line-height:1.5; }
-  .debt-partial-note b { font-weight:800; font-variant-numeric:tabular-nums; }
   .debt-subgroup-title:first-child { margin-top:0; }
   .entry-desc-wrap { display:flex; align-items:center; gap:6px; min-width:0; flex:1; }
   .entry-desc-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; font-size:13.5px; }
@@ -1508,7 +1505,7 @@
   function entryRemaining(entry) {
     if (entry.isInstallment) {
       const rc = Math.max(0, (entry.totalInstallments||0) - (entry.paidInstallments||0));
-      return Math.max(0, rc * (entry.monthlyAmount||0) - (entry.extraPaid||0));
+      return rc * (entry.monthlyAmount||0);
     }
     return entry.amount || 0;
   }
@@ -2335,8 +2332,8 @@
           const content = document.createElement('div');
           content.id = 'debt-row-' + d.id;
 
-          const pctD = d.isInstallment && d.totalInstallments > 0 && d.monthlyAmount > 0
-            ? Math.round(((d.paidInstallments||0) + (d.extraPaid||0)/d.monthlyAmount) / d.totalInstallments * 100) : 0;
+          const pctD = d.isInstallment && d.totalInstallments > 0
+            ? Math.round(d.paidInstallments / d.totalInstallments * 100) : 0;
           const isDone = d.isInstallment && d.paidInstallments >= d.totalInstallments;
 
           const row = document.createElement('div');
@@ -2360,14 +2357,6 @@
               '<span>'+d.paidInstallments+'/'+d.totalInstallments+' ödendi</span>' +
               '<span class="debt-pct" style="color:'+acc+'">%'+pctD+'</span>';
             content.appendChild(meta);
-
-            if ((d.extraPaid||0) > 0 && !isDone) {
-              const thisCycleLeft = Math.max(0, (d.monthlyAmount||0) - (d.extraPaid||0));
-              const partial = document.createElement('div');
-              partial.className = 'debt-partial-note';
-              partial.innerHTML = 'Bu taksitten <b>'+formatMoney(d.extraPaid, d.currency)+'</b> ödendi — kalan <b>'+formatMoney(thisCycleLeft, d.currency)+'</b>';
-              content.appendChild(partial);
-            }
 
             const bar = document.createElement('div');
             bar.className = 'progress-bar';
@@ -4580,167 +4569,29 @@
     document.getElementById('debtPickerBackdrop').classList.add('open');
   }
 
-  // --- Bir borca istediğin tutarı öde: tam, kısmi ya da ara ödeme — hepsi aynı mekanizma. ---
-  // extraPaid, tam bir taksidi kapatmayan tutarları biriktirir; monthlyAmount'a ulaşınca otomatik
-  // bir taksit "ödendi" sayılır (dots ilerler), fazlası bir sonraki takside devreder.
-  // --- Bir bankaya toplu ek/ara ödeme: tutarı taksitlere otomatik dağıtır, sen sadece tek sayı girersin ---
-  function payBankLumpSum(item, totalAmount) {
-    if (totalAmount <= 0) return;
-    const debts = (item.debts||[]).filter(d => d.isInstallment && (d.currency||'TRY')==='TRY' && d.paidInstallments < d.totalInstallments);
-    if (!debts.length) { alert('Bu bankada ödenecek borç yok.'); return; }
-
-    const snapshot = debts.map(d => ({ d, prevPaid: d.paidInstallments, prevExtra: d.extraPaid||0 }));
-    let remaining = totalAmount;
-    let applied = 0;
-    for (const d of debts) {
-      if (remaining <= 0) break;
-      const cap = entryRemaining(d);
-      const apply = Math.min(remaining, cap);
-      if (apply <= 0) continue;
-      d.extraPaid = (d.extraPaid||0) + apply;
-      while (d.extraPaid >= (d.monthlyAmount||0) && d.monthlyAmount > 0 && d.paidInstallments < d.totalInstallments) {
-        d.extraPaid -= d.monthlyAmount;
-        d.paidInstallments += 1;
-      }
-      if (d.paidInstallments >= d.totalInstallments) d.extraPaid = 0;
-      remaining -= apply;
-      applied += apply;
-    }
-
-    logActivity(item.name + ' — ödeme', applied, { type:'bank', bankId: item.id });
-    saveData(); renderAll();
-    if (remaining > 0.005) {
-      alert('Girdiğin tutarın ' + currency(remaining) + ' kadarı, bu bankadaki toplam borcu aştığı için uygulanmadı.');
-    }
-    showUndoToast(item.name + ' ödemesi', () => {
-      snapshot.forEach(s => { s.d.paidInstallments = s.prevPaid; s.d.extraPaid = s.prevExtra; });
-      saveData(); renderAll();
-    });
-  }
-
-  function openBankLumpSumForm(item) {
-    const list = document.getElementById('debtPickerList');
-    document.getElementById('debtPickerTitle').textContent = item.name + ' — Ek / Ara Ödeme';
-    list.innerHTML = '';
-
-    const dueTotal = itemMonthlyDueTRY(item);
-    const remainTotal = bankDebtTRY(item);
-
-    const info = document.createElement('div');
-    info.className = 'archive-empty';
-    info.style.cssText = 'font-style:normal; padding:2px 2px 12px; line-height:1.5;';
-    info.innerHTML = 'Bu ayki toplam ödeme: <b>' + currency(dueTotal) + '</b><br>Toplam kalan borç: <b>' + currency(remainTotal) + '</b>' +
-      '<br><span style="color:var(--text-muted); font-size:11px;">Girdiğin tutar, taksitlere otomatik olarak dağıtılır — hangi karta/taksite gittiğini düşünmene gerek yok.</span>';
-    list.appendChild(info);
-
-    const form = document.createElement('form');
-    form.style.cssText = 'display:flex; flex-direction:column; gap:10px;';
-    form.innerHTML =
-      '<input class="pay-amount-input" inputmode="decimal" placeholder="Ödeme tutarı (₺)" value="'+numToInputValue(dueTotal)+'" ' +
-      'style="background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:11px 12px; font-family:inherit; font-size:16px; font-weight:700; color:var(--text); text-align:right; font-variant-numeric:tabular-nums;" />' +
-      '<div style="display:flex; gap:8px;">' +
-        '<button type="button" class="btn btn-ghost" id="payCancelBtn2" style="flex:1;">Vazgeç</button>' +
-        '<button type="submit" class="btn btn-primary" style="flex:2; background:'+bankAccent(item)+'; color:#fff;">Öde</button>' +
-      '</div>';
-    const input = form.querySelector('.pay-amount-input');
-    attachAmountFormatting(input);
-    form.querySelector('#payCancelBtn2').onclick = () => openPayPicker(item);
-    form.onsubmit = (e) => {
-      e.preventDefault();
-      const amt = parseAmount(input.value);
-      if (amt <= 0) { alert('Geçerli bir tutar gir.'); return; }
-      closeDebtPicker();
-      payBankLumpSum(item, amt);
-    };
-    list.appendChild(form);
-    document.getElementById('debtPickerBackdrop').classList.add('open');
-    setTimeout(() => { input.focus(); input.select(); }, 80);
-  }
-
-  function payEntryAmount(item, entry, amount) {
-    if (amount <= 0) return;
-    const prevExtra = entry.extraPaid || 0;
-    const prevPaid = entry.paidInstallments || 0;
-    entry.extraPaid = prevExtra + amount;
-    while (entry.extraPaid >= (entry.monthlyAmount||0) && entry.monthlyAmount > 0 && entry.paidInstallments < entry.totalInstallments) {
-      entry.extraPaid -= entry.monthlyAmount;
-      entry.paidInstallments += 1;
-    }
-    if (entry.paidInstallments >= entry.totalInstallments) entry.extraPaid = 0; // borç bitti, fazlası tutulmaz
-    logPaymentRange(item, entry, prevPaid, entry.paidInstallments);
-    logActivity((entry.note || entry.debtType) + ' ödemesi', amount, { type:'debt', bankId: item.id, debtId: entry.id });
-    saveData(); renderAll();
-    showUndoToast((entry.note || entry.debtType) + ' ödemesi', () => {
-      logPaymentRange(item, entry, entry.paidInstallments, prevPaid);
-      entry.paidInstallments = prevPaid;
-      entry.extraPaid = prevExtra;
-      saveData(); renderAll();
-    });
-  }
-
-  function openPayAmountForm(item, entry) {
-    const list = document.getElementById('debtPickerList');
-    document.getElementById('debtPickerTitle').textContent = (entry.note || entry.debtType) + ' — Ödeme';
-    list.innerHTML = '';
-
-    const remaining = entryRemaining(entry);
-    const suggested = Math.min(entry.monthlyAmount || 0, remaining) || remaining;
-
-    const info = document.createElement('div');
-    info.className = 'archive-empty';
-    info.style.cssText = 'font-style:normal; padding:2px 2px 12px; line-height:1.5;';
-    info.innerHTML = 'Kalan borç: <b>' + currency(remaining) + '</b>' +
-      (entry.monthlyAmount ? '<br>Bu ayki taksit: <b>' + currency(entry.monthlyAmount) + '</b>' : '');
-    list.appendChild(info);
-
-    const form = document.createElement('form');
-    form.style.cssText = 'display:flex; flex-direction:column; gap:10px;';
-    form.innerHTML =
-      '<input class="pay-amount-input" inputmode="decimal" placeholder="Ödeme tutarı (₺)" value="'+numToInputValue(suggested)+'" ' +
-      'style="background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:11px 12px; font-family:inherit; font-size:16px; font-weight:700; color:var(--text); text-align:right; font-variant-numeric:tabular-nums;" />' +
-      '<div style="display:flex; gap:8px;">' +
-        '<button type="button" class="btn btn-ghost" id="payCancelBtn" style="flex:1;">Vazgeç</button>' +
-        '<button type="submit" class="btn btn-primary" style="flex:2; background:'+bankAccent(item)+'; color:#fff;">Öde</button>' +
-      '</div>';
-    const input = form.querySelector('.pay-amount-input');
-    attachAmountFormatting(input);
-    form.querySelector('#payCancelBtn').onclick = () => openPayDebtSelector(item);
-    form.onsubmit = (e) => {
-      e.preventDefault();
-      const amt = parseAmount(input.value);
-      if (amt <= 0) { alert('Geçerli bir tutar gir.'); return; }
-      closeDebtPicker();
-      payEntryAmount(item, entry, amt);
-    };
-    list.appendChild(form);
-    document.getElementById('debtPickerBackdrop').classList.add('open');
-    setTimeout(() => { input.focus(); input.select(); }, 80);
-  }
-
-  // --- Bir bankada seçilen türdeki tüm taksitlere tam ödeme (hızlı, standart) ---
+  // --- Bir bankada seçilen türdeki tüm taksitlere bir ay tam ödeme işaretle (basit, güvenilir sistem) ---
   function payGroup(item, kind) {
     const list = (item.debts||[]).filter(d => d.isInstallment &&
       (kind === 'kart' ? d.debtType === 'Kredi Kartı' : d.debtType !== 'Kredi Kartı') &&
       d.paidInstallments < d.totalInstallments);
     if (!list.length) { alert('Bu grupta ödenecek taksit kalmadı.'); return; }
 
-    const toplam = list.reduce((s,d) => s + Math.max(0, (d.monthlyAmount||0) - (d.extraPaid||0)), 0);
+    const toplam = list.reduce((s,d) => s + (d.monthlyAmount||0), 0);
     const label = kind === 'kart' ? 'Kredi kartı' : 'Kredi';
     if (!confirm(item.name + ' — ' + label + ' taksitleri\n' +
-                 list.length + ' borç için bu ayki taksit tam ödenmiş sayılacak.\nToplam: ' + currency(toplam))) return;
+                 list.length + ' borç için birer ay ödenmiş sayılacak.\nToplam: ' + currency(toplam))) return;
 
-    const snapshot = list.map(d => ({ d, prevPaid: d.paidInstallments, prevExtra: d.extraPaid||0 }));
+    const snapshot = list.map(d => ({ d, prev: d.paidInstallments }));
     list.forEach(d => {
       const oldP = d.paidInstallments;
       d.paidInstallments = oldP + 1;
-      d.extraPaid = 0;
       logPaymentRange(item, d, oldP, d.paidInstallments);
     });
     logActivity(item.name + ' — ' + label + ' ödemesi (' + list.length + ' taksit)', toplam,
                 { type:'bank', bankId: item.id });
     saveData(); renderAll();
     showUndoToast(label + ' ödemesi', () => {
-      snapshot.forEach(s => { logPaymentRange(item, s.d, s.d.paidInstallments, s.prevPaid); s.d.paidInstallments = s.prevPaid; s.d.extraPaid = s.prevExtra; });
+      snapshot.forEach(s => { logPaymentRange(item, s.d, s.d.paidInstallments, s.prev); s.d.paidInstallments = s.prev; });
       saveData(); renderAll();
     });
   }
@@ -4755,7 +4606,7 @@
     const krediler = (item.debts||[]).filter(d => d.isInstallment && d.debtType !== 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
 
     function opt(label, arr, kind, icon) {
-      const tot = arr.reduce((s,d) => s + Math.max(0, (d.monthlyAmount||0) - (d.extraPaid||0)), 0);
+      const tot = arr.reduce((s,d) => s + (d.monthlyAmount||0), 0);
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'src-opt';
@@ -4766,61 +4617,8 @@
       b.onclick = () => { if (!arr.length) return; closeDebtPicker(); payGroup(item, kind); };
       return b;
     }
-    list.appendChild(opt('Kredi Kartı Borçları — Tam Öde', kartlar, 'kart', '💳'));
-    list.appendChild(opt('Krediler — Tam Öde', krediler, 'kredi', '🏦'));
-
-    const other = document.createElement('button');
-    other.type = 'button';
-    other.className = 'fab-menu-item';
-    other.style.cssText = 'background:none; border:1.5px dashed var(--border); justify-content:center; color:var(--text-muted); margin-top:4px;';
-    other.innerHTML = '✏️  Ek Ödeme / Ara Ödeme / Farklı Tutar';
-    other.onclick = () => openBankLumpSumForm(item);
-    list.appendChild(other);
-
-    document.getElementById('debtPickerBackdrop').classList.add('open');
-  }
-
-  // --- Farklı tutar / ara ödeme: hangi borca ödeneceğini seç ---
-  function openPayDebtSelector(item) {
-    const list = document.getElementById('debtPickerList');
-    document.getElementById('debtPickerTitle').textContent = item.name + ' — Hangi borç?';
-    list.innerHTML = '';
-
-    const acc = bankAccent(item);
-    const kartlar = (item.debts||[]).filter(d => d.isInstallment && d.debtType === 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
-    const krediler = (item.debts||[]).filter(d => d.isInstallment && d.debtType !== 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
-
-    function debtRow(d) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'src-opt';
-      b.style.background = acc;
-      const remaining = entryRemaining(d);
-      b.innerHTML = '<span>'+esc(d.note || d.debtType)+'</span><span class="src-bal">'+currency(remaining)+' kaldı</span>';
-      b.onclick = () => openPayAmountForm(item, d);
-      return b;
-    }
-
-    if (kartlar.length) {
-      const h = document.createElement('div');
-      h.className = 'picker-group-title';
-      h.textContent = 'Kredi Kartı Borçları';
-      list.appendChild(h);
-      kartlar.forEach(d => list.appendChild(debtRow(d)));
-    }
-    if (krediler.length) {
-      const h = document.createElement('div');
-      h.className = 'picker-group-title';
-      h.textContent = 'Krediler';
-      list.appendChild(h);
-      krediler.forEach(d => list.appendChild(debtRow(d)));
-    }
-    if (!kartlar.length && !krediler.length) {
-      const info = document.createElement('div');
-      info.className = 'archive-empty';
-      info.textContent = 'Ödenecek borç yok.';
-      list.appendChild(info);
-    }
+    list.appendChild(opt('Kredi Kartı Borçları', kartlar, 'kart', '💳'));
+    list.appendChild(opt('Krediler', krediler, 'kredi', '🏦'));
     document.getElementById('debtPickerBackdrop').classList.add('open');
   }
 

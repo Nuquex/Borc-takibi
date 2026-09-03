@@ -4630,7 +4630,7 @@
       '</div>';
     const input = form.querySelector('.pay-amount-input');
     attachAmountFormatting(input);
-    form.querySelector('#payCancelBtn').onclick = () => openPayPicker(item);
+    form.querySelector('#payCancelBtn').onclick = () => openPayDebtSelector(item);
     form.onsubmit = (e) => {
       e.preventDefault();
       const amt = parseAmount(input.value);
@@ -4643,7 +4643,71 @@
     setTimeout(() => { input.focus(); input.select(); }, 80);
   }
 
+  // --- Bir bankada seçilen türdeki tüm taksitlere tam ödeme (hızlı, standart) ---
+  function payGroup(item, kind) {
+    const list = (item.debts||[]).filter(d => d.isInstallment &&
+      (kind === 'kart' ? d.debtType === 'Kredi Kartı' : d.debtType !== 'Kredi Kartı') &&
+      d.paidInstallments < d.totalInstallments);
+    if (!list.length) { alert('Bu grupta ödenecek taksit kalmadı.'); return; }
+
+    const toplam = list.reduce((s,d) => s + Math.max(0, (d.monthlyAmount||0) - (d.extraPaid||0)), 0);
+    const label = kind === 'kart' ? 'Kredi kartı' : 'Kredi';
+    if (!confirm(item.name + ' — ' + label + ' taksitleri\n' +
+                 list.length + ' borç için bu ayki taksit tam ödenmiş sayılacak.\nToplam: ' + currency(toplam))) return;
+
+    const snapshot = list.map(d => ({ d, prevPaid: d.paidInstallments, prevExtra: d.extraPaid||0 }));
+    list.forEach(d => {
+      const oldP = d.paidInstallments;
+      d.paidInstallments = oldP + 1;
+      d.extraPaid = 0;
+      logPaymentRange(item, d, oldP, d.paidInstallments);
+    });
+    logActivity(item.name + ' — ' + label + ' ödemesi (' + list.length + ' taksit)', toplam,
+                { type:'bank', bankId: item.id });
+    saveData(); renderAll();
+    showUndoToast(label + ' ödemesi', () => {
+      snapshot.forEach(s => { logPaymentRange(item, s.d, s.d.paidInstallments, s.prevPaid); s.d.paidInstallments = s.prevPaid; s.d.extraPaid = s.prevExtra; });
+      saveData(); renderAll();
+    });
+  }
+
   function openPayPicker(item) {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = item.name + ' — Ödeme';
+    list.innerHTML = '';
+
+    const acc = bankAccent(item);
+    const kartlar = (item.debts||[]).filter(d => d.isInstallment && d.debtType === 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
+    const krediler = (item.debts||[]).filter(d => d.isInstallment && d.debtType !== 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
+
+    function opt(label, arr, kind, icon) {
+      const tot = arr.reduce((s,d) => s + Math.max(0, (d.monthlyAmount||0) - (d.extraPaid||0)), 0);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'src-opt';
+      b.style.background = arr.length ? acc : 'var(--surface-2)';
+      if (!arr.length) b.style.color = 'var(--text-muted)';
+      b.innerHTML = '<span>'+icon+'  '+label+'</span><span class="src-bal">' +
+                    (arr.length ? currency(tot) + ' · ' + arr.length + ' borç' : 'yok') + '</span>';
+      b.onclick = () => { if (!arr.length) return; closeDebtPicker(); payGroup(item, kind); };
+      return b;
+    }
+    list.appendChild(opt('Kredi Kartı Borçları — Tam Öde', kartlar, 'kart', '💳'));
+    list.appendChild(opt('Krediler — Tam Öde', krediler, 'kredi', '🏦'));
+
+    const other = document.createElement('button');
+    other.type = 'button';
+    other.className = 'fab-menu-item';
+    other.style.cssText = 'background:none; border:1.5px dashed var(--border); justify-content:center; color:var(--text-muted); margin-top:4px;';
+    other.innerHTML = '✏️  Ek Ödeme / Ara Ödeme / Farklı Tutar';
+    other.onclick = () => openPayDebtSelector(item);
+    list.appendChild(other);
+
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+  }
+
+  // --- Farklı tutar / ara ödeme: hangi borca ödeneceğini seç ---
+  function openPayDebtSelector(item) {
     const list = document.getElementById('debtPickerList');
     document.getElementById('debtPickerTitle').textContent = item.name + ' — Hangi borç?';
     list.innerHTML = '';

@@ -4583,6 +4583,80 @@
   // --- Bir borca istediğin tutarı öde: tam, kısmi ya da ara ödeme — hepsi aynı mekanizma. ---
   // extraPaid, tam bir taksidi kapatmayan tutarları biriktirir; monthlyAmount'a ulaşınca otomatik
   // bir taksit "ödendi" sayılır (dots ilerler), fazlası bir sonraki takside devreder.
+  // --- Bir bankaya toplu ek/ara ödeme: tutarı taksitlere otomatik dağıtır, sen sadece tek sayı girersin ---
+  function payBankLumpSum(item, totalAmount) {
+    if (totalAmount <= 0) return;
+    const debts = (item.debts||[]).filter(d => d.isInstallment && (d.currency||'TRY')==='TRY' && d.paidInstallments < d.totalInstallments);
+    if (!debts.length) { alert('Bu bankada ödenecek borç yok.'); return; }
+
+    const snapshot = debts.map(d => ({ d, prevPaid: d.paidInstallments, prevExtra: d.extraPaid||0 }));
+    let remaining = totalAmount;
+    let applied = 0;
+    for (const d of debts) {
+      if (remaining <= 0) break;
+      const cap = entryRemaining(d);
+      const apply = Math.min(remaining, cap);
+      if (apply <= 0) continue;
+      d.extraPaid = (d.extraPaid||0) + apply;
+      while (d.extraPaid >= (d.monthlyAmount||0) && d.monthlyAmount > 0 && d.paidInstallments < d.totalInstallments) {
+        d.extraPaid -= d.monthlyAmount;
+        d.paidInstallments += 1;
+      }
+      if (d.paidInstallments >= d.totalInstallments) d.extraPaid = 0;
+      remaining -= apply;
+      applied += apply;
+    }
+
+    logActivity(item.name + ' — ödeme', applied, { type:'bank', bankId: item.id });
+    saveData(); renderAll();
+    if (remaining > 0.005) {
+      alert('Girdiğin tutarın ' + currency(remaining) + ' kadarı, bu bankadaki toplam borcu aştığı için uygulanmadı.');
+    }
+    showUndoToast(item.name + ' ödemesi', () => {
+      snapshot.forEach(s => { s.d.paidInstallments = s.prevPaid; s.d.extraPaid = s.prevExtra; });
+      saveData(); renderAll();
+    });
+  }
+
+  function openBankLumpSumForm(item) {
+    const list = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = item.name + ' — Ek / Ara Ödeme';
+    list.innerHTML = '';
+
+    const dueTotal = itemMonthlyDueTRY(item);
+    const remainTotal = bankDebtTRY(item);
+
+    const info = document.createElement('div');
+    info.className = 'archive-empty';
+    info.style.cssText = 'font-style:normal; padding:2px 2px 12px; line-height:1.5;';
+    info.innerHTML = 'Bu ayki toplam ödeme: <b>' + currency(dueTotal) + '</b><br>Toplam kalan borç: <b>' + currency(remainTotal) + '</b>' +
+      '<br><span style="color:var(--text-muted); font-size:11px;">Girdiğin tutar, taksitlere otomatik olarak dağıtılır — hangi karta/taksite gittiğini düşünmene gerek yok.</span>';
+    list.appendChild(info);
+
+    const form = document.createElement('form');
+    form.style.cssText = 'display:flex; flex-direction:column; gap:10px;';
+    form.innerHTML =
+      '<input class="pay-amount-input" inputmode="decimal" placeholder="Ödeme tutarı (₺)" value="'+numToInputValue(dueTotal)+'" ' +
+      'style="background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:11px 12px; font-family:inherit; font-size:16px; font-weight:700; color:var(--text); text-align:right; font-variant-numeric:tabular-nums;" />' +
+      '<div style="display:flex; gap:8px;">' +
+        '<button type="button" class="btn btn-ghost" id="payCancelBtn2" style="flex:1;">Vazgeç</button>' +
+        '<button type="submit" class="btn btn-primary" style="flex:2; background:'+bankAccent(item)+'; color:#fff;">Öde</button>' +
+      '</div>';
+    const input = form.querySelector('.pay-amount-input');
+    attachAmountFormatting(input);
+    form.querySelector('#payCancelBtn2').onclick = () => openPayPicker(item);
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const amt = parseAmount(input.value);
+      if (amt <= 0) { alert('Geçerli bir tutar gir.'); return; }
+      closeDebtPicker();
+      payBankLumpSum(item, amt);
+    };
+    list.appendChild(form);
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+    setTimeout(() => { input.focus(); input.select(); }, 80);
+  }
+
   function payEntryAmount(item, entry, amount) {
     if (amount <= 0) return;
     const prevExtra = entry.extraPaid || 0;
@@ -4700,7 +4774,7 @@
     other.className = 'fab-menu-item';
     other.style.cssText = 'background:none; border:1.5px dashed var(--border); justify-content:center; color:var(--text-muted); margin-top:4px;';
     other.innerHTML = '✏️  Ek Ödeme / Ara Ödeme / Farklı Tutar';
-    other.onclick = () => openPayDebtSelector(item);
+    other.onclick = () => openBankLumpSumForm(item);
     list.appendChild(other);
 
     document.getElementById('debtPickerBackdrop').classList.add('open');

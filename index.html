@@ -206,7 +206,7 @@
   .net-page-total { font-variant-numeric:tabular-nums; font-weight:700; font-size:26px; margin-bottom:2px; letter-spacing:-0.8px; color:var(--hero-text); }
   .date-leaf { cursor:pointer; }
 
-  .cal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:70; display:none; align-items:center; justify-content:center; padding:20px; }
+  .cal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
   .cal-backdrop.open { display:flex; }
   .cal-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:16px; width:100%; max-width:320px; }
   .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
@@ -1432,9 +1432,15 @@
     const delB = document.createElement('button');
     delB.className = 'icon-btn'; delB.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     delB.onclick = () => {
-      if (!confirm((isBuy?'Alım':'Satım')+' kaydı silinsin mi?')) return;
-      if (isBuy) stock.buys = stock.buys.filter(x => x.id !== l.id); else stock.sells = stock.sells.filter(x => x.id !== l.id);
+      let removed, idx;
+      if (isBuy) { idx = stock.buys.indexOf(l); removed = l; stock.buys = stock.buys.filter(x => x.id !== l.id); }
+      else { idx = stock.sells.indexOf(l); removed = l; stock.sells = stock.sells.filter(x => x.id !== l.id); }
       saveData(); renderAll();
+      showUndoToast((isBuy?'Alım':'Satım') + ' kaydı', () => {
+        if (isBuy) stock.buys.splice(Math.min(idx, stock.buys.length), 0, removed);
+        else stock.sells.splice(Math.min(idx, stock.sells.length), 0, removed);
+        saveData(); renderAll();
+      });
     };
     btnWrap.appendChild(editB); btnWrap.appendChild(delB);
     container.appendChild(r);
@@ -1809,7 +1815,6 @@
         let pressTimer = null;
         card.addEventListener('touchstart', () => {
           pressTimer = setTimeout(() => {
-            if (!confirm(acc.name + ' hesabı silinsin mi?')) return;
             const idx = state.cash.indexOf(acc);
             state.cash = state.cash.filter(x => x.id !== acc.id);
             cashActiveId = null;
@@ -4588,15 +4593,40 @@
       try {
         const parsed = JSON.parse(reader.result);
         if (!parsed || !Array.isArray(parsed.banks) || !Array.isArray(parsed.assets)) { alert('Bu dosya geçerli bir yedek dosyası değil.'); return; }
-        if (confirm('Mevcut verilerin üzerine yedekteki veriler yüklenecek. Devam edilsin mi?')) {
-          state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [], dismissedFixedBanks: parsed.dismissedFixedBanks || [], cash: parsed.cash || [], netWorthHistory: parsed.netWorthHistory || [], privacyMode: !!parsed.privacyMode, goals: parsed.goals || [], personalDebts: parsed.personalDebts || [], themeMode: parsed.themeMode || null };
-          expanded = {}; saveData(); renderAll();
-        }
+        openImportConfirm(parsed);
       } catch (err) { alert('Dosya okunamadı, lütfen doğru yedek dosyasını seç.'); }
     };
     reader.readAsText(file);
     e.target.value = '';
   };
+
+  function openImportConfirm(parsed) {
+    const listEl = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = 'İçe Aktar — Onay';
+    listEl.innerHTML = '';
+    const info = document.createElement('div');
+    info.className = 'archive-empty';
+    info.style.cssText = 'font-style:normal; padding:2px 2px 14px; line-height:1.6; text-align:center;';
+    info.innerHTML = '⚠️ <b style="color:var(--text);">Mevcut verilerin üzerine</b><br>yedekteki veriler yüklenecek.<br>Bu işlem geri alınamaz.';
+    listEl.appendChild(info);
+    const okBtn = document.createElement('button');
+    okBtn.type = 'button'; okBtn.className = 'src-opt';
+    okBtn.style.cssText = 'background:var(--danger); justify-content:center;';
+    okBtn.innerHTML = '<span>Evet, üzerine yaz</span>';
+    okBtn.onclick = () => {
+      closeDebtPicker();
+      state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [], dismissedFixedBanks: parsed.dismissedFixedBanks || [], cash: parsed.cash || [], netWorthHistory: parsed.netWorthHistory || [], privacyMode: !!parsed.privacyMode, goals: parsed.goals || [], personalDebts: parsed.personalDebts || [], themeMode: parsed.themeMode || null };
+      expanded = {}; saveData(); renderAll();
+    };
+    listEl.appendChild(okBtn);
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button'; cancelBtn.className = 'fab-menu-item';
+    cancelBtn.style.cssText = 'background:none; border:1.5px dashed var(--border); justify-content:center; color:var(--text-muted); margin-top:4px;';
+    cancelBtn.textContent = 'Vazgeç';
+    cancelBtn.onclick = () => closeDebtPicker();
+    listEl.appendChild(cancelBtn);
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+  }
 
   // Undo toast: tap to restore, swipe in any direction to dismiss
   (function() {
@@ -4834,12 +4864,48 @@
       (kind === 'kart' ? d.debtType === 'Kredi Kartı' : d.debtType !== 'Kredi Kartı') &&
       d.paidInstallments < d.totalInstallments);
     if (!list.length) { alert('Bu grupta ödenecek taksit kalmadı.'); return; }
+    openPayConfirm(item, kind, list);
+  }
 
+  // Tarayıcının yerleşik confirm() penceresi bazı iOS'ta ana ekrana eklenmiş (standalone)
+  // uygulamalarda sessizce iptal edilebiliyor. Onun yerine uygulamanın kendi ekranını kullanıyoruz.
+  function openPayConfirm(item, kind, list) {
     const toplam = list.reduce((s,d) => s + (d.monthlyAmount||0), 0);
     const label = kind === 'kart' ? 'Kredi kartı' : 'Kredi';
-    if (!confirm(item.name + ' — ' + label + ' taksitleri\n' +
-                 list.length + ' borç için birer ay ödenmiş sayılacak.\nToplam: ' + currency(toplam))) return;
+    const acc = bankAccent(item);
+    const listEl = document.getElementById('debtPickerList');
+    document.getElementById('debtPickerTitle').textContent = item.name + ' — Onay';
+    listEl.innerHTML = '';
 
+    const info = document.createElement('div');
+    info.className = 'archive-empty';
+    info.style.cssText = 'font-style:normal; padding:2px 2px 14px; line-height:1.6; text-align:center;';
+    info.innerHTML = '<b style="color:var(--text); font-size:14px;">'+label+' taksitleri</b><br>' +
+      list.length + ' borç için bu ayki taksit ödenmiş sayılacak.<br>' +
+      '<span style="font-size:18px; font-weight:800; color:'+acc+'; display:block; margin-top:8px;">'+currency(toplam)+'</span>';
+    listEl.appendChild(info);
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'src-opt';
+    confirmBtn.style.background = acc;
+    confirmBtn.style.justifyContent = 'center';
+    confirmBtn.innerHTML = '<span>✓ Onayla ve Öde</span>';
+    confirmBtn.onclick = () => { closeDebtPicker(); commitPayGroup(item, kind, list, toplam, label); };
+    listEl.appendChild(confirmBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'fab-menu-item';
+    cancelBtn.style.cssText = 'background:none; border:1.5px dashed var(--border); justify-content:center; color:var(--text-muted); margin-top:4px;';
+    cancelBtn.textContent = 'Vazgeç';
+    cancelBtn.onclick = () => closeDebtPicker();
+    listEl.appendChild(cancelBtn);
+
+    document.getElementById('debtPickerBackdrop').classList.add('open');
+  }
+
+  function commitPayGroup(item, kind, list, toplam, label) {
     const snapshot = list.map(d => ({ d, prev: d.paidInstallments, prevMonth: d.lastPaidMonth }));
     const thisMonth = currentMonthKey();
     list.forEach(d => {
@@ -4875,7 +4941,7 @@
       if (!arr.length) b.style.color = 'var(--text-muted)';
       b.innerHTML = '<span>'+icon+'  '+label+'</span><span class="src-bal">' +
                     (arr.length ? currency(tot) + ' · ' + arr.length + ' borç' : 'yok') + '</span>';
-      b.onclick = () => { if (!arr.length) return; closeDebtPicker(); payGroup(item, kind); };
+      b.onclick = () => { if (!arr.length) return; payGroup(item, kind); };
       return b;
     }
     list.appendChild(opt('Kredi Kartı Borçları', kartlar, 'kart', '💳'));

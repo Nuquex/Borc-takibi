@@ -1406,9 +1406,10 @@
       form.className = 'inline-form open';
       form.style.margin = '4px 0';
       form.innerHTML =
-        '<div class="fields-row"><input class="txe-price" placeholder="Fiyat" inputmode="decimal" value="'+numToInputValue(l.price)+'" /><input class="txe-qty" placeholder="Adet" inputmode="decimal" value="'+numToInputValue(l.qty)+'" /></div>' +
+        '<div class="fields-row"><input class="txe-price" placeholder="Fiyat" inputmode="decimal" value="'+numToInputValue(l.price, stock.productType === 'fon' ? 6 : 2)+'" /><input class="txe-qty" placeholder="Adet" inputmode="decimal" value="'+numToInputValue(l.qty, stock.productType === 'fon' ? 6 : 4)+'" /></div>' +
         '<div class="form-actions"><button type="button" class="btn btn-ghost txe-cancel">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+(isBuy?'var(--teal)':'var(--danger)')+'">Kaydet</button></div>';
-      attachAmountFormatting(form.querySelector('.txe-price'));
+      attachAmountFormatting(form.querySelector('.txe-price'), stock.productType === 'fon' ? 6 : 2);
+      attachAmountFormatting(form.querySelector('.txe-qty'), stock.productType === 'fon' ? 6 : 4);
 
       form.onsubmit = (e) => {
         e.preventDefault();
@@ -1606,11 +1607,13 @@
   }
   function currency(n) { return formatMoney(n, 'TRY'); }
   // Kayıtlı sayıyı (JS: 135674.99) giriş kutusu formatına çevirir: "135.674,99"
-  function numToInputValue(n) {
+  function numToInputValue(n, maxDecimals) {
+    maxDecimals = (maxDecimals === undefined) ? 2 : maxDecimals;
     if (n === null || n === undefined || n === '' || !Number.isFinite(Number(n)) || Number(n) === 0) return '';
-    return Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: maxDecimals });
   }
-  function formatAmountLive(raw) {
+  function formatAmountLive(raw, maxDecimals) {
+    maxDecimals = (maxDecimals === undefined) ? 2 : maxDecimals;
     if (!raw) return '';
     // sadece rakam ve tek bir virgül bırak
     let s = String(raw).replace(/\./g, '').replace(/[^0-9,]/g, '');
@@ -1621,15 +1624,15 @@
     let [intPart, decPart] = s.split(',');
     intPart = (intPart || '').replace(/^0+(?=\d)/, '');
     const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    if (decPart !== undefined) return grouped + ',' + decPart.slice(0, 2);
+    if (decPart !== undefined) return grouped + ',' + decPart.slice(0, maxDecimals);
     return grouped;
   }
-  function attachAmountFormatting(inputEl) {
+  function attachAmountFormatting(inputEl, maxDecimals) {
     if (!inputEl) return;
     inputEl.addEventListener('input', () => {
       const before = inputEl.value;
       const atEnd = inputEl.selectionStart === before.length;
-      const formatted = formatAmountLive(before);
+      const formatted = formatAmountLive(before, maxDecimals);
       if (formatted !== before) {
         inputEl.value = formatted;
         if (atEnd) inputEl.setSelectionRange(formatted.length, formatted.length);
@@ -2320,8 +2323,8 @@
         const pf = document.createElement('form');
         pf.className = 'price-form open';
         pf.style.marginTop = '8px';
-        pf.innerHTML = '<input class="p-input" placeholder="Güncel fiyat (₺)" inputmode="decimal" value="'+numToInputValue(stats.currentPrice)+'" /><button type="submit" class="btn btn-primary" style="background:var(--teal); color:#fff">Kaydet</button>';
-        attachAmountFormatting(pf.querySelector('.p-input'));
+        pf.innerHTML = '<input class="p-input" placeholder="Güncel fiyat (₺)" inputmode="decimal" value="'+numToInputValue(stats.currentPrice, stock.productType === 'fon' ? 6 : 2)+'" /><button type="submit" class="btn btn-primary" style="background:var(--teal); color:#fff">Kaydet</button>';
+        attachAmountFormatting(pf.querySelector('.p-input'), stock.productType === 'fon' ? 6 : 2);
         pf.onsubmit = (e) => { e.preventDefault(); stock.currentPrice = parseAmount(pf.querySelector('.p-input').value); editingPriceFor = null; saveData(); renderAll(); };
         pctBox.appendChild(pf);
       }
@@ -2348,9 +2351,10 @@
         const form = document.createElement('form');
         form.className = 'inline-form open';
         form.innerHTML =
-          '<div class="fields-row"><input class="tx-price" placeholder="'+(isBuy?'Alış':'Satış')+' fiyatı (₺)" inputmode="decimal" value="'+(lastKnownPrice > 0 ? numToInputValue(lastKnownPrice) : '')+'" /><input class="tx-qty" placeholder="Adet" inputmode="decimal" /></div>' +
+          '<div class="fields-row"><input class="tx-price" placeholder="'+(isBuy?'Alış':'Satış')+' fiyatı (₺)" inputmode="decimal" value="'+(lastKnownPrice > 0 ? numToInputValue(lastKnownPrice, stock.productType === 'fon' ? 6 : 2) : '')+'" /><input class="tx-qty" placeholder="Adet" inputmode="decimal" /></div>' +
           '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+(isBuy?'var(--teal)':'var(--danger)')+'">Ekle</button></div>';
-        attachAmountFormatting(form.querySelector('.tx-price'));
+        attachAmountFormatting(form.querySelector('.tx-price'), stock.productType === 'fon' ? 6 : 2);
+        attachAmountFormatting(form.querySelector('.tx-qty'), stock.productType === 'fon' ? 6 : 4);
 
         form.onsubmit = (e) => {
           e.preventDefault();
@@ -3428,9 +3432,9 @@
       input.className = 'bulk-row-input';
       input.inputMode = 'decimal';
       input.placeholder = '0';
-      input.value = numToInputValue(stats.currentPrice > 0 ? stats.currentPrice : stock.currentPrice);
+      input.value = numToInputValue(stats.currentPrice > 0 ? stats.currentPrice : stock.currentPrice, stock.productType === 'fon' ? 6 : 2);
       input.dataset.stockId = stock.id;
-      attachAmountFormatting(input);
+      attachAmountFormatting(input, stock.productType === 'fon' ? 6 : 2);
       row.appendChild(input);
       listEl.appendChild(row);
     });

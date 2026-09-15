@@ -664,13 +664,13 @@
     position:fixed; right:20px; bottom:calc(88px + env(safe-area-inset-bottom)); width:56px; height:56px;
     border-radius:50%; background:var(--accent); color:var(--accent-ink); border:none; display:flex;
     align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(76,95,232,0.42);
-    z-index:60; cursor:pointer; transition:transform .12s ease;
+    z-index:150; cursor:pointer; transition:transform .12s ease;
   }
   .fab-btn:active { transform:scale(.94); }
   .fab-menu {
     position:fixed; right:20px; bottom:calc(150px + env(safe-area-inset-bottom)); background:var(--surface);
     border:1px solid var(--border); border-radius:14px; padding:6px; display:none; flex-direction:column;
-    gap:2px; box-shadow:0 10px 24px rgba(0,0,0,0.4); z-index:59; min-width:180px;
+    gap:2px; box-shadow:0 10px 24px rgba(0,0,0,0.4); z-index:150; min-width:180px;
   }
   .fab-menu.open { display:flex; }
   .fab-menu-item {
@@ -678,7 +678,7 @@
     border:none; color:var(--text); font-family:inherit; font-size:13.5px; cursor:pointer; text-align:left;
   }
   .fab-menu-item:active, .fab-menu-item:hover { background:var(--surface-2); }
-  .fab-backdrop { position:fixed; inset:0; z-index:58; display:none; }
+  .fab-backdrop { position:fixed; inset:0; z-index:145; display:none; }
   .fab-backdrop.open { display:block; }
 
   svg { display:block; }

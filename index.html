@@ -901,6 +901,14 @@
 
     <div class="tear"></div>
 
+    <div class="section-title"><span>Geçmiş Borçlar</span><span class="section-total" id="debtHistorySectionTotal" style="color:var(--teal)"></span></div>
+    <div id="debtHistoryEmptyState" class="empty-state" style="display:none;">
+      <div class="icon-wrap">🏁</div><p>Henüz tamamlanmış borç yok.<br>Bir borcu bitirdiğinde otomatik olarak buraya taşınır.</p>
+    </div>
+    <div id="debtHistoryList"></div>
+
+    <div class="tear"></div>
+
     <div class="section-title">
       <span style="display:flex; align-items:center; gap:8px;">Kişisel Borçlar
         <button type="button" class="title-add-btn" id="showAddPersonalDebtBtn" aria-label="Kişisel borç ekle">
@@ -1305,11 +1313,12 @@
           privacyMode: !!p.privacyMode,
           goals: p.goals || [],
           personalDebts: p.personalDebts || [],
-          themeMode: p.themeMode || null
+          themeMode: p.themeMode || null,
+          debtHistory: p.debtHistory || []
         };
       }
     } catch (e) {}
-    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [], expenses: [], activityLog: [], dismissedFixedBanks: [], cash: [], netWorthHistory: [], privacyMode: false, goals: [], personalDebts: [], themeMode: null };
+    return { banks: [], assets: [], bes: [], incomeByMonth: {}, paymentLog: [], expenses: [], activityLog: [], dismissedFixedBanks: [], cash: [], netWorthHistory: [], privacyMode: false, goals: [], personalDebts: [], themeMode: null, debtHistory: [] };
   }
   function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }
 
@@ -2579,7 +2588,21 @@
                   const newPaid = (d.paidInstallments === idx + 1) ? idx : idx + 1;
                   logPaymentRange(item, d, oldPaid, newPaid);
                   d.paidInstallments = newPaid;
-                  if (newPaid > oldPaid) { d.lastPaidMonth = currentMonthKey(); logActivity((d.note || d.debtType) + ' taksiti ödendi ('+newPaid+'/'+d.totalInstallments+')', d.monthlyAmount, { type:'debt', bankId: item.id, debtId: d.id }); }
+                  if (newPaid > oldPaid) {
+                    d.lastPaidMonth = currentMonthKey();
+                    logActivity((d.note || d.debtType) + ' taksiti ödendi ('+newPaid+'/'+d.totalInstallments+')', d.monthlyAmount, { type:'debt', bankId: item.id, debtId: d.id });
+                    const arch = archiveDebtIfDone(item, d);
+                    if (arch) {
+                      saveData(); renderAll();
+                      showUndoToast((d.note || d.debtType) + ' — tamamlandı', () => {
+                        unarchiveDebt(item, arch);
+                        logPaymentRange(item, d, d.paidInstallments, oldPaid);
+                        d.paidInstallments = oldPaid;
+                        saveData(); renderAll();
+                      });
+                      return;
+                    }
+                  }
                   else logActivity((d.note || d.debtType) + ' taksit işareti geri alındı ('+newPaid+'/'+d.totalInstallments+')', d.monthlyAmount, { type:'debt', bankId: item.id, debtId: d.id });
                   saveData(); renderAll();
                 };})();
@@ -3134,6 +3157,46 @@
     const s = Number(n).toLocaleString('tr-TR', { maximumFractionDigits: 2 });
     return s;
   }
+  function renderDebtHistory() {
+    const listEl = document.getElementById('debtHistoryList');
+    const items = (state.debtHistory || []).slice().reverse(); // en yeni en üstte
+    document.getElementById('debtHistoryEmptyState').style.display = items.length === 0 ? 'block' : 'none';
+    const total = items.reduce((s,h) => s + (h.currency==='TRY' ? (h.totalPaid||0) : 0), 0);
+    document.getElementById('debtHistorySectionTotal').textContent = items.length ? currency(total) : '';
+    listEl.innerHTML = '';
+
+    items.forEach(h => {
+      const content = document.createElement('div');
+      content.className = 'goal-card';
+      content.style.opacity = '0.88';
+      content.innerHTML =
+        '<div class="goal-top" style="margin-bottom:0;">' +
+          '<span class="goal-name"><span class="goal-icon" style="background:rgba(63,191,154,.16); color:var(--teal)">✓</span>' +
+            '<span>'+esc(h.note || h.debtType)+'<span style="display:block; font-size:10.5px; color:var(--text-muted); font-weight:500;">'+esc(h.bankName)+' · '+esc(h.debtType)+' · '+h.totalInstallments+' taksit</span></span>' +
+          '</span>' +
+          '<span style="font-size:14px; font-weight:800; color:var(--teal); text-align:right;">'+formatMoney(h.totalPaid, h.currency)+'</span>' +
+        '</div>';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'swipe-wrap';
+      attachSwipeGesture(wrap, content, {
+        onSwipeRight: {
+          color: '#E5484D', icon: TRASH_ICON, label: 'Sil', destructive: true,
+          commit: () => {
+            const idx = state.debtHistory.indexOf(h);
+            state.debtHistory = state.debtHistory.filter(x => x.id !== h.id);
+            saveData(); renderAll();
+            showUndoToast(h.note || h.debtType, () => {
+              state.debtHistory.splice(Math.min(idx, state.debtHistory.length), 0, h);
+              saveData(); renderAll();
+            });
+          }
+        }
+      });
+      listEl.appendChild(wrap);
+    });
+  }
+
   function renderPersonalDebts() {
     const listEl = document.getElementById('personalDebtsList');
     const items = state.personalDebts || [];
@@ -3985,6 +4048,7 @@
     renderGainBadge();
     updateBulkPriceButtonVisibility();
     renderGoals();
+    renderDebtHistory();
     renderPersonalDebts();
     renderMonthCarousel();
     renderExpenses();
@@ -4619,7 +4683,7 @@
     okBtn.innerHTML = '<span>Evet, üzerine yaz</span>';
     okBtn.onclick = () => {
       closeDebtPicker();
-      state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [], dismissedFixedBanks: parsed.dismissedFixedBanks || [], cash: parsed.cash || [], netWorthHistory: parsed.netWorthHistory || [], privacyMode: !!parsed.privacyMode, goals: parsed.goals || [], personalDebts: parsed.personalDebts || [], themeMode: parsed.themeMode || null };
+      state = { banks: parsed.banks, assets: parsed.assets, bes: parsed.bes || [], incomeByMonth: parsed.incomeByMonth || {}, paymentLog: parsed.paymentLog || [], expenses: parsed.expenses || [], activityLog: parsed.activityLog || [], dismissedFixedBanks: parsed.dismissedFixedBanks || [], cash: parsed.cash || [], netWorthHistory: parsed.netWorthHistory || [], privacyMode: !!parsed.privacyMode, goals: parsed.goals || [], personalDebts: parsed.personalDebts || [], themeMode: parsed.themeMode || null, debtHistory: parsed.debtHistory || [] };
       expanded = {}; saveData(); renderAll();
     };
     listEl.appendChild(okBtn);
@@ -4909,19 +4973,45 @@
     document.getElementById('debtPickerBackdrop').classList.add('open');
   }
 
+  // Bir taksit tamamlanınca (paidInstallments === totalInstallments) borcu bankadan çıkarıp
+  // "Geçmiş Borçlar" arşivine taşır. Geri alınabilir olması için çıkarılan indeksi ve kaydı döner.
+  function archiveDebtIfDone(item, d) {
+    if (!(d.isInstallment && d.paidInstallments >= d.totalInstallments)) return null;
+    const idx = item.debts.indexOf(d);
+    if (idx === -1) return null;
+    item.debts = item.debts.filter(x => x.id !== d.id);
+    const histRecord = {
+      id: uid(), bankName: item.name, bankId: item.id, debtType: d.debtType, note: d.note,
+      currency: d.currency || 'TRY', totalPaid: (d.monthlyAmount||0) * (d.totalInstallments||0),
+      totalInstallments: d.totalInstallments, completedDate: todayKey()
+    };
+    state.debtHistory = state.debtHistory || [];
+    state.debtHistory.push(histRecord);
+    return { idx, debt: d, histId: histRecord.id };
+  }
+  function unarchiveDebt(item, archived) {
+    if (!archived) return;
+    state.debtHistory = (state.debtHistory||[]).filter(h => h.id !== archived.histId);
+    item.debts.splice(Math.min(archived.idx, item.debts.length), 0, archived.debt);
+  }
+
   function commitPayGroup(item, kind, list, toplam, label) {
     const snapshot = list.map(d => ({ d, prev: d.paidInstallments, prevMonth: d.lastPaidMonth }));
     const thisMonth = currentMonthKey();
+    const archivedList = [];
     list.forEach(d => {
       const oldP = d.paidInstallments;
       d.paidInstallments = oldP + 1;
       d.lastPaidMonth = thisMonth;
       logPaymentRange(item, d, oldP, d.paidInstallments);
+      const arch = archiveDebtIfDone(item, d);
+      if (arch) archivedList.push(arch);
     });
     logActivity(item.name + ' — ' + label + ' ödemesi (' + list.length + ' taksit)', toplam,
                 { type:'bank', bankId: item.id });
     saveData(); renderAll();
     showUndoToast(label + ' ödemesi', () => {
+      archivedList.forEach(a => unarchiveDebt(item, a));
       snapshot.forEach(s => { logPaymentRange(item, s.d, s.d.paidInstallments, s.prev); s.d.paidInstallments = s.prev; s.d.lastPaidMonth = s.prevMonth; });
       saveData(); renderAll();
     });

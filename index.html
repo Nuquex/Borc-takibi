@@ -1740,7 +1740,29 @@
     const gain = currentPrice > 0 ? currentValue - costBasis : 0;
     return { totalBuyQty, totalSellQty, remainingQty, avgCost, costBasis, currentPrice, currentValue, gain };
   }
-  function portfolioCash(item) { return item.cash > 0 ? item.cash : 0; }
+  // Aracı kurum nakdi: item.cashList = [{ id, cur:'TRY'|'USD'|'EUR', amount, rate }]  (TL karşılığı = amount * rate)
+  function portfolioCashList(item) {
+    if (!item.cashList) {
+      item.cashList = [];
+      if (item.cash > 0) item.cashList.push({ id: uid(), cur:'TRY', amount: item.cash, rate: 1 });   // v87'den geçiş
+      delete item.cash;
+    }
+    return item.cashList;
+  }
+  function cashEntryTRY(e) { return e.cur === 'TRY' ? (e.amount||0) : (e.amount||0) * (e.rate||0); }
+  function portfolioCash(item) { return portfolioCashList(item).reduce((s,e) => s + cashEntryTRY(e), 0); }
+  function lastCashRate(cur) {
+    for (const a of state.assets) { if (a.type !== 'portfolio') continue;
+      const e = (a.cashList||[]).find(x => x.cur === cur && x.rate > 0); if (e) return e.rate; }
+    return 0;
+  }
+  function addPortfolioCash(item, cur, amount, rate) {
+    const list = portfolioCashList(item);
+    let e = list.find(x => x.cur === cur);
+    if (e) { e.amount = (e.amount||0) + amount; if (cur !== 'TRY') e.rate = rate; }
+    else { e = { id: uid(), cur, amount, rate: cur === 'TRY' ? 1 : rate }; list.push(e); }
+    logActivity(item.name + ' — ' + CURRENCIES.find(c => c.code === cur).label + ' nakit eklendi', cashEntryTRY({ cur, amount, rate: e.rate }), { type:'asset', assetId: item.id });
+  }
   function portfolioValue(item) { return (item.stocks||[]).reduce((s,st) => s + stockStats(st).currentValue, 0) + portfolioCash(item); }
 
   function itemValue(item) {
@@ -2288,42 +2310,56 @@
     body.appendChild(extrasRow);
   }
 
-  // --- Aracı kurumdaki (örn. Midas) fon/hisse dışı NAKİT bakiye girişi ---
+  // --- Aracı kurumdaki (örn. Midas) fon/hisse dışı NAKİT bakiyeler: hisse/fonların en üstünde listelenir ---
   function renderPortfolioCash(body, item) {
-    const cash = portfolioCash(item);
-    const sub = document.createElement('div');
-    sub.className = 'sub-card';
-    sub.id = 'pcash-' + item.id;
-    const sh = document.createElement('button');
-    sh.type = 'button';
-    sh.className = 'sub-head';
-    sh.innerHTML =
-      '<span class="sub-dot" style="background:#4FA8A0; font-size:14px;">💵</span>' +
-      '<span class="sub-name">Nakit<div class="item-sub">' + (cash > 0 ? 'Hesapta bekleyen bakiye' : 'Bakiye eklemek için dokun') + '</div></span>' +
-      '<span class="item-total"' + (cash > 0 ? '' : ' style="color:var(--text-muted)"') + '>' + currency(cash) + '</span>';
-    sh.onclick = () => { editingPortfolioCashFor = editingPortfolioCashFor === item.id ? null : item.id; renderAll(); };
-    sub.appendChild(sh);
+    portfolioCashList(item).forEach(e => {
+      const key = item.id + ':' + e.id;
+      const cinfo = { TRY:{ sym:'₺', bg:'#4FA8A0', name:'Nakit · TL' }, USD:{ sym:'$', bg:'#6FA8D6', name:'Nakit · Dolar' }, EUR:{ sym:'€', bg:'#8C86D6', name:'Nakit · Euro' } }[e.cur] || { sym:'₺', bg:'#4FA8A0', name:'Nakit' };
+      const sub = document.createElement('div');
+      sub.className = 'sub-card';
+      sub.id = 'pcash-' + e.id;
+      const sh = document.createElement('button');
+      sh.type = 'button'; sh.className = 'sub-head';
+      const subLine = e.cur === 'TRY' ? 'Hesapta bekleyen bakiye' : (formatMoney(e.amount, e.cur) + ' · Kur ' + currency(e.rate));
+      sh.innerHTML =
+        '<span class="sub-dot" style="background:'+cinfo.bg+'; font-size:15px;">'+cinfo.sym+'</span>' +
+        '<span class="sub-name">'+cinfo.name+'<div class="item-sub">'+subLine+'</div></span>' +
+        '<span class="item-total">'+currency(cashEntryTRY(e))+'</span>';
+      sh.onclick = () => { editingPortfolioCashFor = editingPortfolioCashFor === key ? null : key; renderAll(); };
+      sub.appendChild(sh);
 
-    if (editingPortfolioCashFor === item.id) {
-      const f = document.createElement('form');
-      f.className = 'kesim-form open';
-      f.style.cssText += 'padding:0 12px 12px; margin:0;';
-      f.innerHTML = '<input class="pcash-input" placeholder="Nakit bakiye (₺)" inputmode="decimal" value="' + (cash > 0 ? numToInputValue(cash) : '') + '" />' +
-        '<button type="submit" class="btn btn-primary" style="background:#4FA8A0; color:#fff">Kaydet</button>';
-      const inp = f.querySelector('.pcash-input');
-      attachAmountFormatting(inp);
-      f.onsubmit = (e) => {
-        e.preventDefault();
-        const v = parseAmount(inp.value);
-        const old = portfolioCash(item);
-        item.cash = v > 0 ? v : 0;
-        if (item.cash !== old) logActivity(item.name + ' nakit bakiyesi güncellendi', item.cash, { type:'asset', assetId: item.id });
-        editingPortfolioCashFor = null; saveData(); renderAll();
-      };
-      sub.appendChild(f);
-      setTimeout(() => { try { inp.focus(); } catch (e) {} }, 0);
-    }
-    body.appendChild(sub);
+      if (editingPortfolioCashFor === key) {
+        const f = document.createElement('form');
+        f.className = 'kesim-form open';
+        f.style.cssText += 'flex-wrap:wrap; padding:0 12px 12px; margin:0;';
+        const inStyle = 'flex:1 1 100%; min-width:0; font-size:16px;';
+        f.innerHTML =
+          '<input class="pcash-amt" style="'+inStyle+'" placeholder="Tutar ('+cinfo.sym+')" inputmode="decimal" value="'+numToInputValue(e.amount)+'" />' +
+          (e.cur !== 'TRY' ? '<input class="pcash-rate" style="'+inStyle+'" placeholder="Güncel kur (₺)" inputmode="decimal" value="'+numToInputValue(e.rate, 4)+'" />' : '') +
+          '<button type="button" class="btn btn-ghost pcash-del" style="flex:1; color:var(--danger)">Sil</button>' +
+          '<button type="submit" class="btn btn-primary" style="flex:1; background:'+cinfo.bg+'; color:#fff">Kaydet</button>';
+        const amtI = f.querySelector('.pcash-amt'), rateI = f.querySelector('.pcash-rate');
+        attachAmountFormatting(amtI); if (rateI) attachAmountFormatting(rateI, 4);
+        f.onsubmit = (ev) => {
+          ev.preventDefault();
+          const v = parseAmount(amtI.value);
+          const r = rateI ? parseAmount(rateI.value) : 1;
+          if (v > 0 && r <= 0) { alert('Güncel kuru gir (₺).'); return; }
+          if (v <= 0) { item.cashList = item.cashList.filter(x => x.id !== e.id); }
+          else { e.amount = v; e.rate = r; }
+          logActivity(item.name + ' — ' + cinfo.name.replace('Nakit · ','') + ' nakit güncellendi', v > 0 ? cashEntryTRY(e) : 0, { type:'asset', assetId: item.id });
+          editingPortfolioCashFor = null; saveData(); renderAll();
+        };
+        f.querySelector('.pcash-del').onclick = () => {
+          const idx = item.cashList.indexOf(e);
+          item.cashList = item.cashList.filter(x => x.id !== e.id);
+          editingPortfolioCashFor = null; saveData(); renderAll();
+          showUndoToast(cinfo.name, () => { item.cashList.splice(Math.min(idx, item.cashList.length), 0, e); saveData(); renderAll(); });
+        };
+        sub.appendChild(f);
+      }
+      body.appendChild(sub);
+    });
   }
 
   function renderStocksInto(body, portfolioItem) {
@@ -2533,6 +2569,16 @@
         '<div class="mode-toggle">' +
           '<button type="button" class="mode-btn active" data-ptype="hisse">Hisse</button>' +
           '<button type="button" class="mode-btn" data-ptype="fon">Para Fonu</button>' +
+          '<button type="button" class="mode-btn" data-ptype="nakit">Nakit</button>' +
+        '</div>' +
+        '<div class="pcash-panel" style="display:none; flex-direction:column; gap:8px; margin-bottom:8px;">' +
+          '<div class="mode-toggle pcash-cur">' +
+            '<button type="button" class="mode-btn active" data-cur="TRY">TL</button>' +
+            '<button type="button" class="mode-btn" data-cur="USD">Dolar</button>' +
+            '<button type="button" class="mode-btn" data-cur="EUR">Euro</button>' +
+          '</div>' +
+          '<input class="pcash-amt" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:16px; font-family:inherit;" placeholder="Tutar (₺)" inputmode="decimal" />' +
+          '<input class="pcash-rate" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:16px; font-family:inherit;" placeholder="Güncel kur (₺)" inputmode="decimal" />' +
         '</div>' +
         '<div class="combo-wrap"><input class="new-stock-input" placeholder="Hisse ara (örn. THYAO, Migros)" autocomplete="off" /><div class="combo-dropdown new-stock-dropdown"></div></div>' +
         '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-stock">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:var(--teal)">Ekle</button></div>';
@@ -2553,17 +2599,47 @@
     const full = (productType === 'fon' ? FUND_OPTIONS : BIST100_OPTIONS);
     return recent.length ? recent.concat(full.filter(o => !recent.includes(o))) : full;
   });
+      const comboWrapEl = form.querySelector('.combo-wrap');
+      const cashPanel = form.querySelector('.pcash-panel');
+      const cashAmt = form.querySelector('.pcash-amt');
+      const cashRate = form.querySelector('.pcash-rate');
+      attachAmountFormatting(cashAmt); attachAmountFormatting(cashRate, 4);
+      let cashCur = 'TRY';
       form.querySelectorAll('.mode-btn[data-ptype]').forEach(btn => {
         btn.onclick = () => {
           form.querySelectorAll('.mode-btn[data-ptype]').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           productType = btn.dataset.ptype;
-          stockInput.placeholder = productType === 'fon' ? 'Fon ara (örn. Ziraat)' : 'Hisse ara (örn. THYAO, Migros)';
+          const isCash = productType === 'nakit';
+          comboWrapEl.style.display = isCash ? 'none' : '';
+          cashPanel.style.display = isCash ? 'flex' : 'none';
+          if (!isCash) stockInput.placeholder = productType === 'fon' ? 'Fon ara (örn. Ziraat)' : 'Hisse ara (örn. THYAO, Migros)';
           stockInput.value = '';
+        };
+      });
+      form.querySelectorAll('.pcash-cur .mode-btn').forEach(btn => {
+        btn.onclick = () => {
+          form.querySelectorAll('.pcash-cur .mode-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          cashCur = btn.dataset.cur;
+          const sym = { TRY:'₺', USD:'$', EUR:'€' }[cashCur];
+          cashAmt.placeholder = 'Tutar (' + sym + ')';
+          cashRate.style.display = cashCur === 'TRY' ? 'none' : '';
+          if (cashCur !== 'TRY' && !cashRate.value) { const lr = lastCashRate(cashCur); if (lr > 0) cashRate.value = numToInputValue(lr, 4); }
+          if (cashCur !== 'TRY') cashRate.placeholder = '1 ' + (cashCur === 'USD' ? 'Dolar' : 'Euro') + ' kaç ₺? (güncel kur)';
         };
       });
       form.onsubmit = (e) => {
         e.preventDefault();
+        if (productType === 'nakit') {
+          const amt = parseAmount(cashAmt.value);
+          if (amt <= 0) { alert('Lütfen geçerli bir tutar gir.'); return; }
+          let rate = 1;
+          if (cashCur !== 'TRY') { rate = parseAmount(cashRate.value); if (rate <= 0) { alert('Güncel kuru gir (₺).'); return; } }
+          addPortfolioCash(portfolioItem, cashCur, amt, rate);
+          addingStockFor = null; saveData(); renderAll();
+          return;
+        }
         const name = stockInput.value.trim();
         if (!name) return;
         const id = uid();
@@ -2577,7 +2653,7 @@
     } else {
       const addStockBtn = document.createElement('button');
       addStockBtn.className = 'add-sub-btn';
-      addStockBtn.innerHTML = '+ Ürün ekle';
+      addStockBtn.innerHTML = '+ Ürün / nakit ekle';
       addStockBtn.onclick = () => { addingStockFor = portfolioItem.id; renderAll(); };
       body.appendChild(addStockBtn);
     }
@@ -3046,7 +3122,10 @@
           const label = st.productType === 'fon' ? 'Fon' : 'Hisse';
           map[label] = (map[label]||0) + stockStats(st).currentValue;
         });
-        if (portfolioCash(a) > 0) map['Nakit'] = (map['Nakit']||0) + portfolioCash(a);
+        portfolioCashList(a).forEach(e => {
+          const label = e.cur === 'USD' ? 'Dolar' : (e.cur === 'EUR' ? 'Euro' : 'Nakit');
+          map[label] = (map[label]||0) + cashEntryTRY(e);
+        });
       } else {
         const label = categorizeSimpleAssetName(a.name);
         map[label] = (map[label]||0) + itemValue(a);

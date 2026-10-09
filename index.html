@@ -119,10 +119,12 @@
     font-size:10px; font-weight:800; color:#fff; }
   .bulk-row-name { flex:1; min-width:0; font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .bulk-row-input {
-    width:110px; background:var(--surface-2); border:1px solid var(--border); border-radius:9px;
-    padding:8px 9px; font-family:inherit; font-size:14px; font-weight:700; color:var(--text); text-align:right;
-    font-variant-numeric:tabular-nums; flex-shrink:0;
+    width:132px; max-width:48%; min-width:0; background:var(--surface-2); border:1px solid var(--border); border-radius:9px;
+    padding:8px 10px; font-family:inherit; font-size:16px; font-weight:700; color:var(--text); text-align:right;
+    font-variant-numeric:tabular-nums; flex-shrink:0; -webkit-appearance:none; appearance:none; outline:none;
   }
+  .bulk-row-input:focus { border-color:var(--accent); }
+  #bulkPriceList { overflow-x:hidden; }
 
   .goal-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:15px 17px;
     box-shadow:0 1px 2px rgba(10,20,40,0.04); }
@@ -457,6 +459,21 @@
     margin-top:10px; position:relative; z-index:1; }
   .bprog span { display:block; height:100%; background:#fff; border-radius:99px; }
   .bhead .chevron { color:rgba(255,255,255,0.8); }
+
+  /* --- Kart limiti kutusu (banka kartı içinde) --- */
+  .blimit { position:relative; z-index:1; margin-top:12px; padding:11px 13px 12px; border-radius:14px;
+    background:rgba(255,255,255,0.13); cursor:pointer; }
+  .blimit-top { display:flex; justify-content:space-between; align-items:baseline; font-size:11px; font-weight:700;
+    letter-spacing:.4px; text-transform:uppercase; opacity:.92; }
+  .blimit-top b { font-size:12px; letter-spacing:0; text-transform:none; font-variant-numeric:tabular-nums; }
+  .blimit-bar { height:7px; border-radius:99px; background:rgba(255,255,255,0.22); overflow:hidden; margin:8px 0 8px; }
+  .blimit-bar span { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#E8C06B,#F0707A); }
+  .blimit-bar.warn span { background:#FF8A8F; }
+  .blimit-bot { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12px; font-weight:700;
+    font-variant-numeric:tabular-nums; }
+  .blimit-add { position:relative; z-index:1; margin-top:10px; display:inline-flex; align-items:center; gap:5px;
+    background:rgba(255,255,255,0.16); border:none; color:#fff; border-radius:99px; padding:5px 11px;
+    font-family:inherit; font-size:11px; font-weight:700; cursor:pointer; }
   .bbody { padding:2px 16px 14px; }
   .pay-btn {
     position:relative; z-index:2; margin-top:12px; width:100%;
@@ -987,7 +1004,7 @@
   </div>
 
   <div class="cal-backdrop" id="bulkPriceBackdrop">
-    <div class="cal-card">
+    <div class="cal-card" style="max-width:340px; overflow:hidden;">
       <div class="cal-header"><span class="cal-title">Fiyatları Toplu Güncelle</span></div>
       <div id="bulkPriceList" style="display:flex; flex-direction:column; max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch; margin-bottom:12px;"></div>
       <div style="display:flex; gap:8px;">
@@ -1604,6 +1621,7 @@
   let monthCarouselIndex = null;
   let editingCarouselKey = null;
   let editingKesimFor = null;
+  let editingLimitFor = null;
   let salaryOpenMain = false;
 
   function currencySymbol(code) { const c = CURRENCIES.find(x => x.code === code); return c ? c.symbol : '₺'; }
@@ -1637,18 +1655,45 @@
     return grouped;
   }
   function attachAmountFormatting(inputEl, maxDecimals) {
-    if (!inputEl) return;
+    if (!inputEl || inputEl.dataset.amtFmt) return;
+    inputEl.dataset.amtFmt = '1';
+    let prev = { v: inputEl.value, s: 0, e: 0 };
+    // Silme/yazma öncesi durumu hatırla (virgülün kazara silinmesini yakalamak için)
+    inputEl.addEventListener('beforeinput', () => {
+      prev = { v: inputEl.value, s: inputEl.selectionStart, e: inputEl.selectionEnd };
+    });
     inputEl.addEventListener('input', () => {
-      const before = inputEl.value;
-      const atEnd = inputEl.selectionStart === before.length;
-      const formatted = formatAmountLive(before, maxDecimals);
-      if (formatted !== before) {
-        inputEl.value = formatted;
-        if (atEnd) inputEl.setSelectionRange(formatted.length, formatted.length);
+      let val = inputEl.value;
+      let caret = inputEl.selectionStart;
+      // Virgül tek başına silindiyse (seçim yokken) geri koy: tam ve ondalık kısım birleşmesin,
+      // imleç virgülün soluna (tam sayı kısmına) geçsin.
+      if (prev.v.indexOf(',') !== -1 && val.indexOf(',') === -1 && prev.s === prev.e && val.length === prev.v.length - 1) {
+        const ci = prev.v.indexOf(',');
+        inputEl.value = prev.v;
+        inputEl.setSelectionRange(ci, ci);
+        prev = { v: inputEl.value, s: ci, e: ci };
+        return;
       }
+      // İmlece kadar kaç tane rakam/virgül var say, biçimlendirdikten sonra imleci aynı yere koy
+      const sig = (val.slice(0, caret).match(/[0-9,]/g) || []).length;
+      const atEnd = caret === val.length;
+      const formatted = formatAmountLive(val, maxDecimals);
+      if (formatted !== val) {
+        inputEl.value = formatted;
+        let pos = formatted.length;
+        if (!atEnd) {
+          let seen = 0; pos = 0;
+          while (pos < formatted.length && seen < sig) { if (/[0-9,]/.test(formatted[pos])) seen++; pos++; }
+        }
+        inputEl.setSelectionRange(pos, pos);
+      }
+      prev = { v: inputEl.value, s: inputEl.selectionStart, e: inputEl.selectionEnd };
+    });
+    // Odak bırakılınca sonda kalan boş virgülü temizle ("1.234," -> "1.234")
+    inputEl.addEventListener('blur', () => {
+      if (/,$/.test(inputEl.value)) inputEl.value = inputEl.value.slice(0, -1);
     });
   }
-
   function parseAmount(str) {
     if (!str) return 0;
     const cleaned = str.replace(/\./g,'').replace(',','.').replace(/[^0-9.]/g,'');
@@ -1822,10 +1867,11 @@
 
       card.appendChild(top); card.appendChild(bottom);
 
-      // uzun basınca sil (sadece ön karttan)
+      // uzun basınca sil (sadece ön karttan, tutar alanı/klavye açıkken hariç)
       if (isFront) {
         let pressTimer = null;
-        card.addEventListener('touchstart', () => {
+        card.addEventListener('touchstart', (e) => {
+          if (e.target.closest('.cash-card-amt, .cash-card-input, .cash-card-label')) return;
           pressTimer = setTimeout(() => {
             const idx = state.cash.indexOf(acc);
             state.cash = state.cash.filter(x => x.id !== acc.id);
@@ -2478,6 +2524,15 @@
     }
   }
 
+  // Banka mantığı: kart harcaması, ödeme yapılana kadar (ay değişse de) limiti tüketir.
+  // Limiti tüketenler: Kredi Kartı / Nakit Avans borçlarının kalanı + ödenmemiş tüm kart harcamaları.
+  function bankUnpaidCardExpenses(item) {
+    return state.expenses.filter(e => (e.kind||'gider') === 'gider' && e.sourceType === 'bank' && e.bankId === item.id && !e.cardPaid);
+  }
+  function bankLimitUsedTRY(item) {
+    const debtPart = (item.debts||[]).reduce((s,d) => s + (((d.currency||'TRY')==='TRY' && (d.debtType==='Kredi Kartı' || d.debtType==='Nakit Avans')) ? entryRemaining(d) : 0), 0);
+    return debtPart + bankUnpaidCardExpenses(item).reduce((s,e) => s + (e.amount||0), 0);
+  }
   function bankDebtTRY(item) {
     return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryRemaining(d) : 0), 0) + bankCardExpenseTotal(item);
   }
@@ -2729,6 +2784,30 @@
               ? '<div class="brow2"><span class="bpill">Aylık '+currency(dueM)+'</span><span class="bmeta">kart harcaması</span></div>'
               : ''));
 
+      // --- Kart limiti kutusu ---
+      const limitVal = item.cardLimit > 0 ? item.cardLimit : 0;
+      if (limitVal > 0) {
+        const usedL = bankLimitUsedTRY(item);
+        const remL = limitVal - usedL;
+        const pctL = Math.max(0, Math.min(100, Math.round(usedL / limitVal * 100)));
+        const warnL = pctL >= 90;
+        const lb = document.createElement('div');
+        lb.className = 'blimit';
+        lb.innerHTML =
+          '<div class="blimit-top"><span>Kart Limiti</span><b>'+currency(limitVal)+'</b></div>' +
+          '<div class="blimit-bar'+(warnL?' warn':'')+'"><span style="width:'+pctL+'%"></span></div>' +
+          '<div class="blimit-bot"><span>Kullanılan: '+currency(usedL).replace(',00','')+' · %'+pctL+'</span>' +
+          '<span>'+(remL < 0 ? 'Limit aşıldı '+currency(-remL).replace(',00','') : 'Kalan '+currency(remL).replace(',00',''))+(warnL ? ' ⚠️' : '')+'</span></div>';
+        lb.onclick = (e) => { e.stopPropagation(); editingLimitFor = editingLimitFor === item.id ? null : item.id; expanded[expKey] = true; renderAll(); };
+        head.appendChild(lb);
+      } else {
+        const ab = document.createElement('button');
+        ab.type = 'button'; ab.className = 'blimit-add';
+        ab.textContent = '+ Kart limiti ekle';
+        ab.onclick = (e) => { e.stopPropagation(); editingLimitFor = item.id; expanded[expKey] = true; renderAll(); };
+        head.appendChild(ab);
+      }
+
       if (dueM > 0) {
         const payBtn = document.createElement('button');
         payBtn.type = 'button';
@@ -2760,6 +2839,20 @@
 
       const body = document.createElement('div');
       body.className = 'bbody item-body' + (isOpen ? ' open' : '');
+
+      if (editingLimitFor === item.id) {
+        const lf = document.createElement('form');
+        lf.className = 'kesim-form open';
+        lf.innerHTML = '<input class="limit-input" placeholder="Kart limiti (₺)" inputmode="decimal" value="'+(item.cardLimit > 0 ? numToInputValue(item.cardLimit) : '')+'" /><button type="submit" class="btn btn-primary" style="background:'+item.color+'">Kaydet</button>';
+        attachAmountFormatting(lf.querySelector('.limit-input'));
+        lf.onsubmit = (e) => {
+          e.preventDefault();
+          const v = parseAmount(lf.querySelector('.limit-input').value);
+          item.cardLimit = v > 0 ? v : null;
+          editingLimitFor = null; saveData(); renderAll();
+        };
+        body.appendChild(lf);
+      }
 
       if (editingKesimFor === item.id) {
         const kf = document.createElement('form');
@@ -5040,6 +5133,23 @@
     }
     list.appendChild(opt('Kredi Kartı Borçları', kartlar, 'kart', '💳'));
     list.appendChild(opt('Krediler', krediler, 'kredi', '🏦'));
+    // Kart harcamaları: ödenince harcama limiti geri açılır
+    const unpaidEx = bankUnpaidCardExpenses(item);
+    const exTot = unpaidEx.reduce((s,e) => s + (e.amount||0), 0);
+    const eb = document.createElement('button');
+    eb.type = 'button'; eb.className = 'src-opt';
+    eb.style.background = unpaidEx.length ? acc : 'var(--surface-2)';
+    if (!unpaidEx.length) eb.style.color = 'var(--text-muted)';
+    eb.innerHTML = '<span>🧾  Kart Harcamaları</span><span class="src-bal">' + (unpaidEx.length ? currency(exTot) + ' · ' + unpaidEx.length + ' harcama' : 'yok') + '</span>';
+    eb.onclick = () => {
+      if (!unpaidEx.length) return;
+      closeDebtPicker();
+      unpaidEx.forEach(e => { e.cardPaid = true; });
+      logActivity(item.name + ' — kart harcamaları ödendi (' + unpaidEx.length + ' harcama)', exTot, { type:'bank', bankId: item.id });
+      saveData(); renderAll();
+      showUndoToast('Kart harcamaları ödemesi', () => { unpaidEx.forEach(e => { delete e.cardPaid; }); saveData(); renderAll(); });
+    };
+    list.appendChild(eb);
     document.getElementById('debtPickerBackdrop').classList.add('open');
   }
 

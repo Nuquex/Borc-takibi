@@ -1282,6 +1282,15 @@
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
   function monthOfDayKey(dayKey) { return dayKey.slice(0,7); }
+  // Hesap kesim mantığı: kesim gününden SONRA yapılan giriş bir sonraki ayın ekstresine düşer.
+  // (Kesim günü dahil o aya sayılır: 10'unda kesilen kartta 10 Ekim hâlâ Ekim, 11 Ekim Kasım ekstresidir.)
+  function monthNameTR(key) { const [y,m] = key.split('-').map(Number); return new Date(y, m-1, 1).toLocaleDateString('tr-TR', { month:'long' }); }
+  function stmtMonthOfDay(dayKey, kesim) {
+    const mk = dayKey.slice(0,7);
+    if (!kesim) return mk;
+    const dom = parseInt(dayKey.slice(8,10), 10);
+    return dom > kesim ? nextMonthKeyOf(mk) : mk;
+  }
   function dayLabel(dayKey) {
     const [y,m,d] = dayKey.split('-').map(Number);
     return new Date(y, m-1, d).toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
@@ -1712,6 +1721,8 @@
   }
   function entryMonthlyDue(entry) {
     if (!entry.isInstallment) return 0;
+    // Giriş tarihi hesap kesimden sonraysa ilk taksit sonraki ayın ekstresindedir; o ay gelene kadar ödenecek sayılmaz.
+    if (entry.firstStmtMonth && entry.firstStmtMonth > currentMonthKey()) return 0;
     const rc = Math.max(0, (entry.totalInstallments||0) - (entry.paidInstallments||0));
     return rc > 0 ? (entry.monthlyAmount||0) : 0;
   }
@@ -1741,8 +1752,15 @@
       .filter(e => (e.kind||'gider') === 'gider' && e.sourceType === 'bank' && e.bankId === bank.id && monthOfDayKey(dayKeyOf(e)) === key)
       .reduce((s,e) => s + (e.amount||0), 0);
   }
+  // Bu ayın ekstresine düşen kart harcamaları (kesim tarihinden sonraki harcama sonraki aya kalır)
+  function bankCardExpenseDueTotal(bank) {
+    const key = currentMonthKey();
+    return state.expenses
+      .filter(e => (e.kind||'gider') === 'gider' && e.sourceType === 'bank' && e.bankId === bank.id && stmtMonthOfDay(dayKeyOf(e), bank.kesimTarihi) === key)
+      .reduce((s,e) => s + (e.amount||0), 0);
+  }
   function itemMonthlyDueTRY(item) {
-    return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryMonthlyDue(d) : 0), 0) + bankCardExpenseTotal(item);
+    return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryMonthlyDue(d) : 0), 0) + bankCardExpenseDueTotal(item);
   }
   function expenseBucketForBank(bank) {
     const real = currentMonthKey();
@@ -2529,6 +2547,10 @@
   function bankUnpaidCardExpenses(item) {
     return state.expenses.filter(e => (e.kind||'gider') === 'gider' && e.sourceType === 'bank' && e.bankId === item.id && !e.cardPaid);
   }
+  function bankPayableCardExpenses(item) {
+    const key = currentMonthKey();
+    return bankUnpaidCardExpenses(item).filter(e => stmtMonthOfDay(dayKeyOf(e), item.kesimTarihi) <= key);
+  }
   function bankLimitUsedTRY(item) {
     const debtPart = (item.debts||[]).reduce((s,d) => s + (((d.currency||'TRY')==='TRY' && (d.debtType==='Kredi Kartı' || d.debtType==='Nakit Avans')) ? entryRemaining(d) : 0), 0);
     return debtPart + bankUnpaidCardExpenses(item).reduce((s,e) => s + (e.amount||0), 0);
@@ -2569,7 +2591,8 @@
         logActivity((note || debtType) + ' düzenlendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: editing.id });
       } else {
         const newDebtId = uid();
-        item.debts.push({ id: newDebtId, debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0 });
+        const addedDay = todayKey();
+        item.debts.push({ id: newDebtId, debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0, addedDay, firstStmtMonth: stmtMonthOfDay(addedDay, item.kesimTarihi) });
         logActivity((note || debtType) + ' eklendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: newDebtId });
       }
       addingEntryFor = null; saveData(); renderAll();
@@ -2598,6 +2621,8 @@
               '<span class="debt-row-title">'+esc(d.note || d.debtType)+'</span>' +
               '<span class="debt-type-chip" style="color:'+acc+'; background:'+acc+'1A">'+esc(d.debtType)+'</span>' +
               (paidThisMonth ? '<span class="debt-paid-chip">✓ Bu ay ödendi</span>' : '') +
+              ((d.isInstallment && !isDone && d.firstStmtMonth && d.firstStmtMonth > currentMonthKey())
+                ? '<span class="debt-paid-chip" style="background:var(--surface-2); color:var(--text-muted)">⏳ '+monthNameTR(d.firstStmtMonth)+' ekstresinde başlar</span>' : '') +
             '</span>' +
             '<span class="debt-row-right">' +
               '<span class="entry-amount">'+formatMoney(entryRemaining(d), d.currency)+'</span>' +
@@ -2781,7 +2806,7 @@
             '</div>' +
             (totalAmt > 0 ? '<div class="bprog"><span style="width:'+pct+'%"></span></div>' : '')
           : (hasCardOnly
-              ? '<div class="brow2"><span class="bpill">Aylık '+currency(dueM)+'</span><span class="bmeta">kart harcaması</span></div>'
+              ? '<div class="brow2">'+(dueM > 0 ? '<span class="bpill">Aylık '+currency(dueM)+'</span>' : '')+'<span class="bmeta">kart harcaması</span></div>'
               : ''));
 
       // --- Kart limiti kutusu ---
@@ -5023,7 +5048,7 @@
   function payGroup(item, kind) {
     const list = (item.debts||[]).filter(d => d.isInstallment &&
       (kind === 'kart' ? d.debtType === 'Kredi Kartı' : d.debtType !== 'Kredi Kartı') &&
-      d.paidInstallments < d.totalInstallments);
+      d.paidInstallments < d.totalInstallments && entryMonthlyDue(d) > 0);
     if (!list.length) { alert('Bu grupta ödenecek taksit kalmadı.'); return; }
     openPayConfirm(item, kind, list);
   }
@@ -5116,8 +5141,8 @@
     list.innerHTML = '';
 
     const acc = bankAccent(item);
-    const kartlar = (item.debts||[]).filter(d => d.isInstallment && d.debtType === 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
-    const krediler = (item.debts||[]).filter(d => d.isInstallment && d.debtType !== 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
+    const kartlar = (item.debts||[]).filter(d => d.isInstallment && d.debtType === 'Kredi Kartı' && d.paidInstallments < d.totalInstallments && entryMonthlyDue(d) > 0);
+    const krediler = (item.debts||[]).filter(d => d.isInstallment && d.debtType !== 'Kredi Kartı' && d.paidInstallments < d.totalInstallments && entryMonthlyDue(d) > 0);
 
     function opt(label, arr, kind, icon) {
       const tot = arr.reduce((s,d) => s + (d.monthlyAmount||0), 0);
@@ -5134,7 +5159,7 @@
     list.appendChild(opt('Kredi Kartı Borçları', kartlar, 'kart', '💳'));
     list.appendChild(opt('Krediler', krediler, 'kredi', '🏦'));
     // Kart harcamaları: ödenince harcama limiti geri açılır
-    const unpaidEx = bankUnpaidCardExpenses(item);
+    const unpaidEx = bankPayableCardExpenses(item);
     const exTot = unpaidEx.reduce((s,e) => s + (e.amount||0), 0);
     const eb = document.createElement('button');
     eb.type = 'button'; eb.className = 'src-opt';

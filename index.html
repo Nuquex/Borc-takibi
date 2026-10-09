@@ -1631,6 +1631,7 @@
   let editingCarouselKey = null;
   let editingKesimFor = null;
   let editingLimitFor = null;
+  let editingPortfolioCashFor = null;
   let salaryOpenMain = false;
 
   function currencySymbol(code) { const c = CURRENCIES.find(x => x.code === code); return c ? c.symbol : '₺'; }
@@ -1739,7 +1740,8 @@
     const gain = currentPrice > 0 ? currentValue - costBasis : 0;
     return { totalBuyQty, totalSellQty, remainingQty, avgCost, costBasis, currentPrice, currentValue, gain };
   }
-  function portfolioValue(item) { return (item.stocks||[]).reduce((s,st) => s + stockStats(st).currentValue, 0); }
+  function portfolioCash(item) { return item.cash > 0 ? item.cash : 0; }
+  function portfolioValue(item) { return (item.stocks||[]).reduce((s,st) => s + stockStats(st).currentValue, 0) + portfolioCash(item); }
 
   function itemValue(item) {
     if (item.type === 'portfolio') return portfolioValue(item);
@@ -1952,7 +1954,7 @@
       head.className = 'item-head';
       head.setAttribute('role', 'button');
       head.setAttribute('tabindex', '0');
-      const subText = isPortfolio ? ((item.stocks||[]).length + ' ürün') : ((item.debts||[]).length + ' kayıt');
+      const subText = isPortfolio ? ((item.stocks||[]).length + ' ürün' + (portfolioCash(item) > 0 ? ' · Nakit ' + currency(portfolioCash(item)).replace(',00','') : '')) : ((item.debts||[]).length + ' kayıt');
       let gainBits = '';
       if (isPortfolio) {
         let cost = 0, val = 0;
@@ -2286,7 +2288,46 @@
     body.appendChild(extrasRow);
   }
 
+  // --- Aracı kurumdaki (örn. Midas) fon/hisse dışı NAKİT bakiye girişi ---
+  function renderPortfolioCash(body, item) {
+    const cash = portfolioCash(item);
+    const sub = document.createElement('div');
+    sub.className = 'sub-card';
+    sub.id = 'pcash-' + item.id;
+    const sh = document.createElement('button');
+    sh.type = 'button';
+    sh.className = 'sub-head';
+    sh.innerHTML =
+      '<span class="sub-dot" style="background:#4FA8A0; font-size:14px;">💵</span>' +
+      '<span class="sub-name">Nakit<div class="item-sub">' + (cash > 0 ? 'Hesapta bekleyen bakiye' : 'Bakiye eklemek için dokun') + '</div></span>' +
+      '<span class="item-total"' + (cash > 0 ? '' : ' style="color:var(--text-muted)"') + '>' + currency(cash) + '</span>';
+    sh.onclick = () => { editingPortfolioCashFor = editingPortfolioCashFor === item.id ? null : item.id; renderAll(); };
+    sub.appendChild(sh);
+
+    if (editingPortfolioCashFor === item.id) {
+      const f = document.createElement('form');
+      f.className = 'kesim-form open';
+      f.style.cssText += 'padding:0 12px 12px; margin:0;';
+      f.innerHTML = '<input class="pcash-input" placeholder="Nakit bakiye (₺)" inputmode="decimal" value="' + (cash > 0 ? numToInputValue(cash) : '') + '" />' +
+        '<button type="submit" class="btn btn-primary" style="background:#4FA8A0; color:#fff">Kaydet</button>';
+      const inp = f.querySelector('.pcash-input');
+      attachAmountFormatting(inp);
+      f.onsubmit = (e) => {
+        e.preventDefault();
+        const v = parseAmount(inp.value);
+        const old = portfolioCash(item);
+        item.cash = v > 0 ? v : 0;
+        if (item.cash !== old) logActivity(item.name + ' nakit bakiyesi güncellendi', item.cash, { type:'asset', assetId: item.id });
+        editingPortfolioCashFor = null; saveData(); renderAll();
+      };
+      sub.appendChild(f);
+      setTimeout(() => { try { inp.focus(); } catch (e) {} }, 0);
+    }
+    body.appendChild(sub);
+  }
+
   function renderStocksInto(body, portfolioItem) {
+    renderPortfolioCash(body, portfolioItem);
     (portfolioItem.stocks || []).forEach(stock => {
       const stKey = portfolioItem.id + ':' + stock.id;
       const isOpen = !!expanded[stKey];
@@ -3005,6 +3046,7 @@
           const label = st.productType === 'fon' ? 'Fon' : 'Hisse';
           map[label] = (map[label]||0) + stockStats(st).currentValue;
         });
+        if (portfolioCash(a) > 0) map['Nakit'] = (map['Nakit']||0) + portfolioCash(a);
       } else {
         const label = categorizeSimpleAssetName(a.name);
         map[label] = (map[label]||0) + itemValue(a);

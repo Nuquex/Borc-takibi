@@ -543,7 +543,7 @@
 
   .dots { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
   .dot-inst {
-    min-width:26px; height:26px; border-radius:7px; border:1px solid var(--border); background:var(--bg);
+    min-width:38px; min-height:30px; padding-top:2px; padding-bottom:2px; border-radius:7px; border:1px solid var(--border); background:var(--bg);
     cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 4px;
     font-family:'Inter',sans-serif; font-size:10.5px; font-weight:600; color:var(--text-muted);
     transition:background .12s ease, color .12s ease, border-color .12s ease;
@@ -1282,15 +1282,6 @@
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
   function monthOfDayKey(dayKey) { return dayKey.slice(0,7); }
-  // Hesap kesim mantığı: kesim gününden SONRA yapılan giriş bir sonraki ayın ekstresine düşer.
-  // (Kesim günü dahil o aya sayılır: 10'unda kesilen kartta 10 Ekim hâlâ Ekim, 11 Ekim Kasım ekstresidir.)
-  function monthNameTR(key) { const [y,m] = key.split('-').map(Number); return new Date(y, m-1, 1).toLocaleDateString('tr-TR', { month:'long' }); }
-  function stmtMonthOfDay(dayKey, kesim) {
-    const mk = dayKey.slice(0,7);
-    if (!kesim) return mk;
-    const dom = parseInt(dayKey.slice(8,10), 10);
-    return dom > kesim ? nextMonthKeyOf(mk) : mk;
-  }
   function dayLabel(dayKey) {
     const [y,m,d] = dayKey.split('-').map(Number);
     return new Date(y, m-1, d).toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
@@ -1300,6 +1291,19 @@
     const real = currentMonthKey();
     return new Date().getDate() >= 25 ? nextMonthKeyOf(real) : real;
   }
+  const TR_MONTHS_SHORT = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  function addMonthsKey(key, n) {
+    let [y,m] = key.split('-').map(Number);
+    const t = (y*12 + (m-1)) + n;
+    return Math.floor(t/12) + '-' + String((t%12)+1).padStart(2,'0');
+  }
+  // Taksitin başlangıç ayı: eklendiği ayı izleyen ay. Eski kayıtlarda startMonth yoksa tahmin edilir.
+  function debtStartMonth(d) {
+    if (d.startMonth) return d.startMonth;
+    if (d.lastPaidMonth && d.paidInstallments > 0) return addMonthsKey(d.lastPaidMonth, -(d.paidInstallments - 1));
+    return nextMonthKeyOf(currentMonthKey());
+  }
+  function shortMonthOf(key) { return TR_MONTHS_SHORT[Number(key.split('-')[1]) - 1]; }
   function monthLabel(key) {
     const [y,m] = key.split('-').map(Number);
     return new Date(y, m-1, 1).toLocaleDateString('tr-TR', { month:'long', year:'numeric' });
@@ -1631,7 +1635,6 @@
   let editingCarouselKey = null;
   let editingKesimFor = null;
   let editingLimitFor = null;
-  let editingPortfolioCashFor = null;
   let salaryOpenMain = false;
 
   function currencySymbol(code) { const c = CURRENCIES.find(x => x.code === code); return c ? c.symbol : '₺'; }
@@ -1722,8 +1725,6 @@
   }
   function entryMonthlyDue(entry) {
     if (!entry.isInstallment) return 0;
-    // Giriş tarihi hesap kesimden sonraysa ilk taksit sonraki ayın ekstresindedir; o ay gelene kadar ödenecek sayılmaz.
-    if (entry.firstStmtMonth && entry.firstStmtMonth > currentMonthKey()) return 0;
     const rc = Math.max(0, (entry.totalInstallments||0) - (entry.paidInstallments||0));
     return rc > 0 ? (entry.monthlyAmount||0) : 0;
   }
@@ -1740,30 +1741,7 @@
     const gain = currentPrice > 0 ? currentValue - costBasis : 0;
     return { totalBuyQty, totalSellQty, remainingQty, avgCost, costBasis, currentPrice, currentValue, gain };
   }
-  // Aracı kurum nakdi: item.cashList = [{ id, cur:'TRY'|'USD'|'EUR', amount, rate }]  (TL karşılığı = amount * rate)
-  function portfolioCashList(item) {
-    if (!item.cashList) {
-      item.cashList = [];
-      if (item.cash > 0) item.cashList.push({ id: uid(), cur:'TRY', amount: item.cash, rate: 1 });   // v87'den geçiş
-      delete item.cash;
-    }
-    return item.cashList;
-  }
-  function cashEntryTRY(e) { return e.cur === 'TRY' ? (e.amount||0) : (e.amount||0) * (e.rate||0); }
-  function portfolioCash(item) { return portfolioCashList(item).reduce((s,e) => s + cashEntryTRY(e), 0); }
-  function lastCashRate(cur) {
-    for (const a of state.assets) { if (a.type !== 'portfolio') continue;
-      const e = (a.cashList||[]).find(x => x.cur === cur && x.rate > 0); if (e) return e.rate; }
-    return 0;
-  }
-  function addPortfolioCash(item, cur, amount, rate) {
-    const list = portfolioCashList(item);
-    let e = list.find(x => x.cur === cur);
-    if (e) { e.amount = (e.amount||0) + amount; if (cur !== 'TRY') e.rate = rate; }
-    else { e = { id: uid(), cur, amount, rate: cur === 'TRY' ? 1 : rate }; list.push(e); }
-    logActivity(item.name + ' — ' + CURRENCIES.find(c => c.code === cur).label + ' nakit eklendi', cashEntryTRY({ cur, amount, rate: e.rate }), { type:'asset', assetId: item.id });
-  }
-  function portfolioValue(item) { return (item.stocks||[]).reduce((s,st) => s + stockStats(st).currentValue, 0) + portfolioCash(item); }
+  function portfolioValue(item) { return (item.stocks||[]).reduce((s,st) => s + stockStats(st).currentValue, 0); }
 
   function itemValue(item) {
     if (item.type === 'portfolio') return portfolioValue(item);
@@ -1776,15 +1754,8 @@
       .filter(e => (e.kind||'gider') === 'gider' && e.sourceType === 'bank' && e.bankId === bank.id && monthOfDayKey(dayKeyOf(e)) === key)
       .reduce((s,e) => s + (e.amount||0), 0);
   }
-  // Bu ayın ekstresine düşen kart harcamaları (kesim tarihinden sonraki harcama sonraki aya kalır)
-  function bankCardExpenseDueTotal(bank) {
-    const key = currentMonthKey();
-    return state.expenses
-      .filter(e => (e.kind||'gider') === 'gider' && e.sourceType === 'bank' && e.bankId === bank.id && stmtMonthOfDay(dayKeyOf(e), bank.kesimTarihi) === key)
-      .reduce((s,e) => s + (e.amount||0), 0);
-  }
   function itemMonthlyDueTRY(item) {
-    return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryMonthlyDue(d) : 0), 0) + bankCardExpenseDueTotal(item);
+    return (item.debts||[]).reduce((s,d) => s + ((d.currency||'TRY')==='TRY' ? entryMonthlyDue(d) : 0), 0) + bankCardExpenseTotal(item);
   }
   function expenseBucketForBank(bank) {
     const real = currentMonthKey();
@@ -1976,7 +1947,7 @@
       head.className = 'item-head';
       head.setAttribute('role', 'button');
       head.setAttribute('tabindex', '0');
-      const subText = isPortfolio ? ((item.stocks||[]).length + ' ürün' + (portfolioCash(item) > 0 ? ' · Nakit ' + currency(portfolioCash(item)).replace(',00','') : '')) : ((item.debts||[]).length + ' kayıt');
+      const subText = isPortfolio ? ((item.stocks||[]).length + ' ürün') : ((item.debts||[]).length + ' kayıt');
       let gainBits = '';
       if (isPortfolio) {
         let cost = 0, val = 0;
@@ -2310,60 +2281,7 @@
     body.appendChild(extrasRow);
   }
 
-  // --- Aracı kurumdaki (örn. Midas) fon/hisse dışı NAKİT bakiyeler: hisse/fonların en üstünde listelenir ---
-  function renderPortfolioCash(body, item) {
-    portfolioCashList(item).forEach(e => {
-      const key = item.id + ':' + e.id;
-      const cinfo = { TRY:{ sym:'₺', bg:'#4FA8A0', name:'Nakit · TL' }, USD:{ sym:'$', bg:'#6FA8D6', name:'Nakit · Dolar' }, EUR:{ sym:'€', bg:'#8C86D6', name:'Nakit · Euro' } }[e.cur] || { sym:'₺', bg:'#4FA8A0', name:'Nakit' };
-      const sub = document.createElement('div');
-      sub.className = 'sub-card';
-      sub.id = 'pcash-' + e.id;
-      const sh = document.createElement('button');
-      sh.type = 'button'; sh.className = 'sub-head';
-      const subLine = e.cur === 'TRY' ? 'Hesapta bekleyen bakiye' : (formatMoney(e.amount, e.cur) + ' · Kur ' + currency(e.rate));
-      sh.innerHTML =
-        '<span class="sub-dot" style="background:'+cinfo.bg+'; font-size:15px;">'+cinfo.sym+'</span>' +
-        '<span class="sub-name">'+cinfo.name+'<div class="item-sub">'+subLine+'</div></span>' +
-        '<span class="item-total">'+currency(cashEntryTRY(e))+'</span>';
-      sh.onclick = () => { editingPortfolioCashFor = editingPortfolioCashFor === key ? null : key; renderAll(); };
-      sub.appendChild(sh);
-
-      if (editingPortfolioCashFor === key) {
-        const f = document.createElement('form');
-        f.className = 'kesim-form open';
-        f.style.cssText += 'flex-wrap:wrap; padding:0 12px 12px; margin:0;';
-        const inStyle = 'flex:1 1 100%; min-width:0; font-size:16px;';
-        f.innerHTML =
-          '<input class="pcash-amt" style="'+inStyle+'" placeholder="Tutar ('+cinfo.sym+')" inputmode="decimal" value="'+numToInputValue(e.amount)+'" />' +
-          (e.cur !== 'TRY' ? '<input class="pcash-rate" style="'+inStyle+'" placeholder="Güncel kur (₺)" inputmode="decimal" value="'+numToInputValue(e.rate, 4)+'" />' : '') +
-          '<button type="button" class="btn btn-ghost pcash-del" style="flex:1; color:var(--danger)">Sil</button>' +
-          '<button type="submit" class="btn btn-primary" style="flex:1; background:'+cinfo.bg+'; color:#fff">Kaydet</button>';
-        const amtI = f.querySelector('.pcash-amt'), rateI = f.querySelector('.pcash-rate');
-        attachAmountFormatting(amtI); if (rateI) attachAmountFormatting(rateI, 4);
-        f.onsubmit = (ev) => {
-          ev.preventDefault();
-          const v = parseAmount(amtI.value);
-          const r = rateI ? parseAmount(rateI.value) : 1;
-          if (v > 0 && r <= 0) { alert('Güncel kuru gir (₺).'); return; }
-          if (v <= 0) { item.cashList = item.cashList.filter(x => x.id !== e.id); }
-          else { e.amount = v; e.rate = r; }
-          logActivity(item.name + ' — ' + cinfo.name.replace('Nakit · ','') + ' nakit güncellendi', v > 0 ? cashEntryTRY(e) : 0, { type:'asset', assetId: item.id });
-          editingPortfolioCashFor = null; saveData(); renderAll();
-        };
-        f.querySelector('.pcash-del').onclick = () => {
-          const idx = item.cashList.indexOf(e);
-          item.cashList = item.cashList.filter(x => x.id !== e.id);
-          editingPortfolioCashFor = null; saveData(); renderAll();
-          showUndoToast(cinfo.name, () => { item.cashList.splice(Math.min(idx, item.cashList.length), 0, e); saveData(); renderAll(); });
-        };
-        sub.appendChild(f);
-      }
-      body.appendChild(sub);
-    });
-  }
-
   function renderStocksInto(body, portfolioItem) {
-    renderPortfolioCash(body, portfolioItem);
     (portfolioItem.stocks || []).forEach(stock => {
       const stKey = portfolioItem.id + ':' + stock.id;
       const isOpen = !!expanded[stKey];
@@ -2569,16 +2487,6 @@
         '<div class="mode-toggle">' +
           '<button type="button" class="mode-btn active" data-ptype="hisse">Hisse</button>' +
           '<button type="button" class="mode-btn" data-ptype="fon">Para Fonu</button>' +
-          '<button type="button" class="mode-btn" data-ptype="nakit">Nakit</button>' +
-        '</div>' +
-        '<div class="pcash-panel" style="display:none; flex-direction:column; gap:8px; margin-bottom:8px;">' +
-          '<div class="mode-toggle pcash-cur">' +
-            '<button type="button" class="mode-btn active" data-cur="TRY">TL</button>' +
-            '<button type="button" class="mode-btn" data-cur="USD">Dolar</button>' +
-            '<button type="button" class="mode-btn" data-cur="EUR">Euro</button>' +
-          '</div>' +
-          '<input class="pcash-amt" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:16px; font-family:inherit;" placeholder="Tutar (₺)" inputmode="decimal" />' +
-          '<input class="pcash-rate" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; color:var(--text); font-size:16px; font-family:inherit;" placeholder="Güncel kur (₺)" inputmode="decimal" />' +
         '</div>' +
         '<div class="combo-wrap"><input class="new-stock-input" placeholder="Hisse ara (örn. THYAO, Migros)" autocomplete="off" /><div class="combo-dropdown new-stock-dropdown"></div></div>' +
         '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-stock">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:var(--teal)">Ekle</button></div>';
@@ -2599,47 +2507,17 @@
     const full = (productType === 'fon' ? FUND_OPTIONS : BIST100_OPTIONS);
     return recent.length ? recent.concat(full.filter(o => !recent.includes(o))) : full;
   });
-      const comboWrapEl = form.querySelector('.combo-wrap');
-      const cashPanel = form.querySelector('.pcash-panel');
-      const cashAmt = form.querySelector('.pcash-amt');
-      const cashRate = form.querySelector('.pcash-rate');
-      attachAmountFormatting(cashAmt); attachAmountFormatting(cashRate, 4);
-      let cashCur = 'TRY';
       form.querySelectorAll('.mode-btn[data-ptype]').forEach(btn => {
         btn.onclick = () => {
           form.querySelectorAll('.mode-btn[data-ptype]').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           productType = btn.dataset.ptype;
-          const isCash = productType === 'nakit';
-          comboWrapEl.style.display = isCash ? 'none' : '';
-          cashPanel.style.display = isCash ? 'flex' : 'none';
-          if (!isCash) stockInput.placeholder = productType === 'fon' ? 'Fon ara (örn. Ziraat)' : 'Hisse ara (örn. THYAO, Migros)';
+          stockInput.placeholder = productType === 'fon' ? 'Fon ara (örn. Ziraat)' : 'Hisse ara (örn. THYAO, Migros)';
           stockInput.value = '';
-        };
-      });
-      form.querySelectorAll('.pcash-cur .mode-btn').forEach(btn => {
-        btn.onclick = () => {
-          form.querySelectorAll('.pcash-cur .mode-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          cashCur = btn.dataset.cur;
-          const sym = { TRY:'₺', USD:'$', EUR:'€' }[cashCur];
-          cashAmt.placeholder = 'Tutar (' + sym + ')';
-          cashRate.style.display = cashCur === 'TRY' ? 'none' : '';
-          if (cashCur !== 'TRY' && !cashRate.value) { const lr = lastCashRate(cashCur); if (lr > 0) cashRate.value = numToInputValue(lr, 4); }
-          if (cashCur !== 'TRY') cashRate.placeholder = '1 ' + (cashCur === 'USD' ? 'Dolar' : 'Euro') + ' kaç ₺? (güncel kur)';
         };
       });
       form.onsubmit = (e) => {
         e.preventDefault();
-        if (productType === 'nakit') {
-          const amt = parseAmount(cashAmt.value);
-          if (amt <= 0) { alert('Lütfen geçerli bir tutar gir.'); return; }
-          let rate = 1;
-          if (cashCur !== 'TRY') { rate = parseAmount(cashRate.value); if (rate <= 0) { alert('Güncel kuru gir (₺).'); return; } }
-          addPortfolioCash(portfolioItem, cashCur, amt, rate);
-          addingStockFor = null; saveData(); renderAll();
-          return;
-        }
         const name = stockInput.value.trim();
         if (!name) return;
         const id = uid();
@@ -2653,7 +2531,7 @@
     } else {
       const addStockBtn = document.createElement('button');
       addStockBtn.className = 'add-sub-btn';
-      addStockBtn.innerHTML = '+ Ürün / nakit ekle';
+      addStockBtn.innerHTML = '+ Ürün ekle';
       addStockBtn.onclick = () => { addingStockFor = portfolioItem.id; renderAll(); };
       body.appendChild(addStockBtn);
     }
@@ -2663,10 +2541,6 @@
   // Limiti tüketenler: Kredi Kartı / Nakit Avans borçlarının kalanı + ödenmemiş tüm kart harcamaları.
   function bankUnpaidCardExpenses(item) {
     return state.expenses.filter(e => (e.kind||'gider') === 'gider' && e.sourceType === 'bank' && e.bankId === item.id && !e.cardPaid);
-  }
-  function bankPayableCardExpenses(item) {
-    const key = currentMonthKey();
-    return bankUnpaidCardExpenses(item).filter(e => stmtMonthOfDay(dayKeyOf(e), item.kesimTarihi) <= key);
   }
   function bankLimitUsedTRY(item) {
     const debtPart = (item.debts||[]).reduce((s,d) => s + (((d.currency||'TRY')==='TRY' && (d.debtType==='Kredi Kartı' || d.debtType==='Nakit Avans')) ? entryRemaining(d) : 0), 0);
@@ -2708,8 +2582,7 @@
         logActivity((note || debtType) + ' düzenlendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: editing.id });
       } else {
         const newDebtId = uid();
-        const addedDay = todayKey();
-        item.debts.push({ id: newDebtId, debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0, addedDay, firstStmtMonth: stmtMonthOfDay(addedDay, item.kesimTarihi) });
+        item.debts.push({ id: newDebtId, debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0, startMonth: nextMonthKeyOf(currentMonthKey()) });
         logActivity((note || debtType) + ' eklendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: newDebtId });
       }
       addingEntryFor = null; saveData(); renderAll();
@@ -2738,8 +2611,6 @@
               '<span class="debt-row-title">'+esc(d.note || d.debtType)+'</span>' +
               '<span class="debt-type-chip" style="color:'+acc+'; background:'+acc+'1A">'+esc(d.debtType)+'</span>' +
               (paidThisMonth ? '<span class="debt-paid-chip">✓ Bu ay ödendi</span>' : '') +
-              ((d.isInstallment && !isDone && d.firstStmtMonth && d.firstStmtMonth > currentMonthKey())
-                ? '<span class="debt-paid-chip" style="background:var(--surface-2); color:var(--text-muted)">⏳ '+monthNameTR(d.firstStmtMonth)+' ekstresinde başlar</span>' : '') +
             '</span>' +
             '<span class="debt-row-right">' +
               '<span class="entry-amount">'+formatMoney(entryRemaining(d), d.currency)+'</span>' +
@@ -2753,6 +2624,7 @@
             meta.innerHTML =
               '<span class="debt-mini-pill" style="color:'+acc+'; background:'+acc+'14">Aylık '+formatMoney(d.monthlyAmount, d.currency)+'</span>' +
               '<span>'+d.paidInstallments+'/'+d.totalInstallments+' ödendi</span>' +
+              '<span style="font-size:10.5px">'+monthLabel(debtStartMonth(d))+' – '+monthLabel(addMonthsKey(debtStartMonth(d), d.totalInstallments-1))+'</span>' +
               '<span class="debt-pct" style="color:'+acc+'">%'+pctD+'</span>';
             content.appendChild(meta);
 
@@ -2779,7 +2651,13 @@
                 dot.className = 'dot-inst' + (isPaid ? ' paid' : (isNext ? ' next' : ''));
                 if (isPaid) { dot.style.background = acc; dot.style.borderColor = acc; dot.style.color = '#fff'; }
                 else if (isNext) { dot.style.borderColor = acc; dot.style.color = acc; }
-                dot.textContent = (i + 1);
+                const mKey = addMonthsKey(debtStartMonth(d), i);
+                const showYear = (i === 0 || mKey.endsWith('-01'));
+                dot.title = monthLabel(mKey) + ' · ' + (i + 1) + '. taksit';
+                dot.innerHTML = '<span style="display:flex; flex-direction:column; align-items:center; line-height:1.15;">' +
+                  '<span>'+shortMonthOf(mKey)+'</span>' +
+                  (showYear ? '<span style="font-size:8px; opacity:.75; font-weight:500;">'+mKey.slice(0,4)+'</span>' : '') +
+                  '</span>';
                 dot.onclick = (() => { const idx = i; return () => {
                   const oldPaid = d.paidInstallments;
                   const newPaid = (d.paidInstallments === idx + 1) ? idx : idx + 1;
@@ -2923,7 +2801,7 @@
             '</div>' +
             (totalAmt > 0 ? '<div class="bprog"><span style="width:'+pct+'%"></span></div>' : '')
           : (hasCardOnly
-              ? '<div class="brow2">'+(dueM > 0 ? '<span class="bpill">Aylık '+currency(dueM)+'</span>' : '')+'<span class="bmeta">kart harcaması</span></div>'
+              ? '<div class="brow2"><span class="bpill">Aylık '+currency(dueM)+'</span><span class="bmeta">kart harcaması</span></div>'
               : ''));
 
       // --- Kart limiti kutusu ---
@@ -3121,10 +2999,6 @@
         (a.stocks||[]).forEach(st => {
           const label = st.productType === 'fon' ? 'Fon' : 'Hisse';
           map[label] = (map[label]||0) + stockStats(st).currentValue;
-        });
-        portfolioCashList(a).forEach(e => {
-          const label = e.cur === 'USD' ? 'Dolar' : (e.cur === 'EUR' ? 'Euro' : 'Nakit');
-          map[label] = (map[label]||0) + cashEntryTRY(e);
         });
       } else {
         const label = categorizeSimpleAssetName(a.name);
@@ -5169,7 +5043,7 @@
   function payGroup(item, kind) {
     const list = (item.debts||[]).filter(d => d.isInstallment &&
       (kind === 'kart' ? d.debtType === 'Kredi Kartı' : d.debtType !== 'Kredi Kartı') &&
-      d.paidInstallments < d.totalInstallments && entryMonthlyDue(d) > 0);
+      d.paidInstallments < d.totalInstallments);
     if (!list.length) { alert('Bu grupta ödenecek taksit kalmadı.'); return; }
     openPayConfirm(item, kind, list);
   }
@@ -5262,8 +5136,8 @@
     list.innerHTML = '';
 
     const acc = bankAccent(item);
-    const kartlar = (item.debts||[]).filter(d => d.isInstallment && d.debtType === 'Kredi Kartı' && d.paidInstallments < d.totalInstallments && entryMonthlyDue(d) > 0);
-    const krediler = (item.debts||[]).filter(d => d.isInstallment && d.debtType !== 'Kredi Kartı' && d.paidInstallments < d.totalInstallments && entryMonthlyDue(d) > 0);
+    const kartlar = (item.debts||[]).filter(d => d.isInstallment && d.debtType === 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
+    const krediler = (item.debts||[]).filter(d => d.isInstallment && d.debtType !== 'Kredi Kartı' && d.paidInstallments < d.totalInstallments);
 
     function opt(label, arr, kind, icon) {
       const tot = arr.reduce((s,d) => s + (d.monthlyAmount||0), 0);
@@ -5280,7 +5154,7 @@
     list.appendChild(opt('Kredi Kartı Borçları', kartlar, 'kart', '💳'));
     list.appendChild(opt('Krediler', krediler, 'kredi', '🏦'));
     // Kart harcamaları: ödenince harcama limiti geri açılır
-    const unpaidEx = bankPayableCardExpenses(item);
+    const unpaidEx = bankUnpaidCardExpenses(item);
     const exTot = unpaidEx.reduce((s,e) => s + (e.amount||0), 0);
     const eb = document.createElement('button');
     eb.type = 'button'; eb.className = 'src-opt';

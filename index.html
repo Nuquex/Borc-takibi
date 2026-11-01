@@ -3027,6 +3027,18 @@
     }
     return map;
   }
+  // Kişisel (elden) borçlar: TL tutarlar + fiyatı girilmiş altınlar. Fiyatsız altın TL'ye çevrilemez, ayrıca döner.
+  function personalDebtsTotals() {
+    const items = state.personalDebts || [];
+    let tryTotal = 0; const goldNoPrice = {};
+    items.forEach(p => {
+      if (p.kind === 'altin') {
+        if (p.price > 0) tryTotal += (p.qty||0) * p.price;
+        else goldNoPrice[p.goldType] = (goldNoPrice[p.goldType]||0) + (p.qty||0);
+      } else tryTotal += (p.amount||0);
+    });
+    return { tryTotal, goldNoPrice };
+  }
   function computeDebtBreakdown() {
     const map = {};
     state.banks.forEach(b => (b.debts||[]).forEach(d => {
@@ -3240,7 +3252,32 @@
     p3.innerHTML = html3;
     carousel.appendChild(p3);
 
-    for (let i = 0; i < 4; i++) {
+    // Sayfa 4: Tüm borçlar (banka/kredi + kişisel/elden). Diğer sayfalardaki Borç Dağılımı elden borçları İÇERMEZ.
+    const pd = personalDebtsTotals();
+    const allMap = Object.assign({}, debtMap);
+    if (pd.tryTotal > 0) allMap['Kişisel (Elden)'] = (allMap['Kişisel (Elden)']||0) + pd.tryTotal;
+    const allCats = Object.keys(allMap).map((label,i) => ({ label, value: allMap[label], color: label === 'Kişisel (Elden)' ? '#B07CC6' : colorForLabel(label,i) })).filter(c=>c.value>0).sort((a,b)=>b.value-a.value);
+    const allTotal = allCats.reduce((s,c)=>s+c.value,0);
+    const p4 = document.createElement('div');
+    p4.className = 'net-page net-page-fill';
+    let html4 = '<div class="net-page-title">Tüm Borçlar (Elden Dahil)</div>';
+    html4 += '<div class="net-page-total' + (state.privacyMode?' blurred':'') + '" style="color:var(--gold)">' + currency(allTotal) + '</div>';
+    html4 += '<div class="donut-wrap">' + buildDonutSVG(allCats) + '</div>';
+    html4 += buildLegendHTML(allCats, allTotal);
+    html4 += '<div style="display:flex; justify-content:space-between; gap:8px; margin-top:8px; font-size:11.5px; color:#9FB0CC;">' +
+      '<span>Banka/Kredi <b style="color:#fff">' + currency(debtCatsTotal) + '</b></span>' +
+      '<span>Elden <b style="color:#fff">' + currency(pd.tryTotal) + '</b></span></div>';
+    const goldKeys = Object.keys(pd.goldNoPrice);
+    if (goldKeys.length) {
+      html4 += '<div class="fx-chips">' + goldKeys.map(t => '<span class="fx-chip">+ ' + formatGoldQty(pd.goldNoPrice[t]) + ' ' + esc(t) + ' (fiyatsız)</span>').join('') + '</div>';
+    }
+    if (Object.keys(fxTotals).length > 0) {
+      html4 += '<div class="fx-chips">' + Object.keys(fxTotals).map(cur => '<span class="fx-chip">'+formatMoney(fxTotals[cur], cur)+' borç</span>').join('') + '</div>';
+    }
+    p4.innerHTML = html4;
+    carousel.appendChild(p4);
+
+    for (let i = 0; i < 5; i++) {
       const dot = document.createElement('span');
       dot.className = 'carousel-dot' + (i === netCarouselIndex ? ' active' : '');
       dotsWrap.appendChild(dot);
@@ -3790,9 +3827,9 @@
     const prevAlign = carousel.style.alignItems;
     carousel.style.height = 'auto';
     carousel.style.alignItems = 'flex-start';   // ölçüm için gerilmeyi kapat
-    // Her zaman Net Durum sayfasının (index 1) boyuna kilitle — diğerleri ona dolgu ile yayılır.
-    const netDurumPage = carousel.children[1];
-    const h = netDurumPage ? netDurumPage.offsetHeight : 0;
+    // En uzun sayfanın boyuna kilitle (genelde Net Durum) — diğerleri ona dolgu ile yayılır, hiçbir sayfa kesilmez.
+    let h = 0;
+    Array.from(carousel.children).forEach(pg => { h = Math.max(h, pg.offsetHeight); });
     carousel.style.alignItems = 'stretch';
     if (h > 0) carousel.style.height = h + 'px';
   }

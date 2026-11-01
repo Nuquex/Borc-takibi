@@ -2556,12 +2556,21 @@
     const presetT = (addingEntryFor && addingEntryFor.presetType) || null;
     const typeOptsSel = DEBT_TYPES.map(t => '<option value="'+t+'"'+((editing && editing.debtType === t) || (!editing && presetT === t) ? ' selected' : '')+'>'+t+'</option>').join('');
     const curOptsSel = CURRENCIES.map(c => '<option value="'+c.code+'"'+(editing && (editing.currency||'TRY') === c.code ? ' selected' : '')+'>'+c.label+'</option>').join('');
+    const startKey = editing ? debtStartMonth(editing) : nextMonthKeyOf(currentMonthKey());
+    const [startY, startM] = startKey.split('-').map(Number);
+    const startMonthOpts = TR_MONTHS.map((m,i) => '<option value="'+(i+1)+'"'+(i+1 === startM ? ' selected' : '')+'>'+m+'</option>').join('');
+    const baseYear = new Date().getFullYear();
+    let yFrom = Math.min(baseYear - 2, startY), yTo = Math.max(baseYear + 5, startY);
+    let startYearOpts = '';
+    for (let y = yFrom; y <= yTo; y++) startYearOpts += '<option value="'+y+'"'+(y === startY ? ' selected' : '')+'>'+y+'</option>';
     form.innerHTML =
       '<select class="sel-input debt-type-sel">'+typeOptsSel+'</select>' +
       '<input class="entry-note-input" placeholder="Açıklama (opsiyonel, örn. Araba kredisi)" value="'+(editing && editing.note ? esc(editing.note) : '')+'" />' +
       '<select class="sel-input debt-cur-sel">'+curOptsSel+'</select>' +
       '<div class="installment-fields open">' +
         '<div class="installment-fields-row"><input class="inst-monthly-input" placeholder="Aylık taksit" inputmode="decimal" value="'+(editing ? numToInputValue(editing.monthlyAmount) : '')+'" /><input class="inst-total-input" placeholder="Toplam taksit" inputmode="numeric" value="'+(editing ? editing.totalInstallments : '')+'" /></div>' +
+        '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">İlk taksit ayı</div>' +
+        '<div class="installment-fields-row"><select class="sel-input inst-start-month">'+startMonthOpts+'</select><select class="sel-input inst-start-year">'+startYearOpts+'</select></div>' +
       '</div>' +
       '<div class="form-actions"><button type="button" class="btn btn-ghost cancel-entry">Vazgeç</button><button type="submit" class="btn btn-primary" style="background:'+bankAccent(item)+'; color:#fff">'+(editing ? 'Kaydet' : 'Ekle')+'</button></div>';
 
@@ -2575,14 +2584,16 @@
       const monthlyAmount = parseAmount(form.querySelector('.inst-monthly-input').value);
       const totalInstallments = parseInt2(form.querySelector('.inst-total-input').value);
       if (monthlyAmount <= 0 || totalInstallments <= 0) { alert('Aylık taksit ve toplam taksit sayısını gir.'); return; }
+      const startMonth = form.querySelector('.inst-start-year').value + '-' + String(form.querySelector('.inst-start-month').value).padStart(2,'0');
       if (editing) {
+        editing.startMonth = startMonth;
         editing.debtType = debtType; editing.note = note; editing.currency = cur;
         editing.monthlyAmount = monthlyAmount; editing.totalInstallments = totalInstallments;
         if (editing.paidInstallments > totalInstallments) editing.paidInstallments = totalInstallments;
         logActivity((note || debtType) + ' düzenlendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: editing.id });
       } else {
         const newDebtId = uid();
-        item.debts.push({ id: newDebtId, debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0, startMonth: nextMonthKeyOf(currentMonthKey()) });
+        item.debts.push({ id: newDebtId, debtType, note, currency: cur, isInstallment: true, monthlyAmount, totalInstallments, paidInstallments: 0, startMonth });
         logActivity((note || debtType) + ' eklendi', monthlyAmount * totalInstallments, { type:'debt', bankId: item.id, debtId: newDebtId });
       }
       addingEntryFor = null; saveData(); renderAll();

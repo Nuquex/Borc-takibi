@@ -870,6 +870,7 @@
     <div id="bankEmptyState" class="empty-state" style="display:none;">
       <div class="icon-wrap">🏦</div><p>Henüz borç eklemedin.<br>Başlamak için aşağıdan ekle.</p>
     </div>
+    <div id="debtEndCal"></div>
     <div id="bankList"></div>
 
     <form class="new-item-form" id="newBankForm">
@@ -4188,6 +4189,64 @@
     });
   }
 
+  // "Ne zaman biter?" — bitiş aylarına göre borç sayısı + tutar, bankalara göre döküm
+  let endCalSel = null;
+  function renderDebtEndCalendar() {
+    const box = document.getElementById('debtEndCal');
+    if (!box) return;
+    const nowKey = currentMonthKey();
+    const map = {};
+    state.banks.forEach(b => (b.debts||[]).forEach(d => {
+      if (!d.isInstallment) return;
+      const rem = Math.max(0, (d.totalInstallments||0) - (d.paidInstallments||0));
+      if (rem <= 0) return;
+      const key = addMonthsKey(debtStartMonth(d), d.totalInstallments - 1);
+      if (key < nowKey) return;
+      const isTry = (d.currency||'TRY') === 'TRY';
+      const m = map[key] = map[key] || { n:0, monthly:0, remaining:0, fx:0, by:{} };
+      m.n++;
+      const bk = m.by[b.id] = m.by[b.id] || { name:b.name.replace(' Bankası',''), color:b.color, n:0, monthly:0, remaining:0 };
+      bk.n++;
+      if (isTry) {
+        const mo = d.monthlyAmount||0, re = mo * rem;
+        m.monthly += mo; m.remaining += re; bk.monthly += mo; bk.remaining += re;
+      } else m.fx++;
+    }));
+    const keys = Object.keys(map).sort();
+    if (!keys.length) { box.innerHTML = ''; return; }
+    if (!endCalSel || !map[endCalSel]) endCalSel = keys[0];
+    const blur = state.privacyMode ? ' blurred' : '';
+    const short = n => '₺' + Math.round(n).toLocaleString('tr-TR');
+    let h = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:12px;">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Ne zaman biter?</div>' +
+      '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;">';
+    keys.forEach(k => {
+      const m = map[k], sel = k === endCalSel;
+      h += '<div data-endk="'+k+'" style="flex:none;min-width:82px;text-align:center;cursor:pointer;border-radius:12px;padding:8px 10px;border:1px solid '+(sel?'var(--gold)':'var(--border)')+';background:'+(sel?'rgba(217,177,104,.12)':'var(--surface-2)')+';">' +
+        '<div style="font-size:11px;color:var(--text-muted);">'+shortMonthOf(k)+' '+k.slice(2,4)+'</div>' +
+        '<div style="font-size:22px;font-weight:800;line-height:1.2;color:'+(sel?'var(--gold)':'var(--text)')+';">'+m.n+'</div>' +
+        '<div class="'+blur.trim()+'" style="font-size:11px;color:var(--text-muted);">'+short(m.monthly)+'/ay</div></div>';
+    });
+    h += '</div>';
+    const m = map[endCalSel];
+    h += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">' +
+        '<span style="font-size:13px;font-weight:700;color:var(--text);">'+monthLabel(endCalSel)+' · '+m.n+' borç biter</span>' +
+      '</div>' +
+      '<div style="display:flex;gap:16px;margin:6px 0 8px;font-size:12px;color:var(--text-muted);">' +
+        '<span>Aylık yük <b class="'+blur.trim()+'" style="color:var(--gold);font-weight:700;">'+currency(m.monthly)+'</b></span>' +
+        '<span>Kalan toplam <b class="'+blur.trim()+'" style="color:var(--text);font-weight:700;">'+currency(m.remaining)+'</b></span></div>';
+    Object.keys(m.by).map(id => m.by[id]).sort((a,b) => b.n - a.n || b.remaining - a.remaining).forEach(bk => {
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;font-size:13px;color:var(--text);">' +
+        '<span style="display:flex;align-items:center;gap:7px;"><i style="width:8px;height:8px;border-radius:50%;background:'+bk.color+';display:inline-block;"></i>'+esc(bk.name)+' <b>'+bk.n+'</b></span>' +
+        '<span class="'+blur.trim()+'" style="color:var(--text-muted);font-size:12px;">aylık '+short(bk.monthly)+' · kalan '+short(bk.remaining)+'</span></div>';
+    });
+    if (m.fx) h += '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">+ '+m.fx+' dövizli borç tutara dahil değil</div>';
+    h += '</div></div>';
+    box.innerHTML = h;
+    box.querySelectorAll('[data-endk]').forEach(el => { el.onclick = () => { endCalSel = el.getAttribute('data-endk'); renderDebtEndCalendar(); }; });
+  }
+
   function renderAll() {
     captureNetWorthSnapshot();
     const totalDebtsTRY = state.banks.reduce((s,b) => s + bankDebtTRY(b), 0);
@@ -4211,6 +4270,7 @@
     renderGoals();
     renderDebtHistory();
     renderPersonalDebts();
+    renderDebtEndCalendar();
     renderMonthCarousel();
     renderExpenses();
     renderCashStrip();
